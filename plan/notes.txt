@@ -1,0 +1,15 @@
+* V-REP setup
+  * open/close gripper
+  * grasp objects
+  * finish ce class
+  * put fryer in
+  * IK (traj following)
+    * http://www.coppeliarobotics.com/helpFiles/en/pathAndMotionPlanningModules.htm
+    * http://www.forum.coppeliarobotics.com/viewtopic.php?t=3119
+    * http://www.coppeliarobotics.com/helpFiles/en/inverseKinematicsTutorial.htm
+    * http://www.coppeliarobotics.com/helpFiles/en/inverseKinematicsModule.htm
+    * https://github.com/JoshSong/jaco_ros_vrep
+
+* Real robot setup
+  * UR
+  * Jaco
