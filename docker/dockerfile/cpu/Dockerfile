@@ -1,5 +1,6 @@
 # Download base image
-FROM osrf/ros:kinetic-desktop-full-xenial
+FROM ubuntu:16.04
+
 
 MAINTAINER Xiao Li <xli87@bu.edu>
 
@@ -7,7 +8,8 @@ MAINTAINER Xiao Li <xli87@bu.edu>
 ARG USER=xli4217
 ARG GROUP=${USER}
 ARG UID=1000
-    
+ARG DIRS_TO_COPY_ROOT=dirs-to-copy
+
 #RUN useradd -r -u 1000 -g ${GROUP} ${USER}   
 
 #USER ${USER}
@@ -17,9 +19,9 @@ ENV HOSTNAME localhost
 ENV HOME /home/${USER}
 ENV USER ${USER}
 
+
 # Set working directory
 WORKDIR "/home/${USER}"
-
 
 #################
 # install tools #
@@ -31,41 +33,25 @@ RUN apt-get update && apt-get install -y emacs24 \
                                          mesa-utils \
                                          htop \
                                          iputils-ping \
+                                         python-tk \
                                          tmux \
-                                         libqwt-dev
+                                         build-essential \             
+                                         curl \
+                                         libfreetype6-dev \
+                                         libpng12-dev \
+                                         libzmq3-dev \
+                                         pkg-config \
+                                         python \
+                                         python-dev \
+                                         python-pip \
+                                         rsync \                                    
+                                         software-properties-common \
+                                         unzip \
+                                         git \
+                                         python3-tk \
+                                         xvfb
+                                         #rm -rf /var/lib/apt/lists/*
                                          
-##############
-# update gcc #
-##############
-RUN apt-get install -y  build-essential software-properties-common && \
-                        add-apt-repository ppa:ubuntu-toolchain-r/test && \
-                        apt-get update && \
-                        apt-get install gcc-6 g++-6 -y && \
-                        update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 60 --slave /usr/bin/g++ g++ /usr/bin/g++-6
-                        # apt-get update && \
-                        # apt-get install gcc-snapshot -y && \
-                        # apt-get install gcc-4.8 g++-4.8 -y && \
-                        # update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 60 --slave /usr/bin/g++ g++ /usr/bin/g++-4.8;
-
-RUN update-alternatives --config gcc
-
-########################
-# install ros packages #
-########################
-RUN apt-get install -y ros-kinetic-gazebo-ros-pkgs \
-                       ros-kinetic-qt-build \
-                       ros-kinetic-gazebo-ros-control\
-                       ros-kinetic-gazebo-ros-pkgs\
-                       ros-kinetic-ros-control\
-                       ros-kinetic-control-toolbox\
-                       ros-kinetic-realtime-tools\
-                       ros-kinetic-ros-controllers\
-                       ros-kinetic-xacro\
-                       python-wstool\
-                       ros-kinetic-tf-conversions\
-                       ros-kinetic-kdl-parser\
-                       ros-kinetic-moveit
-                           
 
 ###################
 # Install Pytorch #
@@ -84,7 +70,11 @@ RUN apt-get install -y ros-kinetic-gazebo-ros-pkgs \
 #     apt-get update && \
 #     apt-get -y install spot libspot-dev spot-doc python3-spot # Or a subset of those
 
-
+##########################
+# Copy V-REP and env API #
+##########################
+COPY ${DIRS_TO_COPY_ROOT}/V-REP /home/${USER}/V-REP 
+COPY ${DIRS_TO_COPY_ROOT}/cooking_env /home/${USER}/cooking_env
 
 ########
 # Misc #
@@ -93,14 +83,19 @@ RUN apt-get install -y ros-kinetic-gazebo-ros-pkgs \
 # EXPOSE 6006 8888 11311
 EXPOSE 5000-60000
 
+WORKDIR "/home"
 
 # Putting stuff in bashrc
-RUN echo "alias em='emacs -nw'" >> /root/.bashrc && \
-    echo "source $HOME/rlfps/setup_pythonpath.sh" >> /root/.bashrc && \
-    echo "source /opt/ros/kinetic/setup.bash" >> /root/.bashrc 
+RUN echo "alias em='emacs -nw'" >> /root/.bashrc
+RUN echo "source /home/root/cooking_env/setup_path.sh" >> /root/.bashrc
 
 # copy bashrc
-RUN cp /root/.bashrc /home/${USER}/.bashrc && \
-    mkdir /home/${USER}/rlfps/
+RUN cp /root/.bashrc /home/root/
 
-#CMD ['source', '/opt/ros/kinetic/setup.bash']
+###########################
+# Install python packages #
+###########################
+RUN pip install --upgrade pip
+
+RUN pip --no-cache-dir install \
+        fire

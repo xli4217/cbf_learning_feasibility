@@ -7,12 +7,14 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[ 0]}" )" && pwd )"
 DOCKER_DIR="$(dirname "$DIR")"
 
 # this can be cpu or gpu
-ARCH=$1
+# ARCH=$1
+ARCH="cpu"
 
 # this  is the instance name
-INSTANCE_NAME=$2
+# INSTANCE_NAME=$2
+INSTANCE_NAME='robot_cooking'
 
-VOLUME_MAPPING=$3
+VOLUME_MAPPING=$1
 
 
 IMAGE_NAME="xli4217/robot-cooking-$ARCH"
@@ -20,27 +22,10 @@ IMAGE_NAME="xli4217/robot-cooking-$ARCH"
 
 if [ "$1" == "--help" ]
 then
-    echo "Usage: ./start.sh <cpu/gpu> <instance name> <volume mapping from in format host_dir:image_dir>"
+#    echo "Usage: ./start.sh <cpu/gpu> <instance name> <volume mapping from in format host_dir:image_dir>"
+    echo "Usage: ./start.sh <volume mapping from in format host_dir:image_dir>"
     exit 0
 fi
-
-
-# #BASE_VOLUME_MAPPING="$DOCKER_DIR/docker_home/:/home/$USER/"
-# BASE_VOLUME_MAPPING=$4
-# DEPLOY_VOLUME_MAPPING="$DOCKER_DIR/experiments/:/root/experiments/"
-
-# if [ $IMAGE_TYPE == "base" ] 
-# then
-#     VOLUME_MAPPING=$BASE_VOLUME_MAPPING
-# elif [ $IMAGE_TYPE == "rlfps" ]
-# then
-#     VOLUME_MAPPING=$RLFPS_VOLUME_MAPPING
-# elif [ $IMAGE_TYPE == "vrep" ]
-# then
-#     VOLUME_MAPPING=$RLFPS_VOLUME_MAPPING
-# else
-#     VOLUME_MAPPING=$DEPLOY_VOLUME_MAPPING
-# fi
 
 
 xhost +local:root
