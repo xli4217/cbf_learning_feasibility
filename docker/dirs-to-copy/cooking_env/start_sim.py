@@ -50,8 +50,6 @@ def exec_commands(cmds):
 def start_sim(ttt_file_path=os.path.join(os.environ['CE_PATH'], 'ttt', 'cooking_env.ttt'),
               headless=False,
               operating_system='linux'):
-    # set vrep path
-    # os.environ["RLFPS_PATH"] = "/home/xli4217/rlfps"
 
     home_dir = os.path.expanduser("~")
     

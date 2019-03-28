@@ -3,7 +3,7 @@ import struct
 import sys
 import os
 import ctypes as ct
-from rl_pipeline.env.vrep_env.vrepConst import *
+from cooking_env.vrepConst import *
 
 #load library
 libsimx = None

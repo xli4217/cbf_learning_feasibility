@@ -10,11 +10,11 @@ robot_handles = {
     'UR5':{
         'joint_handles': ur5_joint_handles,
         'gripper_handles': {
-            'toggle_handle': '',
+            'toggle_handle': 'robotiqClosing',
             'connector_handle': 'ROBOTIQ_85_attachPoint',
             'prox_sensor_handle': 'ROBOTIQ_85_attachProxSensor'
         },
-        'goal_handle': 'Jaco_goal'
+        'goal_handle': 'UR5_goal_dummy'
     },
     'Jaco': {
         'joint_handles': jaco_joint_handles,
@@ -27,4 +27,9 @@ robot_handles = {
     }
 }
 
-object_handles = []
+object_handles = [
+    {
+        'name': 'obj',
+        'handle': 'obj'
+    }
+]

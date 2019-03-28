@@ -1,10 +1,9 @@
-from rl_pipeline.env.env_base import Env
-from rl_pipeline.configuration.configuration import Configuration
+from cooking_env.utils.configuration import Configuration
 
 import time
 
 try:
-    import rl_pipeline.env.vrep_env.vrep as vrep
+    import cooking_env.vrep as vrep
 except:
     print ('--------------------------------------------------------------')
     print ('"vrep.py" could not be imported. This means very probably that')
