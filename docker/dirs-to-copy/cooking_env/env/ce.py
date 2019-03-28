@@ -71,13 +71,14 @@ class CookingEnv(VrepEnvBase):
         #### gripper handles ####
         self.gripper_toggle_signal_name = rh['gripper_handles']['toggle_handle']
         
-        _, self.gripper_connector_handle = vrep.simxGetObjectHandle(self.clientID,
-                                                                 rh['gripper_handles']['connector_handle'],
-                                                                 vrep.simx_opmode_oneshot_wait)
+        _, self.gripper_attachpoint_handle = vrep.simxGetObjectHandle(self.clientID,
+                                                                      rh['gripper_handles']['attachpoint_handle'],
+                                                                      vrep.simx_opmode_oneshot_wait)
        
         _, self.gripper_prox_sensor_handle = vrep.simxGetObjectHandle(self.clientID,
                                                                    rh['gripper_handles']['prox_sensor_handle'],
                                                                    vrep.simx_opmode_oneshot_wait)
+
 
         #### target handle ####
         _, self.target_handle = vrep.simxGetObjectHandle(self.clientID,
@@ -108,6 +109,23 @@ class CookingEnv(VrepEnvBase):
         vrep.simxSetIntegerSignal(self.clientID, self.gripper_toggle_signal_name, 0, vrep.simx_opmode_oneshot)
 
     def robot_close_gripper(self):
+        # check which dynamically non-static and respondable object is in-between the fingers. Then attach the object to the gripper
+        _, shape_obj_list = vrep.simxGetObjects(self.clientID, vrep.sim_object_shape_type, vrep.simx_opmode_streaming)
+        for shape in shape_obj_list:
+            if shape == -1:
+                break
+            _, static = vrep.simxGetObjectIntParameter(self.clientID, shape, vrep.sim_shapeintparam_static, vrep.simx_opmode_streaming)
+            _, respondable = vrep.simxGetObjectIntParameter(self.clientID, shape, vrep.sim_shapeintparam_respondable)
+            # ds: detection state
+            # dp: detectd point
+            # dh: detected object handle
+            # dn: detected surface normal
+            _, ds, dp, dh, dn = vrep.simxReadProximitySensor(self.clientID, self.gripper_prox_sensor_handle, vrep.simx_opmode_streaming)
+            if not static and respondable and ds == 1:
+                
+                break
+
+        # close gripper
         vrep.simxSetIntegerSignal(self.clientID, self.gripper_toggle_signal_name, 1, vrep.simx_opmode_oneshot)
 
     def set_target_position(self, pos):
@@ -130,6 +148,12 @@ class CookingEnv(VrepEnvBase):
             return np.array([0])
 
     def reset(self):
+        #### clear signals ####
+        vrep.simxClearIntegerSignal(self.clientID, "", vrep.simx_opmode_oneshot)
+        vrep.simxClearFloatSignal(self.clientID, "", vrep.simx_opmode_oneshot)
+        vrep.simxClearStringSignal(self.clientID, "", vrep.simx_opmode_oneshot)
+
+        #### reset robot and environment ####
         self.set_position_control_mode()
         if self.CookingEnv_reset is not None:
             new_joint_angles = self.CookingEnv_reset.reset(self.all_info)['new_joint_angles']
@@ -286,10 +310,15 @@ if __name__ == "__main__":
     }
 
     env = CookingEnv(config)
-    # env.robot_open_gripper()
-
-    env.reset()
-    for i in range(100):
+    #env.robot_open_gripper()
+    env.robot_close_gripper()
+    # env.reset()
+    env.synchronous_trigger()
+   
+    
+    
+    # env.reset()
+    # for i in range(100):
         
         #### test set target position ####
         # target_pos = env.all_info['target_pose'][:3]

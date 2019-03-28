@@ -11,7 +11,7 @@ robot_handles = {
         'joint_handles': ur5_joint_handles,
         'gripper_handles': {
             'toggle_handle': 'robotiqClosing',
-            'connector_handle': 'ROBOTIQ_85_attachPoint',
+            'attachpoint_handle': 'ROBOTIQ_85_attachPoint',
             'prox_sensor_handle': 'ROBOTIQ_85_attachProxSensor'
         },
         'goal_handle': 'UR5_goal_dummy'
@@ -20,7 +20,7 @@ robot_handles = {
         'joint_handles': jaco_joint_handles,
         'jaco_hand_handles': {
             'toggle_handle': '',
-            'connector_handle': 'ROBOTIQ_85_attachPoint',
+            'attachpoint_handle': 'ROBOTIQ_85_attachPoint',
             'prox_sensor_handle': 'ROBOTIQ_85_attachProxSensor'
         },
         'goal_handle': 'Jaco_goal'
