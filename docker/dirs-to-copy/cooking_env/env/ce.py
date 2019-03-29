@@ -310,13 +310,31 @@ if __name__ == "__main__":
     }
 
     env = CookingEnv(config)
-    #env.robot_open_gripper()
-    env.robot_close_gripper()
-    # env.reset()
+    env.reset()
+
+    target_pos = env.all_info['target_pose'][:3]
+    target_pos[2] -= 0.1
+    env.set_target_position(target_pos)
     env.synchronous_trigger()
+
+    
+    env.robot_close_gripper()
+    for i in range(20):
+        env.synchronous_trigger()
+
    
+
+    target_pos = env.all_info['target_pose'][:3]
+    target_pos[2] += 0.1
+    env.set_target_position(target_pos)
+    for i in range(10):
+        env.synchronous_trigger()
+
     
-    
+    env.robot_open_gripper()
+    env.synchronous_trigger()
+
+        
     # env.reset()
     # for i in range(100):
         
