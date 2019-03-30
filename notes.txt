@@ -1,0 +1,12 @@
+* System: Ubuntu 16.04, ROS Kinetic
+* Robot setup
+  * UR5: https://github.com/olinrobotics/irl/wiki/Tutorial:-Setting-up-and-running-the-UR5-Robotic-Arm
+  * Kinova: https://github.com/Kinovarobotics/kinova-ros
+  * Baxter
+    * https://moveit.ros.org/robots/baxter-research-robot/
+    * http://sdk.rethinkrobotics.com/wiki/MoveIt_Tutorial
+    * http://sdk.rethinkrobotics.com/wiki/Simulator_Installation
+    * https://github.com/baxter-flowers/trac_ik_baxter
+  * Moveit: https://moveit.ros.org/install/source/
+  * Trac_ik: https://www.google.com/search?client=ubuntu&channel=fs&q=trac_ik+ros&ie=utf-8&oe=utf-8
+  * Industrial: https://github.com/ros-industrial/industrial_core
