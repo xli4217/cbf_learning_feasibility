@@ -12,11 +12,16 @@
     * https://www.google.com/search?client=ubuntu&channel=fs&q=trac_ik+ros&ie=utf-8&oe=utf-8
     * https://bitbucket.org/traclabs/trac_ik/src/master/
   * Industrial: https://github.com/ros-industrial/industrial_core
-
+  * Robotiq
+    * http://wiki.ros.org/robotiq
+    * http://wiki.ros.org/robotiq/Tutorials/Control%20of%20a%202-Finger%20Gripper%20using%20the%20Modbus%20RTU%20protocol%20%28ros%20kinetic%20and%20newer%20releases%29
+    * need to install and build against ros_canopen
+    * need to execute sudo chmod 777 /dev/ttyUSB0
 
 * Executing Cartesian Path
   * https://answers.ros.org/question/308358/moveit-low-precision-when-executing-cartesian-path/
   * https://github.com/ros-planning/moveit/issues/27
+  * http://wiki.ros.org/descartes
 
 
 * Commands
