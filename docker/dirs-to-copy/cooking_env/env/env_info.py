@@ -14,7 +14,8 @@ robot_handles = {
             'attachpoint_handle': 'ROBOTIQ_85_attachPoint',
             'prox_sensor_handle': 'ROBOTIQ_85_attachProxSensor'
         },
-        'goal_handle': 'UR5_goal_dummy'
+        'goal_handle': 'UR5_goal_dummy',
+        'particle_handle': 'UR5_goal_test'
     },
     'Jaco': {
         'joint_handles': jaco_joint_handles,
