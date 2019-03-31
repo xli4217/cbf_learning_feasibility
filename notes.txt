@@ -8,5 +8,16 @@
     * http://sdk.rethinkrobotics.com/wiki/Simulator_Installation
     * https://github.com/baxter-flowers/trac_ik_baxter
   * Moveit: https://moveit.ros.org/install/source/
-  * Trac_ik: https://www.google.com/search?client=ubuntu&channel=fs&q=trac_ik+ros&ie=utf-8&oe=utf-8
+  * Trac_ik:
+    * https://www.google.com/search?client=ubuntu&channel=fs&q=trac_ik+ros&ie=utf-8&oe=utf-8
+    * https://bitbucket.org/traclabs/trac_ik/src/master/
   * Industrial: https://github.com/ros-industrial/industrial_core
+
+
+* Executing Cartesian Path
+  * https://answers.ros.org/question/308358/moveit-low-precision-when-executing-cartesian-path/
+  * https://github.com/ros-planning/moveit/issues/27
+
+
+* Commands
+  * roslaunch baxter_api baxter_api.launch mode:=real optitrack:=True env_config_json:=/home/xli4217/docker/docker_home/rlfps/examples/rss2019/env_config.json
