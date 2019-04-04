@@ -1,6 +1,9 @@
 * System: Ubuntu 16.04, ROS Kinetic
 * Robot setup
-  * UR5: https://github.com/olinrobotics/irl/wiki/Tutorial:-Setting-up-and-running-the-UR5-Robotic-Arm
+  * UR5
+    * moveit: https://github.com/olinrobotics/irl/wiki/Tutorial:-Setting-up-and-running-the-UR5-Robotic-Arm
+    * simulation: http://wiki.ros.org/ur_gazebo
+    * https://github.com/SintefManufacturing/python-urx
   * Kinova: https://github.com/Kinovarobotics/kinova-ros
   * Baxter
     * https://moveit.ros.org/robots/baxter-research-robot/
