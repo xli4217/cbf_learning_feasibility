@@ -4,7 +4,15 @@
     * moveit: https://github.com/olinrobotics/irl/wiki/Tutorial:-Setting-up-and-running-the-UR5-Robotic-Arm
     * simulation: http://wiki.ros.org/ur_gazebo
     * https://github.com/SintefManufacturing/python-urx
-  * Kinova: https://github.com/Kinovarobotics/kinova-ros
+  * Kinova:
+    * manual (https://www.kinovarobotics.com/sites/default/files/SDK-UG-INT-EN%20201804-1.0%20%28KINOVA%E2%84%A2%20Software%20development%20kit%20user%20guide%29_2.pdf)
+    * https://github.com/Kinovarobotics/kinova-ros (for indigo)
+    * https://github.com/CNURobotics/kinova-ros/tree/kinetic_devel (for kinetic)
+    * need to install dev center (https://www.kinovarobotics.com/en/knowledge-hub/all-kinova-products)
+    * start dev center with sudo
+    * use 'lsusb' and 'dmesg' to find usb device (most likely /dev/usb/00X/00Y)
+    * run "sudo chmod 777 /dev/usb/00X/00Y" (can use similar procedure for robotiq)
+    
   * Baxter
     * https://moveit.ros.org/robots/baxter-research-robot/
     * http://sdk.rethinkrobotics.com/wiki/MoveIt_Tutorial
