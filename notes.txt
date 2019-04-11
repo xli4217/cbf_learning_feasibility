@@ -13,7 +13,8 @@
     * start dev center with sudo
     * use 'lsusb' and 'dmesg' to find usb device (most likely /dev/usb/00X/00Y)
     * run "sudo chmod 777 /dev/usb/00X/00Y" (can use similar procedure for robotiq)
-    
+    * http://wiki.ros.org/wpi_jaco_wrapper
+
   * Baxter
     * https://moveit.ros.org/robots/baxter-research-robot/
     * http://sdk.rethinkrobotics.com/wiki/MoveIt_Tutorial
