@@ -1,0 +1,8 @@
+<launch>
+  <arg name="optitrack" default="false"/>
+
+  <include file="$(find kinova_api)/launch/kinova_api.launch"/>
+
+  <node name="cooking_environment" pkg="robot_cooking" type="make_env.py" respawn="false" output="screen" args="$(arg optitrack)"/>
+
+</launch>

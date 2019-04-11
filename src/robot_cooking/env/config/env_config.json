@@ -1,0 +1,13 @@
+{
+  "table":{
+    "topic": "/vrpn_client_node/table/pose",
+    "parent_frame_id": "/base",
+    "child_frame_id": "/Robot_a",
+    "init_pose": [0.743, -0.123, -0.055, 0, 0, 0, 1],
+    "scale": [0.76, 1.22, 0.01],
+    "rgba": [0.1, 0.1, 0.1, 1],
+    "marker_type": "cube",
+    "apply_transform": "T_motive2baxter"
+  }
+}
+
