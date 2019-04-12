@@ -23,6 +23,9 @@ default_config = {
                 'lower': -1.5 * np.ones(7),    
             },
             'safe_workspace': {
+                # safe zone defined here takes precedence
+                'env_json_path': os.path.join(os.path.dirname(os.path.abspath(__file__))
+, 'env', 'config', 'env_config.json'),
                 'x': [-0.1, 0.6],
                 'y': [-0.25, 0.16],
                 'z': [0.08 ,0.8]
@@ -98,18 +101,20 @@ class RobotCooking(object):
         #     self.servo_to_pose_target(pt)
         #     self.rate.sleep()
 
-        ee_pos, ee_quat = cls.driver_utils.get_ee_pose()
-        pt = np.array(ee_pos) + np.array([0.1, 0, 0])
-        pt = np.concatenate([pt, ee_quat])
-        print(ee_pos)
-        print(pt)
-        i = 0
-        for i in range(1000):
-            if self.servo_to_pose_target(pt):
-                print('reached goal target')
-                break
-            self.rate.sleep()
+        # ee_pos, ee_quat = cls.driver_utils.get_ee_pose()
+        # pt = np.array(ee_pos) + np.array([0.1, 0, 0])
+        # pt = np.concatenate([pt, ee_quat])
+        # print(ee_pos)
+        # print(pt)
+        # i = 0
+        # for i in range(1000):
+        #     if self.servo_to_pose_target(pt):
+        #         print('reached goal target')
+        #         break
+        #     self.rate.sleep()
 
+        for _ in range(1000):
+            print(self.driver_utils.is_tool_in_safe_workspace())
             
     def cleanup(self):
         pass

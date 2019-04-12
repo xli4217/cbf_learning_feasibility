@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import rospy
-from robot_cooking.visualization.pub_goal_marker import MarkerPublisher
+from robot_cooking.env.visualization.pub_goal_marker import MarkerPublisher
 import numpy as np
 import json
 import argparse
@@ -14,55 +14,33 @@ from visualization_msgs.msg import *
 
 class MakeEnv(object):
     '''
-    makes the environment (send transforms) according to config given by json_config_path (create pubs and subs as necessary), and publish rviz markers if specified
-
-    Example config:
-    {
-        'table':{
-            'topic': '/Robot_a_bak/pose',
-            'parent_frame': '/world',
-            'child_frame_id': "/Robot_a_bak",
-            "init_pose": "[0,0,0,0,0,0,1]",
-            # scale is x,y,z in the motive frame if not in 'sim' mode
-            'scale': '[5, 10, 15',
-            'rgba': '[0.1,0.1,0.1,1]',
-            'marker_type': 'cube',
-            # in non-sim mode, the transform that needs to be applied to the listened frame in order to transform it to the specified base_frame
-            'apply_transform': "T_motive2baxter"
-        },
-        'regon_1': {...} 
-    }
-    
+    makes the environment (send transforms) according to config given by json_config_path (create pubs and subs as necessary), and publish rviz markers if specified    
     '''
     
     def __init__(self, json_config_path, optitrack=False):
 
         with open(json_config_path) as f:
-            self.config = json.loads(f.read())
+            self.json_config = json.loads(f.read())
 
-        self.json_config = self.config['config']
-        del self.config['config']
-        
         self.marker_pub = MarkerPublisher()
  
         # add rviz markers
-        for key, value in viewitems(self.config):
+        for key, value in viewitems(self.json_config):
             if 'marker_type' in value.keys():
                 if value['marker_type'] == "interactive":
-                    if not optitrack:
-                        self.marker_pub.make6DofMarker(False, InteractiveMarkerControl.MOVE_ROTATE_3D, Point(1, 1, 1), True)
+                    self.marker_pub.make6DofMarker(False, InteractiveMarkerControl.MOVE_ROTATE_3D, Point(value['init_pose'][0], value['init_pose'][1], value['init_pose'][2]), True)
                 else:
                     if optitrack:
                         scale = [value['scale'][1], value['scale'][2], value['scale'][0]]
                     else:
                         scale = [value['scale'][0], value['scale'][1], value['scale'][2]]
-                self.marker_pub.add_marker(
-                    key,
-                    value['init_pose'],
-                    scale,
-                    value['rgba'],
-                    value['marker_type']
-                )
+                    self.marker_pub.add_marker(
+                        key,
+                        value['init_pose'],
+                        scale,
+                        value['rgba'],
+                        value['marker_type']
+                    )
 
         self.marker_pub.publish_marker_array()
 
@@ -72,10 +50,10 @@ class MakeEnv(object):
 
         obj_names = []
         topic_names = []
-        for object_name, value in viewitems(self.config):
-            if 'topic' in value.keys():
+        for object_name, value in viewitems(self.json_config):
+            if 'vrpn_topic' in value.keys():
                 obj_names.append(object_name)
-                topic_names.append(value['topic'])
+                topic_names.append(value['vrpn_topic'])
 
         self.object_pose_dict = {}
 
@@ -85,7 +63,7 @@ class MakeEnv(object):
                 pass
         else:
             while not rospy.is_shutdown():
-              for obj_name, value in viewitems(self.config):
+              for obj_name, value in viewitems(self.json_config):
                 if 'marker_type' in value.keys():
                     if value['marker_type'] == "interactive":
                         pose = [self.marker_pub.int_marker_pose.position.x,
@@ -171,7 +149,7 @@ if __name__ == "__main__":
     else:
         optitrack = True
 
-    env_json_path = os.join(os.environ['RC_PATH'],
+    env_json_path = os.path.join(os.environ['RC_PATH'],
                             'src', 'robot_cooking', 'env',
                             'config', 'env_config.json')
     env = MakeEnv(env_json_path, optitrack)

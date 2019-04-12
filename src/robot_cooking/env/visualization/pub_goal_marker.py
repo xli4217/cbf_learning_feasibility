@@ -10,8 +10,8 @@ from interactive_markers.menu_handler import *
 class MarkerPublisher(object):
     def __init__(self, config={}):
         self.marker_array = MarkerArray()
-        self.marker_array_pub =  rospy.Publisher('/baxter_api/marker_array', MarkerArray, queue_size=10)
-        self.int_marker_pub = rospy.Publisher('/baxter_api/int_marker_pose', Pose, queue_size=10)
+        self.marker_array_pub =  rospy.Publisher('/robot_cooking/marker_array', MarkerArray, queue_size=10)
+        self.int_marker_pub = rospy.Publisher('/robot_cooking/int_marker_pose', Pose, queue_size=10)
 
         # rospy.init_node('marker_publisher')
 
@@ -144,7 +144,7 @@ class MarkerPublisher(object):
         int_marker = InteractiveMarker()
         int_marker.header.frame_id = "/world"
         int_marker.pose.position = position
-        int_marker.scale = 1
+        int_marker.scale = 0.1
 
         int_marker.name = "simple_6dof"
         int_marker.description = "Simple 6-DOF Control"
