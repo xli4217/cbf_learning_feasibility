@@ -9,7 +9,7 @@ import tf
 from  geometry_msgs.msg import *
 from future.utils import viewitems
 from visualization_msgs.msg import *
-
+from robot_cooking.env.calibration.jaco_calibration import T_motive2jaco
 
 
 class MakeEnv(object):
@@ -30,8 +30,9 @@ class MakeEnv(object):
                 if value['marker_type'] == "interactive":
                     self.marker_pub.make6DofMarker(False, InteractiveMarkerControl.MOVE_ROTATE_3D, Point(value['init_pose'][0], value['init_pose'][1], value['init_pose'][2]), True)
                 else:
-                    if optitrack:
-                        scale = [value['scale'][1], value['scale'][2], value['scale'][0]]
+                    if optitrack and value['require_motive2robot_transform'] == "True":
+                        # this is Y up motive configuration
+                        scale = [value['scale'][1], value['scale'][0], value['scale'][2]]
                     else:
                         scale = [value['scale'][0], value['scale'][1], value['scale'][2]]
                     self.marker_pub.add_marker(
@@ -75,8 +76,7 @@ class MakeEnv(object):
                     self.pub_transforms(obj_name, value['parent_frame_id'], value['child_frame_id'], pose)
             
     def optitrack_callback(self, msg, obj_name):
-        if self.config[obj_name]['apply_transform'] == "T_motive2baxter":
-            from baxter_api.configs.config import T_motive2baxter
+        if self.json_config[obj_name]['require_motive2robot_transform'] == "True":
             quaternion =  [msg.pose.orientation.x,
                            msg.pose.orientation.y,
                            msg.pose.orientation.z,
@@ -87,7 +87,7 @@ class MakeEnv(object):
             M[1,3] = msg.pose.position.y
             M[2,3] = msg.pose.position.z
 
-            transformed_M = np.dot(T_motive2baxter, M)
+            transformed_M = np.dot(T_motive2jaco, M)
             transformed_q = tf.transformations.quaternion_from_matrix(transformed_M)
             pose = [
                 transformed_M[0,3],
@@ -99,8 +99,8 @@ class MakeEnv(object):
                 transformed_q[3],
             ]
 
-            if obj_name == 'table':
-                pose[2] -= 0.01
+            # if obj_name == 'table':
+            #     pose[2] -= 0.01
         else:
             pose = [msg.pose.position.x,
                     msg.pose.position.y,
@@ -110,7 +110,7 @@ class MakeEnv(object):
                     msg.pose.orientation.z,
                     msg.pose.orientation.w]
             
-        self.pub_transforms(obj_name, self.config[obj_name]['parent_frame_id'], self.config[obj_name]['child_frame_id'], pose)
+        self.pub_transforms(obj_name, self.json_config[obj_name]['parent_frame_id'], self.json_config[obj_name]['child_frame_id'], pose)
         
         
             

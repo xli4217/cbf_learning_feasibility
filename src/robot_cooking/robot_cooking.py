@@ -8,6 +8,10 @@ import time
 from kinova_api.kinova_driver_utils import KinovaDriverUtils
 from kinova_api.kinova_moveit_utils import KinovaMoveitUtils
 
+import tf2_ros
+import tf
+from visualization_msgs.msg import *
+from  geometry_msgs.msg import *
 
 default_config = {
     'rate': 10,    
@@ -19,8 +23,8 @@ default_config = {
             "gripper_move_group": 'gripper',
             "reference_link": "j2s7s300_link_base",
             'joint_vel_bound': {
-                'upper': 1.5 * np.ones(7),
-                'lower': -1.5 * np.ones(7),    
+                'upper': np.array([1.5,1.5,1.5,1.5,2.,2.,2.]),
+                'lower': -np.array([1.5,1.5,1.5,1.5,2.,2.,2.]),    
             },
             'safe_workspace': {
                 # safe zone defined here takes precedence
@@ -60,15 +64,41 @@ class RobotCooking(object):
         self.moveit_utils = self.RobotCooking_config['MoveitUtils']['type'](self.RobotCooking_config['MoveitUtils']['config'])
 
         self.rate = rospy.Rate(self.RobotCooking_config['rate'])
+
+        #### Initialize tf ####
+        self.tf_broadcaster = tf2_ros.TransformBroadcaster()
+        self.tf_buffer = tf2_ros.Buffer()
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
+        
+    def update_pose_target_tf(self, pt):
+        t = geometry_msgs.msg.TransformStamped()
+        t.header.stamp = rospy.Time.now()
+        t.header.frame_id = "world"
+        t.child_frame_id = "pose_target"
+
+        t.transform.translation.x = pt[0]
+        t.transform.translation.y = pt[1]
+        t.transform.translation.z = pt[2]
+        
+        t.transform.rotation.x = pt[3]
+        t.transform.rotation.y = pt[4]
+        t.transform.rotation.z = pt[5]
+        t.transform.rotation.w = pt[6]
+
+        self.tf_broadcaster.sendTransform(t)
         
     def servo_to_pose_target(self, pt):
         assert len(pt) == 7
+
+        # update tf
+        self.update_pose_target_tf(pt)
+        
         # calculate the joint positions using ik
         ik_sol = self.moveit_utils.ik(position=pt[:-4], orientation=pt[-4:])
         ik_jp = ik_sol[:-3]
 
         damping = 1.2
-        natural_freq = 0.9
+        natural_freq = 2.5
         kp = (2 * np.pi * natural_freq) ** 2
         kd = 2 * damping * 2 * np.pi * natural_freq
 
@@ -76,30 +106,30 @@ class RobotCooking(object):
         joint_vel = self.driver_utils.get_joint_velocities()
 
         jv = kp * joint_angle_diff + kd * joint_vel
-        jv = 0.5 * jv
-
 
         ee_pos, ee_quat = self.driver_utils.get_ee_pose()
         pose_distance = np.linalg.norm(ee_pos - pt[:3])
+        quat_distance = np.arccos(2 * np.inner(ee_quat, pt[3:]) - 1)
         
         if not self.driver_utils.is_tool_in_safe_workspace():
             print('tool not in safe workspace')
 
         # start servoing
-        if pose_distance > 0.01 and self.driver_utils.is_tool_in_safe_workspace():
+        if (pose_distance > 0.005 or quat_distance > 0.08) and self.driver_utils.is_tool_in_safe_workspace():
             self.driver_utils.pub_joint_velocity(jv, duration_sec=1./self.RobotCooking_config['rate'])
             return False
         else:
             return True
             
     def run(self):
-        # i = 0
-        # for i in range(1000):
-        #     ee_pos, ee_quat = cls.driver_utils.get_ee_pose()
-        #     pt = np.array(ee_pos) + np.array([0.05 * np.sin(0.1 * i), 0, 0])
-        #     pt = np.concatenate([pt, ee_quat])
-        #     self.servo_to_pose_target(pt)
-        #     self.rate.sleep()
+        i = 0
+        ee_pos, ee_quat = cls.driver_utils.get_ee_pose()
+        for i in range(1000):
+            pt = np.array(ee_pos) + np.array([0, 0.1 * np.sin(0.005 * i), 0])
+            pt = np.concatenate([pt, ee_quat])
+            self.update_pose_target_tf(pt)
+            self.servo_to_pose_target(pt)
+            self.rate.sleep()
 
         # ee_pos, ee_quat = cls.driver_utils.get_ee_pose()
         # pt = np.array(ee_pos) + np.array([0.1, 0, 0])
@@ -113,16 +143,131 @@ class RobotCooking(object):
         #         break
         #     self.rate.sleep()
 
-        for _ in range(1000):
-            print(self.driver_utils.is_tool_in_safe_workspace())
+        # for _ in range(1000):
+        #     print(self.driver_utils.is_tool_in_safe_workspace())
+
+    def get_tf_pose(self, src_frame, target_frame):
+        try:
+            pt_tf = self.tf_buffer.lookup_transform(src_frame, target_frame, rospy.Time())
+        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+            pass
+
+        pt = pt_tf.transform
+
+        return pt_tf, np.array([pt.translation.x,
+                                pt.translation.y,
+                                pt.translation.z,
+                                -pt.rotation.x,
+                                -pt.rotation.y,
+                                -pt.rotation.z,
+                                -pt.rotation.w])
+
+    def get_target_frame(self, obj_name):
+        from waypoints import waypoints_dict
+        if obj_name == 'blue_mapped' or obj_name == 'green_mapped':
+            relative_pose = waypoints_dict['relative_plate']
+        elif obj_name == 'toaster':
+            relative_pose = waypoints_dict['toaster']
+        elif obj_name == 'mustard':
+            relative_pose = waypoints_dict['mustard']
+        else:
+            raise ValueError('relative frame not supported')
+
+        obj_tf, obj_pose = self.get_tf_pose("world", obj_name)
+
+        obj_M = tf.transformations.quaternion_matrix(obj_pose[3:])
+        obj_M[0,3] = obj_pose[0]
+        obj_M[1,3] = obj_pose[1]
+        obj_M[2,3] = obj_pose[2]
+
+        rel_M = tf.transformations.quaternion_matrix(relative_pose[3:])
+        rel_M[0,3] = relative_pose[0]
+        rel_M[1,3] = relative_pose[1]
+        rel_M[2,3] = relative_pose[2]
+
+        target_M = obj_M.dot(rel_M)
+
+        target_quat = tf.transformations.quaternion_from_matrix(target_M)
+        target_pos = np.array([target_M[0,3], target_M[1,3], target_M[2,3]])
+
+        return np.concatenate([target_pos, target_quat])
+        
+    def waypoint_cooking(self):
+        from waypoints import waypoints_dict
+
+        ## go to neutral
+        # pt = waypoints_dict['neutral']
+        # while not self.servo_to_pose_target(pt):
+        #     pass
+
+        ## blue plate 
+        # pt = self.get_target_frame('blue_mapped')
+        # while not self.servo_to_pose_target(pt):
+        #     pass
+
+        ## close gripper
+        self.driver_utils.set_finger_positions([0.9, 0.9, 0.9])
+
+        ## go to neutral
+        pt = waypoints_dict['neutral']
+        while not self.servo_to_pose_target(pt):
+            pass
+
+        ## go to toaster waypoint
+        pt = waypoints_dict['toaster_waypoint']
+        while not self.servo_to_pose_target(pt):
+            pass
+
+        ## go to toaster
+        pt = waypoints_dict['toaster_absolute']
+        while not self.servo_to_pose_target(pt):
+            pass
+
+        ## open gripper
+        self.driver_utils.set_finger_positions([0.1, 0.1, 0.1])
+
+
+        ## go to switch pre
+        pt = waypoints_dict['switch_pre']
+        while not self.servo_to_pose_target(pt):
+            pass
+
+        
+        ## move to toast switch turn on pre-config
+        pt = waypoints_dict['switch_on_wp']
+        while not self.servo_to_pose_target(pt):
+            pass
+
+        ## close first two figures
+        self.driver_utils.set_finger_positions([1., 1., 0.1])
+
             
+        ## turn on switch
+        pt = waypoints_dict['switch_on']
+        while not self.servo_to_pose_target(pt):
+            pass
+
+        ## open gripper
+        self.driver_utils.set_finger_positions([0.1, 0.1, 0.1])
+            
+        ## move to toast switch turn on pre-config
+        pt = waypoints_dict['switch_on_wp']
+        while not self.servo_to_pose_target(pt):
+            pass
+
+            
+        # self.update_pose_target_tf(pt)
+        
     def cleanup(self):
         pass
-        
+
+
         
 if __name__ == "__main__":
     cls = RobotCooking()
     time.sleep(0.5)
+
+    #### test pose target following ####
     
     #### test IK ####
     # curr_ee_pos, curr_ee_quat = cls.driver_utils.get_ee_pose()
@@ -135,4 +280,7 @@ if __name__ == "__main__":
     # print(ik_jp)
 
     #### test servo to target pose ####
-    cls.run()
+    # cls.run()
+
+    #### waypoint cooking ####
+    cls.waypoint_cooking()

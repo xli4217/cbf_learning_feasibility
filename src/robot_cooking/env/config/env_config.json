@@ -2,10 +2,11 @@
   "safe_zone":{
     "parent_frame_id": "/world",
     "child_frame_id": "/safe_zone",
-    "init_pose": [0.743, -0.123, 0.3, 0, 0, 0, 1],
-    "scale": [0.76, 1.22, 0.4],
+    "init_pose": [0.7, -0.18, 0.26, 0, 0, 0, 1],
+    "scale": [0.9, 1.22, 0.4],
     "rgba": [0.1, 0.1, 0.5, 0.1],
-    "marker_type": "cube"
+    "marker_type": "cube",
+    "require_motive2robot_transform": "False"
   },
   "interactive_target":{
     "parent_frame_id": "/world",
@@ -13,16 +14,58 @@
     "init_pose": [0, -0.223, 0.3, 0, 0, 0, 1],
     "scale": [0.76, 1.22, 0.4],
     "rgba": [0.1, 0.1, 0.5, 0.1],
-    "marker_type": "interactive"
+    "marker_type": "interactive",
+    "require_motive2robot_transform": "False"
   },
   "table":{
     "vrpn_topic": "/vrpn_client_node/table/pose",
     "parent_frame_id": "/world",
-    "child_frame_id": "/table",
+    "child_frame_id": "/table_mapped",
     "init_pose": [0.743, -0.123, 0.05, 0, 0, 0, 1],
     "scale": [0.76, 1.22, 0.01],
     "rgba": [0.1, 0.1, 0.1, 1],
-    "marker_type": "cube"
+    "marker_type": "cube",
+    "require_motive2robot_transform": "True"
+  },
+  "toaster":{
+    "vrpn_topic": "/vrpn_client_node/toaster/pose",
+    "parent_frame_id": "/world",
+    "child_frame_id": "/toaster_mapped",
+    "init_pose": [0.743, -0.123, 0.05, 0, 0, 0, 1],
+    "scale": [0.22, 0.45, 0.14],
+    "rgba": [0.5, 0.5, 0.5, 0.8],
+    "marker_type": "cube",
+    "require_motive2robot_transform": "True"
+  },
+  "green_plate":{
+    "vrpn_topic": "/vrpn_client_node/green/pose",
+    "parent_frame_id": "/world",
+    "child_frame_id": "/green_mapped",
+    "init_pose": [0.743, -0.123, 0.05, 0, 0, 0, 1],
+    "scale": [0.25, 0.25, 0.001],
+    "rgba": [0.1, 1.0, 0.1, 1],
+    "marker_type": "sphere",
+    "require_motive2robot_transform": "True"
+  },
+  "blue_plate":{
+    "vrpn_topic": "/vrpn_client_node/blue/pose",
+    "parent_frame_id": "/world",
+    "child_frame_id": "/blue_mapped",
+    "init_pose": [0.743, -0.123, 0.05, 0, 0, 0, 1],
+    "scale": [0.25, 0.25, 0.001],
+    "rgba": [0.1, 0.1, 1.0, 1],
+    "marker_type": "sphere",
+    "require_motive2robot_transform": "True"
+  },
+  "mustard":{
+    "vrpn_topic": "/vrpn_client_node/mustard/pose",
+    "parent_frame_id": "/world",
+    "child_frame_id": "/mustard_mapped",
+    "init_pose": [0.743, -0.123, 0.05, 0, 0, 0, 1],
+    "scale": [0.03, 0.09, 0.18],
+    "rgba": [0.9, 0.9, 0.1, 1],
+    "marker_type": "cube",
+    "require_motive2robot_transform": "True"
   }
 }
 
