@@ -19,12 +19,13 @@ robot_handles = {
     },
     'Jaco': {
         'joint_handles': jaco_joint_handles,
-        'jaco_hand_handles': {
+        'gripper_handles': {
             'toggle_handle': '',
             'attachpoint_handle': 'ROBOTIQ_85_attachPoint',
             'prox_sensor_handle': 'ROBOTIQ_85_attachProxSensor'
         },
-        'goal_handle': 'Jaco_goal'
+        'goal_handle': 'Jaco_goal',
+        'particle_handle': 'Jaco_goal'
     }
 }
 

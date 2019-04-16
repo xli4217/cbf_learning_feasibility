@@ -10,12 +10,6 @@ from env_info import robot_handles, object_handles
 default_config = {
     # Common to all envs
     "seed": 10,
-    "state_space": None,
-    "action_space": None,
-    "get_state": None,
-    "get_reward": None,
-    "is_done": None,
-    "get_info": None,
     # specific to this env
     "suffix": "",
     "particle_test": False,
@@ -40,12 +34,6 @@ class CookingEnv(VrepEnvBase):
         self.CookingEnv_reset = reset
         self.object_handles = None
         
-        if seed:
-            self.set_seed(seed)
-        else:
-            self.set_seed(self.CookingEnv_config.get('seed'))
-        
-
         self.logger = logger
         
         self.suffix = suffix
@@ -115,11 +103,12 @@ class CookingEnv(VrepEnvBase):
     def set_position_control_mode(self):
        for jh in self.joint_handles:
           vrep.simxSetObjectIntParameter(self.clientID, jh, 2001, 1, vrep.simx_opmode_oneshot)
-
+          self.synchronous_trigger()
 
     def robot_open_gripper(self):
         vrep.simxSetIntegerSignal(self.clientID, self.gripper_toggle_signal_name, 0, vrep.simx_opmode_oneshot)
-
+        self.synchronous_trigger()
+        
     def robot_close_gripper(self):
         # check which dynamically non-static and respondable object is in-between the fingers. Then attach the object to the gripper
         # for h in self.object_handles:
@@ -132,7 +121,8 @@ class CookingEnv(VrepEnvBase):
 
         # close gripper
         vrep.simxSetIntegerSignal(self.clientID, self.gripper_toggle_signal_name, 1, vrep.simx_opmode_oneshot)
-
+        self.synchronous_trigger()
+        
     def set_target_position(self, pos):
         assert pos.shape == (3,)
         if self.CookingEnv_config.get('particle_test'):
@@ -140,7 +130,8 @@ class CookingEnv(VrepEnvBase):
         else:
             handle = self.target_handle
         vrep.simxSetObjectPosition(self.clientID, handle, -1, pos, vrep.simx_opmode_oneshot)
-
+        self.synchronous_trigger()
+        
     def set_target_quaternion(self, quat):
         assert quat.shape == (4,)
         if self.CookingEnv_config.get('particle_test'):
@@ -149,6 +140,7 @@ class CookingEnv(VrepEnvBase):
             handle = self.target_handle
       
         vrep.simxSetObjectQuaternion(self.clientID, handle, -1, quat, vrep.simx_opmode_oneshot)
+        self.synchronous_trigger()
         
     def set_target_euler_angles(self, rpy):
         assert rpy.shape == (3,)
@@ -159,14 +151,29 @@ class CookingEnv(VrepEnvBase):
             handle = self.target_handle
       
         vrep.simxSetObjectOrientation(self.clientID, handle, -1, rpy, vrep.simx_opmode_oneshot)
-        
-    def get_state(self):
-        self.update_all_info()
-        if self.CookingEnv_config.get('get_state'):
-            return self.CookingEnv_config.get('get_state')(self.all_info)
-        else:
-            return np.array([0])
+        self.synchronous_trigger()
 
+    def get_target_pose(self):
+        self.update_all_info()
+
+        if self.CookingEnv_config.get('particle_test'):
+            handle = self.particle_handle
+        else:
+            handle = self.target_handle
+
+        return self.all_info['target_pose']
+
+    def get_target_velocity(self):
+        if self.CookingEnv_config.get('particle_test'):
+            handle = self.particle_handle
+        else:
+            handle = self.target_handle
+
+        return_code, linear_vel, angular_vel = vrep.simxGetObjectVelocity(self.clientID, handle, vrep.simx_opmode_blocking)
+
+        return np.array(linear_vel), np.array(angular_vel)
+        
+        
     def reset(self):
         #### clear signals ####
         vrep.simxClearIntegerSignal(self.clientID, "", vrep.simx_opmode_oneshot)
@@ -206,17 +213,6 @@ class CookingEnv(VrepEnvBase):
                 iteration2 = -1
         self.update_all_info()
                 
-    def get_reward(self, state=None, action=None, next_state=None):
-        if self.CookingEnv_config.get('get_reward'):
-            return self.CookingEnv_config.get('get_reward')(state, action, next_state)
-        else:
-            return 0
-            
-    def is_done(self, state=None, action=None, next_state=None):
-        if self.CookingEnv_config.get('is_done'):
-            return self.CookingEnv_config.get('is_done')(state, action, next_state)
-        else:
-            return False
 
     def update_all_info(self):
         """Update all info used to extract states, currently includes
@@ -236,8 +232,8 @@ class CookingEnv(VrepEnvBase):
         # return_code, ee_ori = vrep.simxGetObjectQuaternion(self.clientID, self.baxter_right_gripper_handle, self.baxter_world_frame_handle, vrep.simx_opmode_oneshot)
 
         #### target pose ####
-        _, target_pos = vrep.simxGetObjectPosition(self.clientID, self.target_handle, -1, vrep.simx_opmode_oneshot)
-        _, target_quat = vrep.simxGetObjectQuaternion(self.clientID, self.target_handle, -1, vrep.simx_opmode_oneshot)
+        _, target_pos = vrep.simxGetObjectPosition(self.clientID, self.target_handle, -1, vrep.simx_opmode_blocking)
+        _, target_quat = vrep.simxGetObjectQuaternion(self.clientID, self.target_handle, -1, vrep.simx_opmode_blocking)
         self.all_info['target_pose'] = np.array(target_pos + target_quat)
         
         #### retrive object position relative to end-effector ####
@@ -250,8 +246,6 @@ class CookingEnv(VrepEnvBase):
 
             self.all_info['object_pose'] = object_pose
             
-       
-        
     def step(self, actions, axis=0):
         if actions.ndim == 2:
             actions = actions[0,:]
@@ -266,20 +260,21 @@ class CookingEnv(VrepEnvBase):
                 return_code = vrep.simxSetJointTargetVelocity(self.clientID, self.joint_handles[self.CookingEnv_config.get('arm')][i], clipped_actions[i], vrep.simx_opmode_oneshot)
             elif self.CookingEnv_config.get('control_mode') == "position":
                 return_code = vrep.simxSetJointTargetPosition(self.clientID, self.joint_handles[self.CookingEnv_config.get('arm')][i], clipped_actions[i], vrep.simx_opmode_oneshot)
+            elif self.CookingEnv_config.get('control_mode') is None:
+                pass
             else:
                 raise ValueError("control mode not supported")
 
                 
         self.synchronous_trigger()
         self.update_all_info()
+
         
         
     def get_info(self):
         return self.all_info
         
-    def set_seed(self, seed):
-        np.random.seed(seed)
-
+  
     def stop(self):
         vrep.simxStopSimulation(self.clientID, vrep.simx_opmode_oneshot)
 
@@ -289,28 +284,7 @@ class CookingEnv(VrepEnvBase):
     def close(self):
         pass
 
-    @property
-    def state_space(self):
-        return self.CookingEnv_config.get('state_space')
-
-    @property
-    def action_space(self):
-        return self.CookingEnv_config.get('action_space')
-
-    def save(self, save_dir):
-        pass
-        
-    def restore(self, restore_dir):
-        pass
-
-    def run(self):
-        i = 1
-        while True:
-            action = np.zeros(7)
-            action[0] = np.sin(0.1*i)
-            i += 1
-            self.step(action)
-
+  
 if __name__ == "__main__":
     import time
     
