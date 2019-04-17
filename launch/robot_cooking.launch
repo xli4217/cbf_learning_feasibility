@@ -3,9 +3,9 @@
 
   <include file="$(find kinova_api)/launch/kinova_api.launch"/>
 
-  <include file="$(find vrpn_client_ros)/launch/sample.launch">
-    <arg name="server" value="optitrack"/>
-  </include>
+  <!-- <include file="$(find vrpn_client_ros)/launch/sample.launch"> -->
+  <!--   <arg name="server" value="optitrack"/> -->
+  <!-- </include> -->
 
   <!-- <node name="cooking_environment" pkg="robot_cooking" type="make_env.py" respawn="false" output="screen" args="$(arg optitrack)"/> -->
 

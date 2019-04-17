@@ -23,8 +23,8 @@ default_config = {
             "gripper_move_group": 'gripper',
             "reference_link": "j2s7s300_link_base",
             'joint_vel_bound': {
-                'upper': np.array([1.5,1.5,1.5,1.5,2.,2.,2.]),
-                'lower': -np.array([1.5,1.5,1.5,1.5,2.,2.,2.]),    
+                'upper': 4 * np.array([1.5,1.5,1.5,1.5,2.,2.,5.]),
+                'lower': -4 * np.array([1.5,1.5,1.5,1.5,2.,2.,5.]),    
             },
             'safe_workspace': {
                 # safe zone defined here takes precedence
@@ -97,8 +97,8 @@ class RobotCooking(object):
         ik_sol = self.moveit_utils.ik(position=pt[:-4], orientation=pt[-4:])
         ik_jp = ik_sol[:-3]
 
-        damping = 1.2
-        natural_freq = 2.5
+        damping = 0.5
+        natural_freq = 1.0
         kp = (2 * np.pi * natural_freq) ** 2
         kd = 2 * damping * 2 * np.pi * natural_freq
 
@@ -205,55 +205,117 @@ class RobotCooking(object):
         # while not self.servo_to_pose_target(pt):
         #     pass
 
-        ## close gripper
-        self.driver_utils.set_finger_positions([0.9, 0.9, 0.9])
+        # ## close gripper
+        # self.driver_utils.set_finger_positions([0.9, 0.9, 0.9])
 
-        ## go to neutral
-        pt = waypoints_dict['neutral']
-        while not self.servo_to_pose_target(pt):
-            pass
+        # ## go to neutral
+        # pt = waypoints_dict['neutral']
+        # while not self.servo_to_pose_target(pt):
+        #     pass
 
-        ## go to toaster waypoint
-        pt = waypoints_dict['toaster_waypoint']
-        while not self.servo_to_pose_target(pt):
-            pass
+        # # ## go to toaster waypoint
+        # pt = waypoints_dict['toaster_waypoint']
+        # while not self.servo_to_pose_target(pt):
+        #     pass
 
-        ## go to toaster
-        pt = waypoints_dict['toaster_absolute']
-        while not self.servo_to_pose_target(pt):
-            pass
+        # # ## go to toaster
+        # pt = waypoints_dict['toaster_absolute']
+        # while not self.servo_to_pose_target(pt):
+        #     pass
 
-        ## open gripper
-        self.driver_utils.set_finger_positions([0.1, 0.1, 0.1])
+        # # ## open gripper
+        # self.driver_utils.set_finger_positions([0.1, 0.1, 0.1])
 
 
-        ## go to switch pre
-        pt = waypoints_dict['switch_pre']
-        while not self.servo_to_pose_target(pt):
-            pass
+        # ## go to switch pre
+        # pt = waypoints_dict['switch_pre']
+        # while not self.servo_to_pose_target(pt):
+        #     pass
 
         
-        ## move to toast switch turn on pre-config
-        pt = waypoints_dict['switch_on_wp']
-        while not self.servo_to_pose_target(pt):
-            pass
+        # ## move to toast switch turn on pre-config
+        # pt = waypoints_dict['switch_on_wp']
+        # while not self.servo_to_pose_target(pt):
+        #     pass
 
-        ## close first two figures
-        self.driver_utils.set_finger_positions([1., 1., 0.1])
+        # ## close first two figures
+        # self.driver_utils.set_finger_positions([1., 1., 0.1])
 
             
-        ## turn on switch
-        pt = waypoints_dict['switch_on']
-        while not self.servo_to_pose_target(pt):
-            pass
+        # ## turn on switch
+        # pt = waypoints_dict['switch_on']
+        # while not self.servo_to_pose_target(pt):
+        #     pass
+
+        # ## move to toast switch turn on pre-config
+        # pt = waypoints_dict['switch_on_wp']
+        # while not self.servo_to_pose_target(pt):
+        #     pass
+
+        # ## open gripper
+        # self.driver_utils.set_finger_positions([0.0, 0.0, 0.0])
+
+        # ## go to toaster waypoint
+        # pt = waypoints_dict['toaster_waypoint']
+        # while not self.servo_to_pose_target(pt):
+        #     pass
+
+        # ## go to toaster
+        # pt = waypoints_dict['toaster_absolute']
+        # while not self.servo_to_pose_target(pt):
+        #     pass
+
+
+        # ## close gripper
+        # self.driver_utils.set_finger_positions([0.9, 0.9, 0.9])
+
+
+        ## blue plate 
+        # pt = self.get_target_frame('blue_mapped')
+        # while not self.servo_to_pose_target(pt):
+        #     pass
+
 
         ## open gripper
-        self.driver_utils.set_finger_positions([0.1, 0.1, 0.1])
+        self.driver_utils.set_finger_positions([0., 0., 0.])
+
             
-        ## move to toast switch turn on pre-config
-        pt = waypoints_dict['switch_on_wp']
-        while not self.servo_to_pose_target(pt):
-            pass
+        ## go to toaster waypoint
+        # pt = waypoints_dict['toaster_waypoint']
+        # while not self.servo_to_pose_target(pt):
+        #     pass
+
+        
+        # # ## move to toast switch turn on pre-config
+        # pt = waypoints_dict['switch_pre']
+        # while not self.servo_to_pose_target(pt):
+        #     pass
+        
+        # ## move to toast switch turn off waypoint
+        # pt = waypoints_dict['switch_off_wp']
+        # while not self.servo_to_pose_target(pt):
+        #     pass
+
+        # ## close first two figures
+        # self.driver_utils.set_finger_positions([1., 1., 0.1])
+            
+        # ## turn off switch
+        # pt = waypoints_dict['switch_off']
+        # while not self.servo_to_pose_target(pt):
+        #     pass
+
+        # ## move to toast switch turn off pre-config
+        # pt = waypoints_dict['switch_pre']
+        # while not self.servo_to_pose_target(pt):
+        #     pass
+
+        # ## open gripper
+        # self.driver_utils.set_finger_positions([0., 0., 0.])
+      
+        # ## go to toaster waypoint
+        # pt = waypoints_dict['toaster_waypoint']
+        # while not self.servo_to_pose_target(pt):
+        #     pass
 
             
         # self.update_pose_target_tf(pt)
