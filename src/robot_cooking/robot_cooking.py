@@ -13,6 +13,7 @@ import tf
 from visualization_msgs.msg import *
 from  geometry_msgs.msg import *
 
+
 default_config = {
     'rate': 10,    
     'DriverUtils': {
@@ -191,11 +192,28 @@ class RobotCooking(object):
         target_pos = np.array([target_M[0,3], target_M[1,3], target_M[2,3]])
 
         return np.concatenate([target_pos, target_quat])
+
+    ###############
+    # For DMP Env #
+    ###############
+    def get_target_pose(self):
+        ee_pos, ee_quat = self.driver_utils.get_ee_pose()
+
+        return ee_pos, ee_quat
+        
+    def get_target_velocity(self):
+        # need to test this function
+        ee_linear_vel, ee_angular_vel = self.driver_utils.get_ee_velocity()
+        
+        return ee_linear_vel, ee_angular_vel
+        
+    def set_target_pose(self, pt):
+        self.servo_to_pose_target(pt)
         
     def waypoint_cooking(self):
         from waypoints import waypoints_dict
-
-        ## go to neutral
+        
+        # # go to neutral
         # pt = waypoints_dict['neutral']
         # while not self.servo_to_pose_target(pt):
         #     pass
@@ -277,7 +295,7 @@ class RobotCooking(object):
 
 
         ## open gripper
-        self.driver_utils.set_finger_positions([0., 0., 0.])
+        # self.driver_utils.set_finger_positions([0., 0., 0.])
 
             
         ## go to toaster waypoint

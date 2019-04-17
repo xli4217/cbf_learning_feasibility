@@ -152,6 +152,7 @@ class DMPEnv(object):
         else:
             return False
 
+            
     def step(self, action):
         '''
         here action is forcing function output
@@ -161,8 +162,10 @@ class DMPEnv(object):
         
         self.nb_get_action_calls += 1
 
-        self.y = self.base_env.get_target_pose()[:3]
+        ## currently only support translation
+        self.y, _ = self.base_env.get_target_pose()
         self.dy, _ = self.base_env.get_target_velocity()
+
         point_attractor = self.ay * ( self.by * (self.goal - self.y) - self.dy )
 
         # optional system feedback
@@ -179,7 +182,7 @@ class DMPEnv(object):
         self.dy += self.ddy * self.dt * error_coupling
         self.y += self.dy * self.dt * error_coupling
 
-        self.base_env.set_target_position(self.y)
+        self.base_env.set_target_pose(self.y)
         
     def set_seed(self, seed):
         np.random.seed(seed)
@@ -220,19 +223,22 @@ if __name__ == "__main__":
         'tau': 1.0,
         'use_canonical': False,
         # for cooking environment
-        "ce_config": {
-            # specific to this env
-            "suffix": "",
-            "particle_test": False,
-            "arm": "jaco",
-            "control_mode": None
+        "BaseEnv":{
+            'type': CookingEnv,
+            'config': {
+                # specific to this env
+                "suffix": "",
+                "particle_test": False,
+                "arm": "jaco",
+                "control_mode": "velocity"
+            }
         }
     }
 
 
     cls = DMPEnv(config=config)
     curr_pos = cls.ce_env.get_target_pose()
-    goal = curr_pos[:3] + np.array([0.5, 0.5, 0])
+    goal = curr_pos[:3] + np.array([0.5, 0.5, 0, 0, 0, 0, 1])
         
     for i in range(1000):
         cls.set_goal_pos(goal)

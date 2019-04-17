@@ -123,13 +123,17 @@ class CookingEnv(VrepEnvBase):
         vrep.simxSetIntegerSignal(self.clientID, self.gripper_toggle_signal_name, 1, vrep.simx_opmode_oneshot)
         self.synchronous_trigger()
         
-    def set_target_position(self, pos):
-        assert pos.shape == (3,)
+    def set_target_pose(self, pt):
+        assert pt.shape == (7,)
         if self.CookingEnv_config.get('particle_test'):
             handle = self.particle_handle
         else:
             handle = self.target_handle
+
+        pos = pt[:3]
+        quat = pt[3:]    
         vrep.simxSetObjectPosition(self.clientID, handle, -1, pos, vrep.simx_opmode_oneshot)
+        vrep.simxSetObjectQuaternion(self.clientID, handle, -1, quat, vrep.simx_opmode_oneshot)
         self.synchronous_trigger()
         
     def set_target_quaternion(self, quat):
@@ -161,7 +165,7 @@ class CookingEnv(VrepEnvBase):
         else:
             handle = self.target_handle
 
-        return self.all_info['target_pose']
+        return np.array(self.all_info['target_pose'][:3]), np.array(self.all_info['target_pose'][3:])
 
     def get_target_velocity(self):
         if self.CookingEnv_config.get('particle_test'):
