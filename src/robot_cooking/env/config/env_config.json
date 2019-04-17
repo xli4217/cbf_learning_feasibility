@@ -2,8 +2,8 @@
   "safe_zone":{
     "parent_frame_id": "/world",
     "child_frame_id": "/safe_zone",
-    "init_pose": [0.7, -0.18, 0.26, 0, 0, 0, 1],
-    "scale": [0.9, 1.22, 0.4],
+    "init_pose": [0.7, -0.18, 0.36, 0, 0, 0, 1],
+    "scale": [0.9, 1.22, 0.6],
     "rgba": [0.1, 0.1, 0.5, 0.1],
     "marker_type": "cube",
     "require_motive2robot_transform": "False"

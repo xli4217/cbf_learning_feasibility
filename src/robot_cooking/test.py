@@ -13,25 +13,9 @@ import tf
 from visualization_msgs.msg import *
 from  geometry_msgs.msg import *
 
-from cooking_env.env.dmp.dmp import DMP
 
 default_config = {
-    'rate': 10,
-    "WPGenerator": {
-        'type':DMP,
-        'config': {
-            # gain on attractor term y dynamics
-            'ay': None,
-            # gain on attractor term y dynamics
-            'by': None,
-            # timestep
-            'dt': 0.01,
-            # time scaling, increase tau to make the system execute faster
-            'tau': 1.0,
-            'use_canonical': False,
-            'n_dmp':3
-        }
-    },
+    'rate': 10,    
     'DriverUtils': {
         'type': KinovaDriverUtils,
         'config':  {
@@ -82,29 +66,10 @@ class RobotCooking(object):
 
         self.rate = rospy.Rate(self.RobotCooking_config['rate'])
 
-        self.wp_gen = self.RobotCooking_config['WPGenerator']['type'](self.RobotCooking_config['WPGenerator']['config'])
         #### Initialize tf ####
         self.tf_broadcaster = tf2_ros.TransformBroadcaster()
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
-
-    def update_goal_tf(self, pt):
-        t = geometry_msgs.msg.TransformStamped()
-        t.header.stamp = rospy.Time.now()
-        t.header.frame_id = "world"
-        t.child_frame_id = "goal"
-
-        t.transform.translation.x = pt[0]
-        t.transform.translation.y = pt[1]
-        t.transform.translation.z = pt[2]
-        
-        t.transform.rotation.x = pt[3]
-        t.transform.rotation.y = pt[4]
-        t.transform.rotation.z = pt[5]
-        t.transform.rotation.w = pt[6]
-
-        self.tf_broadcaster.sendTransform(t)
-       
         
     def update_pose_target_tf(self, pt):
         t = geometry_msgs.msg.TransformStamped()
@@ -153,35 +118,36 @@ class RobotCooking(object):
         # start servoing
         if (pose_distance > 0.005 or quat_distance > 0.08) and self.driver_utils.is_tool_in_safe_workspace():
             self.driver_utils.pub_joint_velocity(jv, duration_sec=1./self.RobotCooking_config['rate'])
+            self.rate.sleep()
             return False
         else:
             return True
             
     def run(self):
-        from waypoints import waypoints_dict
-        ## go to neutral
-        goal = waypoints_dict['neutral']
-        self.wp_gen.set_goal(goal[:3])
-        dist = 5
-        
-        while dist > 0.005:
-            ee_pos, ee_quat = self.driver_utils.get_ee_pose()
-            # ee_linear_vel, ee_angular_vel = self.driver_utils.get_ee_velocity()
-            ee_linear_vel = np.array([0,0,0])
-            _, dwp, wp = self.wp_gen.get_next_wp(np.array([0,0,0]), ee_pos, ee_linear_vel)
-            # pt = np.concatenate([ee_pos+dwp, ee_quat])
-            pt = np.concatenate([wp, ee_quat])
-
+        i = 0
+        ee_pos, ee_quat = cls.driver_utils.get_ee_pose()
+        for i in range(1000):
+            pt = np.array(ee_pos) + np.array([0, 0.1 * np.sin(0.005 * i), 0])
+            pt = np.concatenate([pt, ee_quat])
+            self.update_pose_target_tf(pt)
             self.servo_to_pose_target(pt)
-            
-            dist = np.linalg.norm(ee_pos-goal[:3])
-            
-            self.update_goal_tf(goal)
-            
             self.rate.sleep()
 
-        print("finished")
-            
+        # ee_pos, ee_quat = cls.driver_utils.get_ee_pose()
+        # pt = np.array(ee_pos) + np.array([0.1, 0, 0])
+        # pt = np.concatenate([pt, ee_quat])
+        # print(ee_pos)
+        # print(pt)
+        # i = 0
+        # for i in range(1000):
+        #     if self.servo_to_pose_target(pt):
+        #         print('reached goal target')
+        #         break
+        #     self.rate.sleep()
+
+        # for _ in range(1000):
+        #     print(self.driver_utils.is_tool_in_safe_workspace())
+
     def get_tf_pose(self, src_frame, target_frame):
         try:
             pt_tf = self.tf_buffer.lookup_transform(src_frame, target_frame, rospy.Time())
@@ -229,133 +195,35 @@ class RobotCooking(object):
         return np.concatenate([target_pos, target_quat])
 
         
-    def waypoint_cooking(self):
+    def run_test(self):
         from waypoints import waypoints_dict
-        
-        # go to neutral
-        # pt = waypoints_dict['neutral']
-        # while not self.servo_to_pose_target(pt):
-        #     pass
 
-        ## blue plate 
-        # pt = self.get_target_frame('blue_mapped')
-        # while not self.servo_to_pose_target(pt):
-        #     pass
+        ## open gripper
+        self.driver_utils.set_finger_positions([0., 0., 0.])
+       
+        
+        curr_pose, curr_quat = self.driver_utils.get_ee_pose()
+        curr_pose += np.array([0.2, 0, 0])
+        pt = np.concatenate([curr_pose, curr_quat])
+        while not self.servo_to_pose_target(pt):
+            pass
 
         ## close gripper
         self.driver_utils.set_finger_positions([0.9, 0.9, 0.9])
 
-        ## go to neutral
-        # pt = waypoints_dict['neutral']
-        # while not self.servo_to_pose_target(pt):
-        #     pass
-
-        # ## go to toaster waypoint
-        pt = waypoints_dict['toaster_waypoint']
-        while not self.servo_to_pose_target(pt):
-            pass
-
-        # ## go to toaster
-        pt = waypoints_dict['toaster_absolute']
-        while not self.servo_to_pose_target(pt):
-            pass
-
-        # ## open gripper
-        self.driver_utils.set_finger_positions([0.1, 0.1, 0.1])
-
-
-        ## go to switch pre
-        pt = waypoints_dict['switch_pre']
-        while not self.servo_to_pose_target(pt):
-            pass
-
-        
-        ## move to toast switch turn on pre-config
-        pt = waypoints_dict['switch_on_wp']
-        while not self.servo_to_pose_target(pt):
-            pass
-
-        ## close first two figures
-        self.driver_utils.set_finger_positions([1., 1., 0.1])
-
-            
-        ## turn on switch
-        pt = waypoints_dict['switch_on']
-        while not self.servo_to_pose_target(pt):
-            pass
-
-        ## move to toast switch turn on pre-config
-        pt = waypoints_dict['switch_on_wp']
-        while not self.servo_to_pose_target(pt):
-            pass
+        ## rotate 
+        jv = np.array([0,0,0,0,0,0,10])
+        self.driver_utils.pub_joint_velocity(jv, duration_sec=4.)
 
         ## open gripper
-        self.driver_utils.set_finger_positions([0.0, 0.0, 0.0])
+        # self.driver_utils.set_finger_positions([0., 0., 0.])
 
-        ## go to toaster waypoint
-        pt = waypoints_dict['toaster_waypoint']
+        curr_pose, curr_quat = self.driver_utils.get_ee_pose()
+        curr_pose += np.array([-0.2, 0, 0])
+        pt = np.concatenate([curr_pose, curr_quat])
         while not self.servo_to_pose_target(pt):
             pass
 
-        ## go to toaster
-        pt = waypoints_dict['toaster_absolute']
-        while not self.servo_to_pose_target(pt):
-            pass
-
-
-        ## close gripper
-        self.driver_utils.set_finger_positions([0.9, 0.9, 0.9])
-
-
-        # # blue plate 
-        # pt = self.get_target_frame('blue_mapped')
-        # while not self.servo_to_pose_target(pt):
-        #     pass
-
-
-        # open gripper
-        self.driver_utils.set_finger_positions([0., 0., 0.])
-
-            
-        # go to toaster waypoint
-        pt = waypoints_dict['toaster_waypoint']
-        while not self.servo_to_pose_target(pt):
-            pass
-
-        
-        # ## move to toast switch turn on pre-config
-        pt = waypoints_dict['switch_pre']
-        while not self.servo_to_pose_target(pt):
-            pass
-        
-        ## move to toast switch turn off waypoint
-        pt = waypoints_dict['switch_off_wp']
-        while not self.servo_to_pose_target(pt):
-            pass
-
-        ## close first two figures
-        self.driver_utils.set_finger_positions([1., 1., 0.1])
-            
-        ## turn off switch
-        pt = waypoints_dict['switch_off']
-        while not self.servo_to_pose_target(pt):
-            pass
-
-        ## move to toast switch turn off pre-config
-        pt = waypoints_dict['switch_pre']
-        while not self.servo_to_pose_target(pt):
-            pass
-
-        ## open gripper
-        self.driver_utils.set_finger_positions([0., 0., 0.])
-      
-        ## go to toaster waypoint
-        pt = waypoints_dict['toaster_waypoint']
-        while not self.servo_to_pose_target(pt):
-            pass
-
-            
-        # self.update_pose_target_tf(pt)
         
     def cleanup(self):
         pass
@@ -363,31 +231,8 @@ class RobotCooking(object):
 
         
 if __name__ == "__main__":
-    from cooking_env.env.QP_waypoints.QPcontroller import QPcontroller
+    cls = RobotCooking()
+    time.sleep(0.5)
 
-    config = default_config
-    config['WPGenerator'] = {
-        'type': QPcontroller,
-        'config': {}
-    }
-    
-    cls = RobotCooking(config)
-    time.sleep(.5)
-    
-    #### test pose target following ####
-    
-    #### test IK ####
-    # curr_ee_pos, curr_ee_quat = cls.driver_utils.get_ee_pose()
-    # curr_jp = cls.driver_utils.get_joint_values()
-    # ik_sol = cls.moveit_utils.ik(position=curr_ee_pos, orientation=curr_ee_quat)
-    # # for kinova
-    # ik_jp = ik_sol[:-3]
-    # ik_fp = ik_sol[-3:]
-    # print(curr_jp)
-    # print(ik_jp)
-
-    #### test servo to target pose ####
-    cls.run()
-    
     #### waypoint cooking ####
-    # cls.waypoint_cooking()
+    cls.run_test()

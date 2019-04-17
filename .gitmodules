@@ -1,0 +1,3 @@
+[submodule "QP_waypoints"]
+	path = docker/dirs-to-copy/cooking_env/env/QP_waypoints
+	url = https://github.com/paradox56/QP_waypoints.git
