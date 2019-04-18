@@ -76,9 +76,13 @@ class CookingEnv(VrepEnvBase):
         
         #### target handle ####
         _, self.target_handle = vrep.simxGetObjectHandle(self.clientID,
+                                                         rh['target_handle'],
+                                                         vrep.simx_opmode_oneshot_wait)
+        #### goal handle ####
+        _, self.goal_handle = vrep.simxGetObjectHandle(self.clientID,
                                                          rh['goal_handle'],
                                                          vrep.simx_opmode_oneshot_wait)
-
+  
         
         #### object handles ####
         self.object_handles = []
@@ -135,6 +139,20 @@ class CookingEnv(VrepEnvBase):
         vrep.simxSetObjectPosition(self.clientID, handle, -1, pos, vrep.simx_opmode_oneshot)
         vrep.simxSetObjectQuaternion(self.clientID, handle, -1, quat, vrep.simx_opmode_oneshot)
         self.synchronous_trigger()
+
+    def set_goal_pose(self, pt):
+        assert pt.shape == (7,)
+        if self.CookingEnv_config.get('particle_test'):
+            handle = self.particle_handle
+        else:
+            handle = self.goal_handle
+
+        pos = pt[:3]
+        quat = pt[3:]    
+        vrep.simxSetObjectPosition(self.clientID, handle, -1, pos, vrep.simx_opmode_oneshot)
+        vrep.simxSetObjectQuaternion(self.clientID, handle, -1, quat, vrep.simx_opmode_oneshot)
+        self.synchronous_trigger()
+
         
     def set_target_quaternion(self, quat):
         assert quat.shape == (4,)

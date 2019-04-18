@@ -4,7 +4,6 @@ import time
 from future.utils import viewitems
 
 from cooking_env.env.base.ce import CookingEnv
-from cooking_env.env.dmp.dmp import DMP
 
 default_config = {
     # Common to all envs
@@ -17,20 +16,8 @@ default_config = {
     "get_info": None,
     #### class specific ####
     "WPGenerator": {
-        'type':DMP,
-        'config': {
-            # gain on attractor term y dynamics
-            'ay': None,
-            # gain on attractor term y dynamics
-            'by': None,
-            # timestep
-            'dt': 0.01,
-            # time scaling, increase tau to make the system execute faster
-            'tau': 1.0,
-            'use_canonical': False,
-            # for cooking environment
-            
-        }
+        'type':None,
+        'config': {}
     },
     # for cooking environment
     "BaseEnv":{
@@ -72,6 +59,10 @@ class TestEnv(object):
     
     def set_goal_pos(self, goal):
         self.wp_gen.set_goal(goal)
+
+        if len(goal) != 7:
+            goal = np.concatenate([goal, np.array([0,0,0,1])])
+        self.base_env.set_goal_pose(goal)
         
     def get_state(self):
         self.update_all_info()
@@ -132,8 +123,9 @@ class TestEnv(object):
 
 
 if __name__ == "__main__":
-    from cooking_env.env.QP_waypoints.QPcontroller import QPcontroller
-
+    # from cooking_env.env.QP_waypoints.QPcontroller import QPcontroller
+    from cooking_env.env.dmp.dmp import DMP
+    
     dmp_gen = {
         'type':DMP,
         'config': {
@@ -142,46 +134,26 @@ if __name__ == "__main__":
             # gain on attractor term y dynamics
             'by': None,
             # timestep
-            'dt': 0.01,
+            'dt': 0.05,
             # time scaling, increase tau to make the system execute faster
             'tau': 1.0,
             'use_canonical': False,
         }
     }
 
-    qp_gen = {
-        'type': QPcontroller,
-        'config': {}
-    }
+    # qp_gen = {
+    #     'type': QPcontroller,
+    #     'config': {}
+    # }
     
-    config = {
-        # Common to all envs
-        "seed": 10,
-        "state_space": None,
-        "action_space": {'type': 'float', 'shape': (3,), 'upper_bound': [1.,1.,1.], 'lower_bound':[-1.,-1.,-1.]},
-        "get_state": None,
-        "get_reward": None,
-        "is_done": None,
-        "get_info": None,
-        #### class specific ####
-        "WPGenerator": qp_gen,
-        # for cooking environment
-        "BaseEnv":{
-            'type': CookingEnv,
-            'config': {
-                # specific to this env
-                "suffix": "",
-                "particle_test": False,
-                "arm": "jaco",
-                "control_mode": "velocity"
-            }
-        }
-    }
+    config = default_config
+    config['action_space'] = {'type': 'float', 'shape':(3, ), 'upper_bound': np.ones(3), 'lower_bound': -np.ones(3)}
+    config['WPGenerator'] = dmp_gen
 
-
+    
     cls = TestEnv(config=config)
     curr_pos, curr_quat = cls.base_env.get_target_pose()
-    goal = curr_pos + np.array([0.5, 0.5, 0])
+    goal = curr_pos + np.array([0.2, 0.2, 0])
         
     for i in range(1000):
         cls.set_goal_pos(goal)

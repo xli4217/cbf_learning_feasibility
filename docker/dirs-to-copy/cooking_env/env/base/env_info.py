@@ -25,6 +25,7 @@ robot_handles = {
             'prox_sensor_handle': 'ROBOTIQ_85_attachProxSensor'
         },
         'goal_handle': 'Jaco_goal',
+        'target_handle': 'Jaco_target',
         'particle_handle': 'Jaco_goal'
     }
 }
