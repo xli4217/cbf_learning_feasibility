@@ -231,24 +231,27 @@ class RobotCooking(object):
         
     def waypoint_cooking(self):
         from waypoints import waypoints_dict
+
+        # open gripper 
+        self.driver_utils.set_finger_positions([0.1, 0.1, 0.1])
         
         # go to neutral
-        # pt = waypoints_dict['neutral']
-        # while not self.servo_to_pose_target(pt):
-        #     pass
+        pt = waypoints_dict['neutral']
+        while not self.servo_to_pose_target(pt):
+            pass
 
-        ## blue plate 
-        # pt = self.get_target_frame('blue_mapped')
-        # while not self.servo_to_pose_target(pt):
-        #     pass
+        # blue plate 
+        pt = self.get_target_frame('blue_mapped')
+        while not self.servo_to_pose_target(pt):
+            pass
 
         ## close gripper
         self.driver_utils.set_finger_positions([0.9, 0.9, 0.9])
 
         ## go to neutral
-        # pt = waypoints_dict['neutral']
-        # while not self.servo_to_pose_target(pt):
-        #     pass
+        pt = waypoints_dict['neutral']
+        while not self.servo_to_pose_target(pt):
+            pass
 
         # ## go to toaster waypoint
         pt = waypoints_dict['toaster_waypoint']
@@ -292,6 +295,13 @@ class RobotCooking(object):
         ## open gripper
         self.driver_utils.set_finger_positions([0.0, 0.0, 0.0])
 
+
+        ## go to switch pre
+        pt = waypoints_dict['switch_pre']
+        while not self.servo_to_pose_target(pt):
+            pass
+
+        
         ## go to toaster waypoint
         pt = waypoints_dict['toaster_waypoint']
         while not self.servo_to_pose_target(pt):
@@ -307,16 +317,34 @@ class RobotCooking(object):
         self.driver_utils.set_finger_positions([0.9, 0.9, 0.9])
 
 
-        # # blue plate 
-        # pt = self.get_target_frame('blue_mapped')
-        # while not self.servo_to_pose_target(pt):
-        #     pass
+        # ## go to toaster waypoint
+        pt = waypoints_dict['toaster_waypoint']
+        while not self.servo_to_pose_target(pt):
+            pass
+
+
+        ## go to neutral
+        pt = waypoints_dict['neutral']
+        while not self.servo_to_pose_target(pt):
+            pass
+
+        
+        # blue plate 
+        pt = self.get_target_frame('blue_mapped')
+        while not self.servo_to_pose_target(pt):
+            pass
 
 
         # open gripper
         self.driver_utils.set_finger_positions([0., 0., 0.])
 
-            
+
+        ## go to neutral
+        pt = waypoints_dict['neutral']
+        while not self.servo_to_pose_target(pt):
+            pass
+
+        
         # go to toaster waypoint
         pt = waypoints_dict['toaster_waypoint']
         while not self.servo_to_pose_target(pt):
@@ -354,8 +382,6 @@ class RobotCooking(object):
         while not self.servo_to_pose_target(pt):
             pass
 
-            
-        # self.update_pose_target_tf(pt)
         
     def cleanup(self):
         pass
@@ -387,7 +413,7 @@ if __name__ == "__main__":
     # print(ik_jp)
 
     #### test servo to target pose ####
-    cls.run()
+    # cls.run()
     
     #### waypoint cooking ####
-    # cls.waypoint_cooking()
+    cls.waypoint_cooking()
