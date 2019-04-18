@@ -17,8 +17,6 @@ default_config = {
     'tau': 1.0,
     'use_canonical': False,
     'n_dmp': 3
-    # for cooking environment
-
 }
 
 class DMP(object):
