@@ -92,11 +92,12 @@ class TestEnv(object):
         action = np.array(action).flatten()
         assert action.size == self.action_space['shape'][0]
         
+        curr_pos, curr_quat = self.base_env.get_target_pose()
+        curr_linear_vel, curr_angular_vel = self.base_env.get_target_velocity()
 
-        ## currently only support translation
-        curr_pose, _ = self.base_env.get_target_pose()
-        curr_vel, _ = self.base_env.get_target_velocity()
-
+        curr_pose = np.concatenate([curr_pos, curr_quat])
+        curr_vel = np.concatenate([curr_linear_vel, curr_angular_vel])
+        
         ddy, dy, y = self.wp_gen.get_next_wp(action, curr_pose, curr_vel)
 
         if len(y) < 7:
@@ -129,15 +130,21 @@ if __name__ == "__main__":
     dmp_gen = {
         'type':DMP,
         'config': {
-            # gain on attractor term y dynamics
+            # gain on attractor term y dynamics (linear)
             'ay': None,
-            # gain on attractor term y dynamics
+            # gain on attractor term y dynamics (linear)
             'by': None,
+            # gain on attractor term y dynamics (angular)
+            'az': 10,
+            # gain on attractor term y dynamics (angular)
+            'bz': None,
             # timestep
             'dt': 0.05,
             # time scaling, increase tau to make the system execute faster
             'tau': 1.0,
             'use_canonical': False,
+            'n_linear_dmp': 3,
+            'n_angular_dmp': 3
         }
     }
 
@@ -153,10 +160,10 @@ if __name__ == "__main__":
     
     cls = TestEnv(config=config)
     curr_pos, curr_quat = cls.base_env.get_target_pose()
-    goal = curr_pos + np.array([0.2, 0.2, 0])
-        
+    goal_pos, goal_quat = cls.base_env.get_goal_pose()
+    goal = np.concatenate([goal_pos, goal_quat])
+    cls.set_goal_pos(goal)
     for i in range(1000):
-        cls.set_goal_pos(goal)
         cls.step(np.array([0,0,0]))
         
     # print(cls.ce_env.get_target_velocity())
