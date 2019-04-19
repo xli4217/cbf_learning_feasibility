@@ -135,7 +135,7 @@ if __name__ == "__main__":
             # gain on attractor term y dynamics (linear)
             'by': None,
             # gain on attractor term y dynamics (angular)
-            'az': 10,
+            'az': 20,
             # gain on attractor term y dynamics (angular)
             'bz': None,
             # timestep
@@ -143,6 +143,15 @@ if __name__ == "__main__":
             # time scaling, increase tau to make the system execute faster
             'tau': 1.0,
             'use_canonical': False,
+            # for canonical
+            'apx': 1.,
+            'gamma': 0.3,
+            # for faster convergence
+            'app': 0.5,
+            'apr': 0.5,
+            # for integrating goal
+            'ag': 3.0,
+            'ago': 3.0,
             'n_linear_dmp': 3,
             'n_angular_dmp': 3
         }
@@ -154,7 +163,7 @@ if __name__ == "__main__":
     # }
     
     config = default_config
-    config['action_space'] = {'type': 'float', 'shape':(3, ), 'upper_bound': np.ones(3), 'lower_bound': -np.ones(3)}
+    config['action_space'] = {'type': 'float', 'shape':(6, ), 'upper_bound': np.ones(3), 'lower_bound': -np.ones(3)}
     config['WPGenerator'] = dmp_gen
 
     
@@ -162,8 +171,15 @@ if __name__ == "__main__":
     curr_pos, curr_quat = cls.base_env.get_target_pose()
     goal_pos, goal_quat = cls.base_env.get_goal_pose()
     goal = np.concatenate([goal_pos, goal_quat])
-    cls.set_goal_pos(goal)
+       
     for i in range(1000):
-        cls.step(np.array([0,0,0]))
-        
+        if i % 20 == 0:
+            goal_pos, goal_quat = cls.base_env.get_goal_pose()
+            goal_pos += np.array([0.2,0.2,0])
+            goal = np.concatenate([goal_pos, goal_quat])
+            cls.set_goal_pos(goal)
+  
+
+        cls.step(np.array([0,0,0,0,0,0]))
+       
     # print(cls.ce_env.get_target_velocity())
