@@ -15,6 +15,7 @@ robot_handles = {
             'prox_sensor_handle': 'ROBOTIQ_85_attachProxSensor'
         },
         'goal_handle': 'UR5_goal_dummy',
+        'target_handle': 'Jaco_target',
         'particle_handle': 'UR5_goal_test'
     },
     'Jaco': {
@@ -30,9 +31,16 @@ robot_handles = {
     }
 }
 
+obstacle_handles = [
+    {'name': 'sphere_left', 'handle': 'sphere_left'},
+    {'name': 'sphere_low', 'handle': 'sphere_low'},
+    {'name': 'sphere_right', 'handle': 'sphere_right'},
+]
+
 object_handles = [
     {
         'name': 'obj',
         'handle': 'obj'
     }
 ]
+

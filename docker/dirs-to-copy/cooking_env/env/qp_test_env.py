@@ -57,7 +57,7 @@ class TestEnv(object):
             self.set_seed(self.TestEnv_config.get('seed'))
       
     
-    def set_goal_pose(self, goal):
+    def set_goal_pos(self, goal):
         self.wp_gen.set_goal(goal)
 
         if len(goal) != 7:
@@ -94,12 +94,13 @@ class TestEnv(object):
         
         curr_pos, curr_quat = self.base_env.get_target_pose()
         curr_linear_vel, curr_angular_vel = self.base_env.get_target_velocity()
-        curr_angular_vel = curr_angular_vel * np.pi / 180
 
         curr_pose = np.concatenate([curr_pos, curr_quat])
         curr_vel = np.concatenate([curr_linear_vel, curr_angular_vel])
+
+        obs_info = self.base_env.get_obstacle_info()
         
-        ddy, dy, y = self.wp_gen.get_next_wp(action, curr_pose, curr_vel)
+        ddy, dy, y = self.wp_gen.get_next_wp(action, curr_pose[:3], curr_vel, obs_info)
 
         if len(y) < 7:
             y = np.concatenate([y, np.array([0,0,0,1])])
@@ -125,62 +126,25 @@ class TestEnv(object):
 
 
 if __name__ == "__main__":
-    # from cooking_env.env.QP_waypoints.QPcontroller import QPcontroller
-    from cooking_env.env.dmp.dmp import DMP
+    from cooking_env.env.QP_waypoints.QPcontroller import QPcontroller
     
-    dmp_gen = {
-        'type':DMP,
-        'config': {
-            # gain on attractor term y dynamics (linear)
-            'ay': None,
-            # gain on attractor term y dynamics (linear)
-            'by': None,
-            # gain on attractor term y dynamics (angular)
-            'az': 20,
-            # gain on attractor term y dynamics (angular)
-            'bz': None,
-            # timestep
-            'dt': 0.05,
-            # time scaling, increase tau to make the system execute faster
-            'tau': 1.0,
-            'use_canonical': False,
-            # for canonical
-            'apx': 1.,
-            'gamma': 0.3,
-            # for faster convergence
-            'app': 0.5,
-            'apr': 0.5,
-            # for integrating goal
-            'ag': 3.0,
-            'ago': 3.0,
-            'n_linear_dmp': 3,
-            'n_angular_dmp': 3
-        }
+    qp_gen = {
+        'type': QPcontroller,
+        'config': {}
     }
-
-    # qp_gen = {
-    #     'type': QPcontroller,
-    #     'config': {}
-    # }
     
     config = default_config
     config['action_space'] = {'type': 'float', 'shape':(6, ), 'upper_bound': np.ones(3), 'lower_bound': -np.ones(3)}
-    config['WPGenerator'] = dmp_gen
+    config['WPGenerator'] = qp_gen
 
     
     cls = TestEnv(config=config)
     curr_pos, curr_quat = cls.base_env.get_target_pose()
     goal_pos, goal_quat = cls.base_env.get_goal_pose()
     goal = np.concatenate([goal_pos, goal_quat])
-       
+    cls.set_goal_pos(goal)
+    
     for i in range(1000):
-        if i % 20 == 0:
-            goal_pos, goal_quat = cls.base_env.get_goal_pose()
-            goal_pos += np.array([0.2,0.2,0])
-            goal = np.concatenate([goal_pos, goal_quat])
-            cls.set_goal_pose(goal)
-  
-
         cls.step(np.array([0,0,0,0,0,0]))
        
     # print(cls.ce_env.get_target_velocity())

@@ -13,6 +13,27 @@ import tf
 from visualization_msgs.msg import *
 from  geometry_msgs.msg import *
 
+def quaternion_log(q):
+    u = q[:3]
+    v = q[3]
+
+    if np.linalg.norm(u) == 0:
+        return np.array([0,0,0])
+    else:
+        if v > 0.999:
+            v = 0.999
+        return np.arccos(v) * (u / np.linalg.norm(u))
+
+
+def quaternion_dist(q1, q2):
+    conjugate_product = tf.transformations.quaternion_multiply(q1, tf.transformations.quaternion_conjugate(q2))
+
+    if all(conjugate_product == np.array([0,0,0,-1])):
+        return 2*np.pi
+    else:
+        return 2 * np.linalg.norm(quaternion_log(conjugate_product))
+
+
 default_config = {
     'rate': 10,
     "WPGenerator": {
@@ -27,8 +48,8 @@ default_config = {
             "gripper_move_group": 'gripper',
             "reference_link": "j2s7s300_link_base",
             'joint_vel_bound': {
-                'upper': 4 * np.array([1.5,1.5,1.5,1.5,2.,2.,5.]),
-                'lower': -4 * np.array([1.5,1.5,1.5,1.5,2.,2.,5.]),    
+                'upper': 4 * np.array([1.5,1.5,1.5,1.5,5.,5.,5.]),
+                'lower': -4 * np.array([1.5,1.5,1.5,1.5,5.,5.,5.]),    
             },
             'safe_workspace': {
                 # safe zone defined here takes precedence
@@ -132,43 +153,80 @@ class RobotCooking(object):
 
         ee_pos, ee_quat = self.driver_utils.get_ee_pose()
         pose_distance = np.linalg.norm(ee_pos - pt[:3])
-        quat_distance = np.arccos(2 * np.inner(ee_quat, pt[3:]) - 1)
+
+        quat_dist_arg = 2 * np.inner(ee_quat, pt[3:]) - 1
+        quat_dist_arg = np.modf(quat_dist_arg)[0]
+        if quat_dist_arg > 0.99:
+            quat_distance = 0.
+        elif quat_dist_arg < -0.99:
+            quat_distance = np.pi
+        else:
+            quat_distance = np.arccos(quat_dist_arg)
+
+        # quat_distance = quaternion_dist(ee_quat, pt[3:])
         
         if not self.driver_utils.is_tool_in_safe_workspace():
             print('tool not in safe workspace')
-
+            return True
+            
         # start servoing
-        if (pose_distance > 0.005 or quat_distance > 0.08) and self.driver_utils.is_tool_in_safe_workspace():
+        if (pose_distance > 0.005 or quat_distance > 0.1) and self.driver_utils.is_tool_in_safe_workspace():
             self.driver_utils.pub_joint_velocity(jv, duration_sec=1./self.RobotCooking_config['rate'])
             self.rate.sleep()
             return False
         else:
+            return("servo reached goal")
+            return True
+
+    def plan_to_pose_target(self, pt):
+        self.wp_gen.set_goal(pt)
+        self.update_goal_tf(pt)
+        ee_pos, ee_quat = self.driver_utils.get_ee_pose()
+        ee_linear_vel, ee_angular_vel = self.driver_utils.get_ee_velocity()
+
+        curr_pos = np.concatenate([ee_pos, ee_quat])
+        curr_vel = np.concatenate([ee_linear_vel, ee_angular_vel])
+
+        pose_distance = np.linalg.norm(ee_pos - pt[:3])
+
+        quat_dist_arg = 2 * np.inner(ee_quat, pt[3:]) - 1
+        quat_dist_arg = np.modf(quat_dist_arg)[0]
+        
+        if quat_dist_arg > 0.99:
+            quat_distance = 0.
+        elif quat_dist_arg < -0.99:
+            quat_distance = np.pi
+        else:
+            quat_distance = np.arccos(quat_dist_arg)
+
+        quat_distance = np.arccos(quat_dist_arg)
+        # quat_distance = quaternion_dist(ee_quat, pt[3:]) 
+        
+        if not self.driver_utils.is_tool_in_safe_workspace():
+            print('tool not in safe workspace')
+            return True
+            
+        if (pose_distance > 0.015 or quat_distance > 0.25) and self.driver_utils.is_tool_in_safe_workspace():
+        
+            # dt = 0.003 * np.exp(1./(pose_distance + quat_distance))
+            # dt = np.clip(dt, 0.015, 0.03)
+            
+            action = np.array([0,0,0,0,0,0])
+            ddy, dy, y = self.wp_gen.get_next_wp(action, curr_pos, curr_vel, dt=None)
+            self.servo_to_pose_target(y)
+            return False
+        else:
+            print("plan reached goal")
             return True
             
     def run(self):
         from waypoints import waypoints_dict
         ## go to neutral
         goal = waypoints_dict['neutral']
-        self.wp_gen.set_goal(goal[:3])
-        dist = 5
+        while not self.plan_to_pose_target(goal):
+            pass
         
-        while dist > 0.01:
-            ee_pos, ee_quat = self.driver_utils.get_ee_pose()
-            # ee_linear_vel, ee_angular_vel = self.driver_utils.get_ee_velocity()
-            ee_linear_vel = np.array([0,0,0])
-            _, dwp, wp = self.wp_gen.get_next_wp(np.array([0,0,0]), ee_pos, ee_linear_vel)
-            # pt = np.concatenate([ee_pos+dwp, ee_quat])
-            pt = np.concatenate([wp, ee_quat])
-
-            self.servo_to_pose_target(pt)
-            
-            dist = np.linalg.norm(ee_pos-goal[:3])
-            print(dist)
-            
-            self.update_goal_tf(goal)
-
-        print("finished")
-            
+        
     def get_tf_pose(self, src_frame, target_frame):
         try:
             pt_tf = self.tf_buffer.lookup_transform(src_frame, target_frame, rospy.Time())
@@ -389,19 +447,36 @@ if __name__ == "__main__":
     #### DMP ####
     from cooking_env.env.dmp.dmp import DMP
     config = default_config
+    config['rate'] = 30
     config['WPGenerator'] = {
         'type': DMP,
         'config': {
-            # gain on attractor term y dynamics
-            'ay': 30,
-            # gain on attractor term y dynamics
+            # gain on attractor term y dynamics (linear)
+            'ay': 55,
+            # gain on attractor term y dynamics (linear)
             'by': None,
+            # gain on attractor term y dynamics (angular)
+            'az': 55,
+            # gain on attractor term y dynamics (angular)
+            'bz': None,
             # timestep
-            'dt': 0.1,
+            'dt': 0.0004,
             # time scaling, increase tau to make the system execute faster
-            'tau': 1.0,
+            'tau': 1.,
             'use_canonical': False,
-            'n_dmp': 3
+            # for canonical
+            'apx': 1.,
+            'gamma': 0.3,
+            # for faster convergence
+            'app': 0.5,
+            'apr': 0.5,
+            # for integrating goal
+            'ag': 3.0,
+            'ago': 3.0,
+            # if True, then update according to dmp_pose, else update according to current pose
+            'use_dmp_pose': True,
+            'n_linear_dmp': 3,
+            'n_angular_dmp': 3
         }
     }
 

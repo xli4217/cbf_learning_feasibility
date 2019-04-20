@@ -29,7 +29,7 @@ def quaternion_exp(q):
     else:
         return np.concatenate([np.sin(u_norm) * (u / u_norm), np.array([ np.cos(u_norm)])])
 
-def quaterion_dist(q1, q2):
+def quaternion_dist(q1, q2):
     conjugate_product = t.quaternion_multiply(q1, t.quaternion_conjugate(q2))
 
     if all(conjugate_product == np.array([0,0,0,-1])):
@@ -60,6 +60,8 @@ default_config = {
     # for integrating goal
     'ag': 1.0,
     'ago': 1.0,
+    # if True, then update according to dmp_pose, else update according to current pose
+    'use_dmp_pose': False,
     'n_linear_dmp': 3,
     'n_angular_dmp': 4
 }
@@ -71,27 +73,50 @@ class DMP(object):
         self.DMP_config.update(config)
 
         self.build_graph()
+
+        self.dmp_pos = None
+        self.dmp_quat = None
+        self.dmp_linear_vel = None
+        self.dmp_angular_vel = None
         
-    def get_next_wp(self, action, curr_pose, curr_vel):
+    def get_next_wp(self, action, curr_pose, curr_vel, dt=None):
+
+        if dt is not None:
+            self.dt = dt
+
         curr_pos = curr_pose[:3]
         curr_quat = curr_pose[3:] 
 
         curr_linear_vel = curr_vel[:3]
         curr_angular_vel = curr_vel[3:]
-
+        
         action_linear = action[:3]
         action_angular = action[3:]
 
+        if self.DMP_config['use_dmp_pose']:
+            if self.dmp_pos is None:
+                self.dmp_pos = curr_pos
+                self.dmp_quat = curr_quat
+                self.dmp_linear_vel = curr_linear_vel
+                self.dmp_angular_vel = curr_angular_vel
+      
+            lddy, ldy, ly = self.get_next_wp_pos(action_linear, self.dmp_pos, self.dmp_linear_vel, self.linear_front_terms)
+            #### addy is anglar acceleration, ady is angular velocity, ay is quaternion
+            addy, ady, ay= self.get_next_wp_quat(action_angular, self.dmp_quat, self.dmp_angular_vel, self.angular_front_terms)
+            self.dmp_pos = ly
+            self.dmp_quat = ay
+            self.dmp_linear_vel = ldy
+            self.dmp_angular_vel = ady
+        else:
+            lddy, ldy, ly = self.get_next_wp_pos(action_linear, curr_pos, curr_linear_vel, self.linear_front_terms)
+            #### addy is anglar acceleration, ady is angular velocity, ay is quaternion
+            addy, ady, ay= self.get_next_wp_quat(action_angular, curr_quat, curr_angular_vel, self.angular_front_terms)
 
-        lddy, ldy, ly = self.get_next_wp_pos(action_linear, curr_pos, curr_linear_vel, self.linear_front_terms)
-
-        #### addy is anglar acceleration, ady is angular velocity, ay is quaternion
-        addy, ady, ay= self.get_next_wp_quat(action_angular, curr_quat, curr_angular_vel, self.angular_front_terms)
-
+            
         if self.DMP_config['use_canonical']:
             #### implement phase stopping ####
             linear_tracking_error = (curr_pos - ly)
-            angular_tracking_error = quaterion_dist(curr_quat, ay)
+            angular_tracking_error = quaternion_dist(curr_quat, ay)
             error_coupling = 1. / (1. + self.apx * (np.linalg.norm(linear_tracking_error) + self.gamma * angular_tracking_error))
             cx = self.cs.step(tau=self.tau, error_coupling=error_coupling)
             # generate forcing term
@@ -115,19 +140,23 @@ class DMP(object):
     def get_next_wp_quat(self, action, curr_quat, curr_angular_vel, front_terms):
         '''
         reference: Orientation in Cartesian Space Dynamic Movement Primitives - https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6907291
+
+        angular velocity is in rad/s
         '''
         
         goal_quat = self.goal[3:]
-        curr_angular_vel = curr_angular_vel * np.pi / 180
+
         eta = self.tau * curr_angular_vel
 
         log_conjugate_product = quaternion_log(t.quaternion_multiply(goal_quat, t.quaternion_conjugate(curr_quat)))
+
         # eta_dot
         addy = (1 / self.tau) * (self.az * ( self.bz * 2 * log_conjugate_product - eta ) + action * front_terms)
+        
         # eta
         ady = (eta + addy * self.dt) / self.tau
-        # ady +=  self.apr * 2 * quaterion_log(t.quaternion_multiply(goal_quat, t.quaternion_conjugate(curr_quat)))
-
+        # ady +=  self.apr * 2 * quaternion_log(t.quaternion_multiply(goal_quat, t.quaternion_conjugate(curr_quat)))
+        
         # target quat
         ay = t.quaternion_multiply( quaternion_exp((self.dt / 2) * ( ady / self.tau) ), curr_quat )
         
@@ -142,7 +171,7 @@ class DMP(object):
         lddy = ((point_attractor + action) * self.tau) / self.tau
         ldy = (curr_linear_vel + lddy * self.dt) / self.tau
 
-        #ldy += self.app * (pos_goal - curr_pos)
+        # ldy += self.app * (pos_goal - curr_pos)
         ly = curr_pos + ldy * self.dt
 
         return lddy, ldy, ly

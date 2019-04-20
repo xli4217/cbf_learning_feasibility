@@ -5,7 +5,7 @@ from cooking_env.utils.configuration import Configuration
 from future.utils import viewitems
 import time
 from cooking_env.utils import transformations
-from env_info import robot_handles, object_handles
+from env_info import robot_handles, object_handles, obstacle_handles
 
 default_config = {
     # Common to all envs
@@ -13,7 +13,7 @@ default_config = {
     # specific to this env
     "suffix": "",
     "particle_test": False,
-    "arm": "ur5",
+    "arm": "jaco",
     "control_mode": "velocity",
 }
 
@@ -91,6 +91,12 @@ class CookingEnv(VrepEnvBase):
             self.object_handles.append(dict(name=oh['name'], handle=h))
         
 
+        #### obstacle handles ####
+        self.obstacle_handles = []
+        for obs_h in obstacle_handles:
+            _, h = vrep.simxGetObjectHandle(self.clientID, obs_h['handle'], vrep.simx_opmode_oneshot_wait)
+            self.obstacle_handles.append(dict(name=obs_h['name'], handle=h))
+        
         #### test particle ####
         self.test_particle_handle = None
         if self.CookingEnv_config.get('particle_test'):
@@ -186,6 +192,16 @@ class CookingEnv(VrepEnvBase):
 
         return np.array(self.all_info['target_pose'][:3]), np.array(self.all_info['target_pose'][3:])
 
+    def get_obstacle_info(self):
+        self.update_all_info()
+
+        obs_info = []
+        for obs in self.obstacle_handles:
+            _, pos = vrep.simxGetObjectPosition(self.clientID, obs['handle'], -1, vrep.simx_opmode_blocking)
+            obs_info.append({'name': obs['name'], 'position': pos, 'radius': 0.175})
+
+        return obs_info
+            
     def get_goal_pose(self):
         self.update_all_info()
 
@@ -337,35 +353,38 @@ if __name__ == "__main__":
         "get_info": None,
         # specific to this env
         "suffix": "",
-        "arm": "ur5",
+        "arm": "jaco",
         "control_mode": "velocity",
     }
 
     env = CookingEnv(config)
     env.reset()
 
-    target_pos = env.all_info['target_pose'][:3]
-    target_pos[2] -= 0.08
-    env.set_target_position(target_pos)
+    print(env.get_goal_pose())
+    
+    #### test grasping ####
+    # target_pos = env.all_info['target_pose'][:3]
+    # target_pos[2] -= 0.08
+    # env.set_target_position(target_pos)
     
     
-    env.robot_close_gripper()
-    for i in range(20):
-        env.synchronous_trigger()
+    # env.robot_close_gripper()
+    # for i in range(20):
+    #     env.synchronous_trigger()
 
    
 
-    target_pos = env.all_info['target_pose'][:3]
-    target_pos[2] += 0.1
-    env.set_target_position(target_pos)
-    for i in range(30):
-        env.synchronous_trigger()
+    # target_pos = env.all_info['target_pose'][:3]
+    # target_pos[2] += 0.1
+    # env.set_target_position(target_pos)
+    # for i in range(30):
+    #     env.synchronous_trigger()
 
     
-    env.robot_open_gripper()
-    env.synchronous_trigger()
+    # env.robot_open_gripper()
+    # env.synchronous_trigger()
 
-        
+    #### other test ####
     # env.reset()
     # for i in range(100):
         
