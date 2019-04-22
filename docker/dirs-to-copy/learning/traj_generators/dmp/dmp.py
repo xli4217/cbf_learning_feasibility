@@ -4,8 +4,8 @@ import time
 from future.utils import viewitems
 import copy
 
-from cooking_env.env.dmp.canonical_system import CanonicalSystem
-import cooking_env.utils.transformations as t
+from traj_generators.dmp.canonical_system import CanonicalSystem
+import utils.transformations as t
 
 def quaternion_log(q):
     u = q[:3]

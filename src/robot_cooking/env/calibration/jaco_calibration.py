@@ -35,10 +35,10 @@ motive_frame = {
     'z': [0,0,1]
 }
 
-p_in_motive_frame = np.array([-1.58, 2.11, 0.84])
+p_in_motive_frame = np.array([-1.11, 2.325, 0.77])
 R = np.array([motive_frame['x'], motive_frame['y'], motive_frame['z']]).T
 
-p_in_robot_frame = np.array([0.54865, 0.38354, 0.11055])
+p_in_robot_frame = np.array([0.42667, -0.311, -0.0145])
 p_in_aligned_motive_frame = p_in_robot_frame - np.dot(R, p_in_motive_frame)
 
 #####################

@@ -131,7 +131,7 @@ class RobotCooking(object):
 
         self.tf_broadcaster.sendTransform(t)
         
-    def servo_to_pose_target(self, pt):
+    def servo_to_pose_target(self, pt, pos_th=0.01, quat_th=0.1):
         assert len(pt) == 7
 
         # update tf
@@ -159,7 +159,7 @@ class RobotCooking(object):
         if quat_dist_arg > 0.99:
             quat_distance = 0.
         elif quat_dist_arg < -0.99:
-            quat_distance = np.pi
+            quat_distance = 0
         else:
             quat_distance = np.arccos(quat_dist_arg)
 
@@ -168,9 +168,9 @@ class RobotCooking(object):
         if not self.driver_utils.is_tool_in_safe_workspace():
             print('tool not in safe workspace')
             return True
-            
+
         # start servoing
-        if (pose_distance > 0.005 or quat_distance > 0.1) and self.driver_utils.is_tool_in_safe_workspace():
+        if (pose_distance > pos_th or quat_distance > quat_th) and self.driver_utils.is_tool_in_safe_workspace():
             self.driver_utils.pub_joint_velocity(jv, duration_sec=1./self.RobotCooking_config['rate'])
             self.rate.sleep()
             return False
@@ -213,7 +213,7 @@ class RobotCooking(object):
             
             action = np.array([0,0,0,0,0,0])
             ddy, dy, y = self.wp_gen.get_next_wp(action, curr_pos, curr_vel, dt=None)
-            self.servo_to_pose_target(y)
+            self.servo_to_pose_target(y, pos_th=0.005, quat_th=0.1)
             return False
         else:
             print("plan reached goal")
@@ -281,22 +281,22 @@ class RobotCooking(object):
         self.driver_utils.set_finger_positions([0.1, 0.1, 0.1])
         
         # go to neutral
-        pt = waypoints_dict['neutral']
-        while not self.servo_to_pose_target(pt):
-            pass
-
-        # # blue plate 
-        # pt = self.get_target_frame('blue_mapped')
-        # while not self.servo_to_pose_target(pt):
-        #     pass
-
-        # ## close gripper
-        # self.driver_utils.set_finger_positions([0.9, 0.9, 0.9])
-
-        # ## go to neutral
         # pt = waypoints_dict['neutral']
         # while not self.servo_to_pose_target(pt):
         #     pass
+
+        # # blue plate 
+        pt = self.get_target_frame('blue_mapped')
+        while not self.servo_to_pose_target(pt):
+            pass
+
+        ## close gripper
+        self.driver_utils.set_finger_positions([0.9, 0.9, 0.9])
+
+        ## go to neutral
+        pt = waypoints_dict['neutral']
+        while not self.servo_to_pose_target(pt):
+            pass
 
         # # ## go to toaster waypoint
         # pt = waypoints_dict['toaster_waypoint']
@@ -445,7 +445,7 @@ if __name__ == "__main__":
     # }
 
     #### DMP ####
-    from cooking_env.env.dmp.dmp import DMP
+    from traj_generators.dmp.dmp import DMP
     config = default_config
     config['rate'] = 30
     config['WPGenerator'] = {
@@ -497,8 +497,8 @@ if __name__ == "__main__":
     # print(curr_jp)
     # print(ik_jp)
 
-    #### test servo to target pose ####
-    cls.run()
+    #### test plan to target pose ####
+    # cls.run()
     
     #### waypoint cooking ####
-    # cls.waypoint_cooking()
+    cls.waypoint_cooking()

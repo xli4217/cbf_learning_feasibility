@@ -2,9 +2,9 @@
   "safe_zone":{
     "parent_frame_id": "/world",
     "child_frame_id": "/safe_zone",
-    "init_pose": [0.7, -0.18, 0.36, 0, 0, 0, 1],
+    "init_pose": [0.27, -0.54, 0.3, 0, 0, 0, 1],
     "scale": [0.9, 1.22, 0.6],
-    "rgba": [0.1, 0.1, 0.5, 0.1],
+    "rgba": [0.1, 0.1, 0.5, 0.3],
     "marker_type": "cube",
     "require_motive2robot_transform": "False"
   },
@@ -22,37 +22,37 @@
     "parent_frame_id": "/world",
     "child_frame_id": "/table_mapped",
     "init_pose": [0.743, -0.123, 0.05, 0, 0, 0, 1],
-    "scale": [0.76, 1.22, 0.01],
+    "scale": [0.76, 1.22, 0.001],
     "rgba": [0.1, 0.1, 0.1, 1],
     "marker_type": "cube",
-    "require_motive2robot_transform": "False"
+    "require_motive2robot_transform": "True"
   },
   "toaster":{
     "vrpn_topic": "/vrpn_client_node/toaster/pose",
     "parent_frame_id": "/world",
     "child_frame_id": "/toaster_mapped",
     "init_pose": [0.743, -0.123, 0.05, 0, 0, 0, 1],
-    "scale": [0.22, 0.45, 0.14],
+    "scale": [0.45, 0.22, 0.14],
     "rgba": [0.5, 0.5, 0.5, 0.8],
     "marker_type": "cube",
-    "require_motive2robot_transform": "False"
+    "require_motive2robot_transform": "True"
   },
   "green_plate":{
     "vrpn_topic": "/vrpn_client_node/green/pose",
     "parent_frame_id": "/world",
     "child_frame_id": "/green_mapped",
     "init_pose": [0.743, -0.123, 0.05, 0, 0, 0, 1],
-    "scale": [0.25, 0.25, 0.001],
+    "scale": [0.25, 0.25, 0.005],
     "rgba": [0.1, 1.0, 0.1, 1],
     "marker_type": "sphere",
-    "require_motive2robot_transform": "True"
+    "require_motive2robot_transform": "False"
   },
   "blue_plate":{
     "vrpn_topic": "/vrpn_client_node/blue/pose",
     "parent_frame_id": "/world",
     "child_frame_id": "/blue_mapped",
     "init_pose": [0.743, -0.123, 0.05, 0, 0, 0, 1],
-    "scale": [0.25, 0.25, 0.001],
+    "scale": [0.25, 0.25, 0.005],
     "rgba": [0.1, 0.1, 1.0, 1],
     "marker_type": "sphere",
     "require_motive2robot_transform": "True"
