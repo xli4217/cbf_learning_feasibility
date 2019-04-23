@@ -147,166 +147,7 @@ def construct_rl_base_runner_config(restore_runner_dir=None,
 
     else:
         raise ValueError('unsupported agent')
-
-
-    if dmp_action:
-        #### Actor ####
-        from examples.iros2019.policy.dmp_cbf_policy_pytorch import DmpCbfPolicyPytorch
-       
-        
-        action_space = exp_config.action_space
-        
-        a_ub = np.array(action_space['upper_bound'])
-        a_lb = np.array(action_space['lower_bound'])
-        a_shape = tuple(action_space['shape'])
-        a_type = action_space['type']
-
-        actor_action_space = {'type': a_type, 'shape': a_shape, 'upper_bound': 50*a_ub, 'lower_bound': 50*a_lb}
-        forcing_function_action_space = {'type': a_type, 'shape': a_shape, 'upper_bound': [1., 0.2], 'lower_bound': [-1, -0.2]}
-        cbf_action_space = {'type': a_type, 'shape': a_shape, 'upper_bound': 50*a_ub, 'lower_bound': 50*a_lb}
-
-        
-        dmp_policy_config = {
-            'scope': 'policy',
-            'obs_dim': None,
-            'action_space': actor_action_space,
-            ####
-            # gain on attractor term y dynamics
-            'ay': 2,
-            # gain on attractor term y dynamics
-            'by': None,
-            # timestep
-            'dt': 0.1,
-            # time scaling, increase tau to make the system execute faster
-            'tau': 1.,
-            'dmp_state_idx': [0,1],
-        }
-
-
-        if agent == 'ddpg':
-            forcing_function_type = 'deterministic'
-        elif agent == 'ppo':
-            forcing_function_type = 'stochastic'
-
-        forcing_function_config = {
-            'obs_dim': None,
-            'action_space': forcing_function_action_space,
-            'type': forcing_function_type
-        }
-
-        
-        actor_config = {
-            'scope': 'policy',
-            'obs_dim': None,
-            'action_space': actor_action_space,
-            'cbf_action': cbf_action,
-            'dmp_action': dmp_action,
-            'rl_action': rl_action,
-            # whether to include cbf
-            'cbf': {
-                # p has shape  (dim(y) + dim(dy)) x nb_constraints
-                'p': np.array([[1,-1,0,0], [-1,1,0,0]]).T,
-                # q is a scalar
-                'q': np.array([channel_width, channel_width]).reshape(-1,1),
-                'K': 1e20,
-                'eta': 0.99,
-                'tau': 1.,
-                'action_space': cbf_action_space
-            },
-            'dmp_policy_config': dmp_policy_config,
-            'Forcing_function':{
-                'type': None,
-                'config': forcing_function_config
-                
-            }
-        }
-
-        
-        Actor = {
-            'type': DmpCbfPolicyPytorch,
-            'config': actor_config
-        }
-        
-        #### Sampler ####
-        from examples.iros2019.sampler.fsa_dmp_batch_sampler import FsaDmpBatchSampler
-        sampler_type = FsaDmpBatchSampler
-    else:
-        #### Actor ####
-        from examples.iros2019.policy.clf_cbf_policy_pytorch import ClfCbfPolicyPytorch
-        
-        action_space = exp_config.action_space
-        
-        a_ub = np.array(action_space['upper_bound'])
-        a_lb = np.array(action_space['lower_bound'])
-        a_shape = tuple(action_space['shape'])
-        a_type = action_space['type']
-
-        #### for position control ####
-        # for the sum
-        actor_action_space = {'type': a_type, 'shape': a_shape, 'upper_bound': 10*np.array([1.5, 1.5]), 'lower_bound': 10*np.array([-1.5, -1.5])}
-        # for RL
-        forcing_function_action_space = {'type': a_type, 'shape': a_shape, 'upper_bound': [3.0, 3.5], 'lower_bound': [-3., -3.5]}
-        
-        #### for force control ####
-        # actor_action_space = {'type': a_type, 'shape': a_shape, 'upper_bound': [0.2, 0.2], 'lower_bound': [-0.2, -0.2]}
-        # forcing_function_action_space = {'type': a_type, 'shape': a_shape, 'upper_bound': [0.2, 0.2], 'lower_bound': [-0.2, -0.2]}
-        # for cbf action
-        cbf_action_space = {'type': a_type, 'shape': a_shape, 'upper_bound': 10*np.array([1.5, 1.5]), 'lower_bound': 10*np.array([-1.5, -1.5])}
-        # for clf action
-        clf_action_space = {'type': a_type, 'shape': a_shape, 'upper_bound': np.array([1.5, 0.5]), 'lower_bound': np.array([0., -0.5])}
-        
-
-        if agent == 'ddpg':
-            forcing_function_type = 'deterministic'
-        elif agent == 'ppo':
-            forcing_function_type = 'stochastic'
-
-        forcing_function_config = {
-            'obs_dim': None,
-            'action_space': forcing_function_action_space,
-            'type': forcing_function_type
-        }
-
-   
-        actor_config = {
-            'scope': 'policy',
-            'obs_dim': None,
-            'action_space': actor_action_space,
-            # whether to include cbf
-            'rl_action': True,
-            'clf_action': clf_action,
-            'cbf_action': cbf_action,
-            'rl_action': rl_action,
-            'cbf': {
-                # p has shape  (dim(y) + dim(dy)) x nb_constraints
-                'p': np.array([[1,-1], [-1,1]]).T,
-                # q is a scalar
-                'q': np.array([channel_width, channel_width]).reshape(-1,1),
-                'K': 1e20,
-                'eta': 30.,
-                'action_space': cbf_action_space
-            },
-            'clf': {
-                'K': 1e5,
-                'c': 30.4,
-                'action_space': clf_action_space
-            },
-            'Forcing_function':{
-                'type': None,
-                'config': forcing_function_config
-                
-            }
-        }
-
-        
-        Actor = {
-            'type': ClfCbfPolicyPytorch,
-            'config': actor_config
-        }
-        
-        #### Sampler ####
-        from examples.iros2019.sampler.fsa_dmp_batch_sampler import FsaDmpBatchSampler
-        sampler_type = FsaDmpBatchSampler
+ 
         
         
     base_runner_config = {
@@ -354,7 +195,7 @@ def construct_rl_base_runner_config(restore_runner_dir=None,
         'Critic': Critic,
         'Agent':Agent,
         'Sampler':{
-            'type': sampler_type,
+            'type': BatchSampler,
             'config': {
                 'rollout_batch_size': rollout_batch_size, # in units of episodes (if ray is used, this is for each agent)
                 "max_episode_timesteps": max_episode_timesteps,  
@@ -601,7 +442,7 @@ def construct_deployer_config(agent='sac',
 ######################################################
 
 default_args = {
-    'experiment_root_dir': os.path.join(os.environ['RLFPS_PATH'], 'examples','iros2019'),
+    'experiment_root_dir': os.path.join(os.environ['LEARNING_PATH'], 'learning'),
     'exp_name': 'test',
     # this can be 'train' or 'hyperparam_tuning', 'deploy', 'teleop'
     'mode': 'train',
@@ -619,10 +460,10 @@ default_args = {
     # this can be 'vrep_baxter', 'baxter'
     'env_name': 'vrep_baxter',
     # this can be 'gotogoal', 'robustness', 'flat', 'hierarchical'
-    'task': 1.1,
+    'task': 'flat',
     'dist_th': 0.05,
     'headless': False,
-    'fsa_save_dir': os.path.join(os.environ['RLFPS_PATH'], 'examples', 'iros2019', 'figures'),
+    'fsa_save_dir': os.path.join(os.environ['LEARNING_PATH'], 'learning', 'figures'),
     'fsa_name': "fsa",
     'softmax': False,
     'beta': 5.0,
@@ -633,7 +474,7 @@ default_args = {
     'per_alpha': 0.,
     'per_beta0': 0.4,
     #### agent_config ####
-    'agent': 'sac',
+    'agent': 'ppo',
     # -- common
     'lr': 3e-4,
     'batch_size':32,

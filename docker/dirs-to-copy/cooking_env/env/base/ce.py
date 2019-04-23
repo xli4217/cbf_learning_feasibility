@@ -148,6 +148,7 @@ class CookingEnv(VrepEnvBase):
 
         
     def set_goal_pose(self, pt):
+        pt = np.array(pt)
         assert pt.shape == (7,)
         if self.CookingEnv_config.get('particle_test'):
             handle = self.particle_handle

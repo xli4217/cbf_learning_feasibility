@@ -18,7 +18,9 @@ default_config = {
     #### class specific ####
     "WPGenerator": {
         'type':None,
-        'config': {}
+        'config': {
+            'initial_goal': [0,0,0,0,0,0,1]
+        }
     },
     # for cooking environment
     "BaseEnv":{
@@ -35,7 +37,15 @@ default_config = {
 
 class LearningEnv(object):
 
-    def __init__(self, config={}, seed=None, base_env=None, wp_gen=None):
+    def __init__(self,
+                 config={},
+                 seed=None,
+                 port_num=19999,
+                 suffix="",
+                 base_env=None,
+                 wp_gen=None,
+                 reset=None,
+                 logger=None):
         self.LearningEnv_config = default_config
         self.LearningEnv_config.update(config)
 
@@ -49,6 +59,8 @@ class LearningEnv(object):
         else:
             self.wp_gen = wp_gen
 
+        if self.wp_gen is not None:
+            self.set_goal_pose( self.LearningEnv_config['WPGenerator']['config']['initial_goal'])
             
         self.all_info = {}
 
@@ -56,13 +68,20 @@ class LearningEnv(object):
             self.set_seed(seed)
         else:
             self.set_seed(self.LearningEnv_config.get('seed'))
-      
-    
+
+            
+    def reset(self):
+        self.base_env.synchronous_trigger()
+
+    def get_info(self):
+        return self.all_info
+        
     def set_goal_pose(self, goal):
         self.wp_gen.set_goal(goal)
 
         if len(goal) != 7:
             goal = np.concatenate([goal, np.array([0,0,0,1])])
+
         self.base_env.set_goal_pose(goal)
         
     def get_state(self):
@@ -97,7 +116,7 @@ class LearningEnv(object):
         self.all_info = {
             'target_pos': target_pos,
             'target_quat': target_quat,
-            'button_rel_angle': button_rel_angle
+            'button_rel_angle': [button_rel_angle[1]]
         }
         
     def step(self, action):
@@ -106,14 +125,14 @@ class LearningEnv(object):
         '''
         action = np.array(action).flatten()
         assert action.size == self.action_space['shape'][0]
-        
+
         curr_pos, curr_quat = self.base_env.get_target_pose()
         curr_linear_vel, curr_angular_vel = self.base_env.get_target_velocity()
         curr_angular_vel = curr_angular_vel * np.pi / 180
 
         curr_pose = np.concatenate([curr_pos, curr_quat])
         curr_vel = np.concatenate([curr_linear_vel, curr_angular_vel])
-        
+
         ddy, dy, y = self.wp_gen.get_next_wp(action, curr_pose, curr_vel)
 
         if len(y) < 7:
@@ -138,6 +157,8 @@ class LearningEnv(object):
     def restore(self, restore_dir):
         pass
 
+    def teleop(self, cmd):
+        pass
 
 if __name__ == "__main__":
     # from cooking_env.env.QP_waypoints.QPcontroller import QPcontroller
@@ -147,15 +168,15 @@ if __name__ == "__main__":
         'type':DMP,
         'config': {
             # gain on attractor term y dynamics (linear)
-            'ay': None,
+            'ay': 50,
             # gain on attractor term y dynamics (linear)
             'by': None,
             # gain on attractor term y dynamics (angular)
-            'az': 20,
+            'az': 50,
             # gain on attractor term y dynamics (angular)
             'bz': None,
             # timestep
-            'dt': 0.05,
+            'dt': 0.005,
             # time scaling, increase tau to make the system execute faster
             'tau': 1.0,
             'use_canonical': False,
@@ -179,7 +200,7 @@ if __name__ == "__main__":
     # }
     
     config = default_config
-    config['action_space'] = {'type': 'float', 'shape':(6, ), 'upper_bound': np.ones(3), 'lower_bound': -np.ones(3)}
+    config['action_space'] = {'type': 'float', 'shape':(6, ), 'upper_bound': np.ones(6), 'lower_bound': -np.ones(6)}
     config['WPGenerator'] = dmp_gen
 
     
@@ -189,7 +210,18 @@ if __name__ == "__main__":
     goal_pos, goal_quat = cls.base_env.get_goal_pose()
     goal = np.concatenate([goal_pos, goal_quat])
     cls.set_goal_pose(goal)
+
+    #### test nn forcing function ####
+    from rl_pipeline.algo_devel.ppo.pytorch.policy.mlp_policy import PytorchMlp
+    policy_config = {
+        'scope': 'policy',
+        'obs_dim': 8,
+        'action_dim': 6,
+    }
+    policy = PytorchMlp(policy_config)
     
     for i in range(1000):
-        # cls.step(np.array([0,0,0,0,0,0]))
+        s = np.random.rand(8)
+        a = policy.get_action(s)
+        cls.step(a)
         cls.update_all_info()

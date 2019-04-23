@@ -128,15 +128,8 @@ class RunExperiment(object):
             env_config = config.get(['Environment', 'config'])
             env_config['headless'] = False
 
-            # env_config['base_env_config']['base_env']['config']['base_env_config']['headless'] = False
-            # env_config['base_env_config']['fsa_save_dir'] = os.path.join(os.environ['RLFPS_PATH'], 'examples', 'iros2019', 'figures')
-
-            env = config.get(['Environment', 'type'])(env_config,
-                                                      seed=0,
-                                                      port_num=19999,
-                                                      suffix="",
-                                                      reset=reset,
-                                                      logger=logger)
+            env = config.get(['Environment', 'type'])(env_configs)
+            
         else:
             #### construct fresh environment (useful if want to change param) ####
             from experiment_config import ExperimentConfig
@@ -147,14 +140,8 @@ class RunExperiment(object):
             if deploy_config['env_name'] == 'vrep_baxter':
                 Reset = exp_config.reset
                 reset = Reset['type'](Reset['config'])
-            env = Environment['type'](Environment['config'],
-                                      reset=reset,
-                                      seed=0,
-                                      port_num=19999,
-                                      suffix="",
-                                      logger=logger)
+            env = Environment['type'](Environment['config'])
                 
-            
             
         #### load exploration ####
         exploration_config = config.get(['Exploration', 'config'])
