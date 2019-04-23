@@ -4,6 +4,7 @@ import time
 from future.utils import viewitems
 
 from cooking_env.env.base.ce import CookingEnv
+import cooking_env.vrep as vrep
 
 default_config = {
     # Common to all envs
@@ -35,16 +36,16 @@ default_config = {
 class LearningEnv(object):
 
     def __init__(self, config={}, seed=None, base_env=None, wp_gen=None):
-        self.TestEnv_config = default_config
-        self.TestEnv_config.update(config)
+        self.LearningEnv_config = default_config
+        self.LearningEnv_config.update(config)
 
         if base_env is None:
-            self.base_env = self.TestEnv_config['BaseEnv']['type']( self.TestEnv_config['BaseEnv']['config'])
+            self.base_env = self.LearningEnv_config['BaseEnv']['type']( self.LearningEnv_config['BaseEnv']['config'])
         else:
             self.base_env = base_env
 
         if wp_gen is None:
-            self.wp_gen = self.TestEnv_config['WPGenerator']['type']( self.TestEnv_config['WPGenerator']['config'])
+            self.wp_gen = self.LearningEnv_config['WPGenerator']['type']( self.LearningEnv_config['WPGenerator']['config'])
         else:
             self.wp_gen = wp_gen
 
@@ -54,7 +55,7 @@ class LearningEnv(object):
         if seed:
             self.set_seed(seed)
         else:
-            self.set_seed(self.TestEnv_config.get('seed'))
+            self.set_seed(self.LearningEnv_config.get('seed'))
       
     
     def set_goal_pose(self, goal):
@@ -66,25 +67,39 @@ class LearningEnv(object):
         
     def get_state(self):
         self.update_all_info()
-        if self.TestEnv_config.get('get_state'):
-            return self.TestEnv_config.get('get_state')(self.all_info)
+        if self.LearningEnv_config.get('get_state'):
+            return self.LearningEnv_config.get('get_state')(self.all_info)
         else:
             return np.array([0])
 
         
     def get_reward(self, state=None, action=None, next_state=None):
-        if self.TestEnv_config.get('get_reward'):
-            return self.TestEnv_config.get('get_reward')(state, action, next_state)
+        if self.LearningEnv_config.get('get_reward'):
+            return self.LearningEnv_config.get('get_reward')(state, action, next_state)
         else:
             return 0
             
     def is_done(self, state=None, action=None, next_state=None):
-        if self.TestEnv_config.get('is_done'):
-            return self.TestEnv_config.get('is_done')(state, action, next_state)
+        if self.LearningEnv_config.get('is_done'):
+            return self.LearningEnv_config.get('is_done')(state, action, next_state)
         else:
             return False
 
-            
+    def update_all_info(self):
+        self.base_env.synchronous_trigger()
+        target_pos, target_quat = self.base_env.get_target_pose()
+
+        rc, button_rel_angle = vrep.simxGetObjectOrientation(self.base_env.clientID,
+                                                             self.base_env.object_handles['toaster_button'],
+                                                             self.base_env.object_handles['hotdog_cooker'],
+                                                             vrep.simx_opmode_oneshot)
+
+        self.all_info = {
+            'target_pos': target_pos,
+            'target_quat': target_quat,
+            'button_rel_angle': button_rel_angle
+        }
+        
     def step(self, action):
         '''
         here action is forcing function output
@@ -111,11 +126,11 @@ class LearningEnv(object):
 
     @property
     def state_space(self):
-        return self.TestEnv_config.get('state_space')
+        return self.LearningEnv_config.get('state_space')
 
     @property
     def action_space(self):
-        return self.TestEnv_config.get('action_space')
+        return self.LearningEnv_config.get('action_space')
 
     def save(self, save_dir):
         pass
@@ -126,7 +141,7 @@ class LearningEnv(object):
 
 if __name__ == "__main__":
     # from cooking_env.env.QP_waypoints.QPcontroller import QPcontroller
-    from cooking_env.env.dmp.dmp import DMP
+    from traj_generators.dmp.dmp import DMP
     
     dmp_gen = {
         'type':DMP,
@@ -168,19 +183,13 @@ if __name__ == "__main__":
     config['WPGenerator'] = dmp_gen
 
     
-    cls = LeanringEnv(config=config)
+    cls = LearningEnv(config=config)
+    
     curr_pos, curr_quat = cls.base_env.get_target_pose()
     goal_pos, goal_quat = cls.base_env.get_goal_pose()
     goal = np.concatenate([goal_pos, goal_quat])
-       
+    cls.set_goal_pose(goal)
+    
     for i in range(1000):
-        if i % 20 == 0:
-            goal_pos, goal_quat = cls.base_env.get_goal_pose()
-            goal_pos += np.array([0.2,0.2,0])
-            goal = np.concatenate([goal_pos, goal_quat])
-            cls.set_goal_pose(goal)
-  
-
-        cls.step(np.array([0,0,0,0,0,0]))
-       
-    # print(cls.ce_env.get_target_velocity())
+        # cls.step(np.array([0,0,0,0,0,0]))
+        cls.update_all_info()

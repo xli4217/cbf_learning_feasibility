@@ -7,23 +7,6 @@ import cloudpickle
 from experiment_config import ExperimentConfig
 import fire
 
-
-def in_region(abs_pos, ee_pose):
-    dist_th = 0.05
-    rel_pos = np.array(abs_pos) - np.array(ee_pose)
-    sqrt_dist = np.sqrt(rel_pos[0]**2 + rel_pos[1]**2 + rel_pos[2]**2)
-    print(sqrt_dist)
-    r_sqrt = dist_th - sqrt_dist
-    r_log = np.log(dist_th) - np.log(sqrt_dist)
-            
-    th_precise = dist_th**2 - np.exp(-100*dist_th**2)
-    r_precise = th_precise - (sqrt_dist**2 - np.exp(-100*(sqrt_dist**2)))
-    # print(r_precise)
-            
-    r_shaped = 1. - np.power((sqrt_dist / dist_th),0.4)
-    return r_sqrt
-
-
 default_config = {
     # experiment_root_dir: root of the experiment folder where training/evaluation results are saved 
     'experiment_root_dir': os.getcwd(),

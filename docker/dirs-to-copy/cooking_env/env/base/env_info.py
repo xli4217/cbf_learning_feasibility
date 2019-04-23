@@ -26,7 +26,7 @@ robot_handles = {
             'prox_sensor_handle': 'ROBOTIQ_85_attachProxSensor'
         },
         'goal_handle': 'Jaco_goal',
-        'target_handle': 'Jaco_target',
+        'target_handle': 'Jaco_target_dummy',
         'particle_handle': 'Jaco_goal'
     }
 }
@@ -34,13 +34,11 @@ robot_handles = {
 obstacle_handles = [
     {'name': 'sphere_left', 'handle': 'sphere_left'},
     {'name': 'sphere_low', 'handle': 'sphere_low'},
-    {'name': 'sphere_right', 'handle': 'sphere_right'},
+    {'name': 'sphere_right', 'handle': 'sphere_right'}
 ]
 
 object_handles = [
-    {
-        'name': 'obj',
-        'handle': 'obj'
-    }
+    {'name': 'hotdog_cooker', 'handle': 'hotdog_cooker'},
+    {'name': 'toaster_button', 'handle': 'toaster_button_frame'}
 ]
 

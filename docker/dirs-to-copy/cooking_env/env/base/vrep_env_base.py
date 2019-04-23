@@ -1,4 +1,4 @@
-from cooking_env.utils.configuration import Configuration
+from utils.configuration import Configuration
 
 import time
 

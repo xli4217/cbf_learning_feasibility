@@ -1,10 +1,10 @@
 from vrep_env_base import VrepEnvBase
 import cooking_env.vrep as vrep
 import numpy as np
-from cooking_env.utils.configuration import Configuration
+from utils.configuration import Configuration
 from future.utils import viewitems
 import time
-from cooking_env.utils import transformations
+from utils import transformations
 from env_info import robot_handles, object_handles, obstacle_handles
 
 default_config = {
@@ -85,10 +85,10 @@ class CookingEnv(VrepEnvBase):
   
         
         #### object handles ####
-        self.object_handles = []
+        self.object_handles = {}
         for oh in object_handles:
             _, h = vrep.simxGetObjectHandle(self.clientID, oh['handle'], vrep.simx_opmode_oneshot_wait)
-            self.object_handles.append(dict(name=oh['name'], handle=h))
+            self.object_handles[oh['name']] = h
         
 
         #### obstacle handles ####
@@ -183,18 +183,17 @@ class CookingEnv(VrepEnvBase):
         self.synchronous_trigger()
 
     def get_target_pose(self):
-        self.update_all_info()
-
         if self.CookingEnv_config.get('particle_test'):
             handle = self.particle_handle
         else:
             handle = self.target_handle
 
-        return np.array(self.all_info['target_pose'][:3]), np.array(self.all_info['target_pose'][3:])
+        rc, target_pos = vrep.simxGetObjectPosition(self.clientID, handle, -1, vrep.simx_opmode_oneshot)
+        rc, target_quat = vrep.simxGetObjectQuaternion(self.clientID, handle, -1, vrep.simx_opmode_oneshot)
+        
+        return np.array(target_pos), np.array(target_quat)
 
     def get_obstacle_info(self):
-        self.update_all_info()
-
         obs_info = []
         for obs in self.obstacle_handles:
             _, pos = vrep.simxGetObjectPosition(self.clientID, obs['handle'], -1, vrep.simx_opmode_blocking)
@@ -203,8 +202,6 @@ class CookingEnv(VrepEnvBase):
         return obs_info
             
     def get_goal_pose(self):
-        self.update_all_info()
-
         if self.CookingEnv_config.get('particle_test'):
             handle = self.particle_handle
         else:
@@ -265,41 +262,30 @@ class CookingEnv(VrepEnvBase):
             return_code, iteration2 = vrep.simxGetIntegerSignal(self.clientID, 'iteration', vrep.simx_opmode_buffer)
             if return_code != vrep.simx_return_ok:
                 iteration2 = -1
-        self.update_all_info()
                 
 
-    def update_all_info(self):
-        """Update all info used to extract states, currently includes
-           joint angles(rad), object pose relative to end effector 
-        """
-
-        # TODO: Need to get pose in the right frame after calibration with hardware !!!!
+    def get_joint_angles(self):
         #### retrive joint angles ####
         joint_positions = []
         for joint_handle in self.joint_handles:
             return_code, joint_position = vrep.simxGetJointPosition(self.clientID, joint_handle, vrep.simx_opmode_streaming)
             joint_positions.append(joint_position)
-        self.all_info['joint_angles'] = np.array(joint_positions)
-            
-        #### retrive end-effector pose ####
-        # return_code, ee_pos = vrep.simxGetObjectPosition(self.clientID, self.baxter_right_gripper_handle, self.baxter_world_frame_handle, vrep.simx_opmode_oneshot)
-        # return_code, ee_ori = vrep.simxGetObjectQuaternion(self.clientID, self.baxter_right_gripper_handle, self.baxter_world_frame_handle, vrep.simx_opmode_oneshot)
-
-        #### target pose ####
-        _, target_pos = vrep.simxGetObjectPosition(self.clientID, self.target_handle, -1, vrep.simx_opmode_blocking)
-        _, target_quat = vrep.simxGetObjectQuaternion(self.clientID, self.target_handle, -1, vrep.simx_opmode_blocking)
-        self.all_info['target_pose'] = np.array(target_pos + target_quat)
-        
-        #### retrive object position relative to end-effector ####
+        return np.array(joint_positions)
+     
+    def get_object_pose(self):
+        #### retrive object pose ####
         if self.object_handles is not None:
             object_pose = {}
-            for obj in self.object_handles:
-                return_code, object_position = vrep.simxGetObjectPosition(self.clientID, obj['handle'], -1, vrep.simx_opmode_streaming)
-                return_code, object_quat = vrep.simxGetObjectQuaternion(self.clientID, obj['handle'], -1, vrep.simx_opmode_streaming)
-                object_pose[obj['name']] = np.array(object_position + object_quat)
+            for obj_name, obj_handle in viewitems(self.object_handles):
+                return_code, object_position = vrep.simxGetObjectPosition(self.clientID, obj_handle, -1, vrep.simx_opmode_streaming)
+                return_code, object_quat = vrep.simxGetObjectQuaternion(self.clientID, obj_handle, -1, vrep.simx_opmode_streaming)
+                object_pose[obj_name] = np.array(object_position + object_quat)
 
-            self.all_info['object_pose'] = object_pose
-            
+            return object_pose
+        else:
+            return None
+       
+        
     def step(self, actions, axis=0):
         if actions.ndim == 2:
             actions = actions[0,:]
@@ -324,11 +310,6 @@ class CookingEnv(VrepEnvBase):
         self.update_all_info()
 
         
-        
-    def get_info(self):
-        return self.all_info
-        
-  
     def stop(self):
         vrep.simxStopSimulation(self.clientID, vrep.simx_opmode_oneshot)
 
