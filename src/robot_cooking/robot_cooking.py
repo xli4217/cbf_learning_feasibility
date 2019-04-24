@@ -207,7 +207,7 @@ class RobotCooking(object):
             print('tool not in safe workspace')
             return True
 
-        if (pose_distance > 0.015 or quat_distance > 0.25) and self.driver_utils.is_tool_in_safe_workspace():
+        if (pose_distance > 0.01 or quat_distance > 0.15) and self.driver_utils.is_tool_in_safe_workspace():
         
             # dt = 0.003 * np.exp(1./(pose_distance + quat_distance))
             # dt = np.clip(dt, 0.015, 0.03)
@@ -244,17 +244,10 @@ class RobotCooking(object):
                                 -pt.rotation.z,
                                 -pt.rotation.w])
 
-    def get_target_frame(self, obj_name):
+    def get_target_frame(self, obj_name, rel_pose_name):
         from waypoints import waypoints_dict
-        if obj_name == 'blue_mapped' or obj_name == 'green_mapped':
-            relative_pose = waypoints_dict['relative_plate']
-        elif obj_name == 'toaster':
-            relative_pose = waypoints_dict['toaster']
-        elif obj_name == 'mustard':
-            relative_pose = waypoints_dict['mustard']
-        else:
-            raise ValueError('relative frame not supported')
 
+        relative_pose = waypoints_dict[rel_pose_name]
         obj_tf, obj_pose = self.get_tf_pose("world", obj_name)
 
         obj_M = tf.transformations.quaternion_matrix(obj_pose[3:])
@@ -278,7 +271,7 @@ class RobotCooking(object):
     def waypoint_cooking(self, mode="servo"):
         from waypoints import waypoints_dict
 
-        script = [
+        servo_script = [
             'open',
             'neutral',
             #'blue_mapped',
@@ -288,7 +281,6 @@ class RobotCooking(object):
             'toaster_absolute',
             'open',
             'toaster_waypoint',
-            'neutral',
             'switch_pre',
             'close',
             'switch_on',
@@ -310,33 +302,99 @@ class RobotCooking(object):
             'neutral'
         ]
 
-        for pt in script:
-            if pt == 'open':
+        plan_script = [
+            'open',
+            'neutral',
+            #### pick raw dog ####
+            # 'blue_mapped',
+            # 'close',
+            # 'toaster_waypoint',
+            # 'toaster_absolute',
+            # 'open',
+            # 'toaster_waypoint',
+            #### close switch ####
+            # 'switch_pre',
+            # 'close',
+            # 'switch_on',
+            # 'switch_pre',
+            # 'switch_post',
+            #### pick cooked dog ####
+            # 'open',
+            # 'toaster_waypoint',
+            # 'toaster_absolute',
+            # 'close',
+            # 'toaster_waypoint',
+            # 'neutral',
+            #### place cooked dog ####
+            # 'blue_mapped',
+            # 'open',
+            # 'neutral',
+            #### apply condiment ####
+            'relative_condiment_pre',
+            'relative_condiment_post',
+            'close',
+            'relative_plate_apply_condiment_pre',
+            'flip_condiment',
+            'apply_condiment',
+            'flip_condiment_back',
+            'place_condiment',
+            'open',
+            'relative_condiment_pre',
+            'post_place_condiment',
+            #### serve ####
+            #### close switch ####
+            # 'switch_pre',
+            # 'close',
+            # 'switch_off',
+            # 'switch_pre',
+            # 'switch_post',
+            # 'neutral'
+        ]
+
+        if mode == "servo":
+            script = servo_script
+            action_fn = self.servo_to_pose_target
+        elif mode == 'plan':
+            script = plan_script
+            action_fn = self.plan_to_pose_target
+        else:
+            raise ValueError("mode not supported")
+        
+        for pt_name in script:
+            if pt_name == 'open':
                 # open gripper 
-                self.driver_utils.set_finger_positions([0.1, 0.1, 0.1])
-            elif pt == 'close':
+                self.driver_utils.set_finger_positions([0.3, 0.3, 0.3])
+            elif pt_name == 'close':
                 # close gripper 
                 self.driver_utils.set_finger_positions([0.9, 0.9, 0.9])
-            elif pt == 'blue_mapped':
-                pt = self.get_target_frame(pt)
-                if mode == 'servo':
-                    while not self.servo_to_pose_target(pt):
-                        pass
-                elif mode == 'plan':
-                    while not self.plan_to_pose_target(pt):
-                        pass
-                else:
-                    raise ValueError('mode not supported')
+            elif pt_name == 'relative_condiment_pre' or pt_name == 'relative_condiment_post':
+                done = False
+                while not done:
+                    pt = self.get_target_frame('condiment_mapped', pt_name)
+                    done = action_fn(pt)
+            elif pt_name == 'relative_plate_apply_condiment_pre':
+                done = False
+                while not done:
+                    pt = self.get_target_frame('blue_mapped', pt_name)
+                    done = action_fn(pt)
+            elif pt_name == 'apply_condiment':
+                for i in range(70):
+                    vel_scale = 2. * np.sin(0.08*i)
+                    cls.driver_utils.pub_ee_frame_velocity(direction='z',vel_scale=vel_scale, duration_sec=0.1)
+                    time.sleep(0.1)
+            elif pt_name == 'flip_condiment':
+                self.driver_utils.pub_joint_velocity([0,0,0,0,0,0,20], duration_sec=10)
+            elif pt_name == 'flip_condiment_back':
+                self.driver_utils.pub_joint_velocity([0,0,0,0,0,0,-20], duration_sec=10)
+            elif pt_name == 'blue_mapped':
+                done = False
+                while not done:
+                    pt = self.get_target_frame("blue_mapped", "relative_plate")
+                    done = action_fn(pt)
             else:
-                pt = waypoints_dict[pt]
-                if mode == 'servo':
-                    while not self.servo_to_pose_target(pt):
-                        pass
-                elif mode == 'plan':
-                    while not self.plan_to_pose_target(pt):
-                        pass
-                else:
-                    raise ValueError('mode not supported')
+                pt = waypoints_dict[pt_name]
+                while not action_fn(pt):
+                    pass
         
                 
         
@@ -372,7 +430,7 @@ if __name__ == "__main__":
             # gain on attractor term y dynamics (angular)
             'bz': None,
             # timestep
-            'dt': 0.0007,
+            'dt': 0.001,
             # time scaling, increase tau to make the system execute faster
             'tau': 1.,
             'use_canonical': False,
