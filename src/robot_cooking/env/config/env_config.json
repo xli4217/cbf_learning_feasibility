@@ -65,7 +65,7 @@
     "scale": [0.25, 0.25, 0.005],
     "rgba": [0.1, 1.0, 0.1, 1],
     "marker_type": "sphere",
-    "require_motive2robot_transform": "False"
+    "require_motive2robot_transform": "True"
   },
   "blue_plate":{
     "vrpn_topic": "/vrpn_client_node/blue/pose",

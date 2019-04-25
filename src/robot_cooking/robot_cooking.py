@@ -48,8 +48,8 @@ default_config = {
             "gripper_move_group": 'gripper',
             "reference_link": "j2s7s300_link_base",
             'joint_vel_bound': {
-                'upper': 4 * np.array([1.5,1.5,1.5,1.5,5.,5.,5.]),
-                'lower': -4 * np.array([1.5,1.5,1.5,1.5,5.,5.,5.]),    
+                'upper': 4 * np.array([2.5,2.5,2.5,2.5,5.,5.,5.]),
+                'lower': -4 * np.array([2.5,2.5,2.5,2.5,5.,5.,5.]),    
             },
             'safe_workspace': {
                 # safe zone defined here takes precedence
@@ -144,7 +144,8 @@ class RobotCooking(object):
         ik_jp = ik_sol[:-3]
 
         damping = 1.5
-        natural_freq = 2.0
+        natural_freq = 2.1
+
         kp = (2 * np.pi * natural_freq) ** 2
         kd = 2 * damping * 2 * np.pi * natural_freq
 
@@ -152,7 +153,7 @@ class RobotCooking(object):
         joint_vel = self.driver_utils.get_joint_velocities()
 
         jv = kp * joint_angle_diff + kd * joint_vel
-
+        
         ee_pos, ee_quat = self.driver_utils.get_ee_pose()
 
         pose_distance = np.linalg.norm(ee_pos - pt[:3])
@@ -271,64 +272,35 @@ class RobotCooking(object):
     def waypoint_cooking(self, mode="servo"):
         from waypoints import waypoints_dict
 
-        servo_script = [
-            'open',
-            'neutral',
-            #'blue_mapped',
-            'close',
-            'neutral',
-            'toaster_waypoint',
-            'toaster_absolute',
-            'open',
-            'toaster_waypoint',
-            'switch_pre',
-            'close',
-            'switch_on',
-            'switch_pre',
-            'switch_post',
-            'open',
-            'toaster_waypoint',
-            'toaster_absolute',
-            'close',
-            'toaster_waypoint',
-            # 'blue_mapped',
-            'open',
-            'toaster_waypoint',
-            'switch_pre',
-            'close',
-            'switch_off',
-            'switch_pre',
-            'switch_post',
-            'neutral'
-        ]
+        servo_script = []
 
         plan_script = [
             'open',
             'neutral',
             #### pick raw dog ####
-            # 'blue_mapped',
-            # 'close',
-            # 'toaster_waypoint',
-            # 'toaster_absolute',
-            # 'open',
-            # 'toaster_waypoint',
+            'blue_mapped',
+            'close',
+            'toaster_waypoint',
+            'toaster_absolute',
+            'open',
+            'toaster_waypoint',
             #### close switch ####
-            # 'switch_pre',
-            # 'close',
-            # 'switch_on',
-            # 'switch_pre',
-            # 'switch_post',
+            'switch_pre',
+            'close',
+            'switch_on',
+            'switch_pre',
+            'switch_post',
             #### pick cooked dog ####
-            # 'open',
-            # 'toaster_waypoint',
-            # 'toaster_absolute',
-            # 'close',
-            # 'toaster_waypoint',
-            # 'neutral',
+            'open',
+            'toaster_waypoint',
+            'toaster_absolute',
+            'close',
+            'toaster_waypoint',
+            'neutral',
             #### place cooked dog ####
-            # 'blue_mapped',
-            # 'open',
-            # 'neutral',
+            'blue_mapped',
+            'open',
+            'neutral',
             #### apply condiment ####
             'relative_condiment_pre',
             'relative_condiment_post',
@@ -342,13 +314,21 @@ class RobotCooking(object):
             'relative_condiment_pre',
             'post_place_condiment',
             #### serve ####
+            'neutral',
+            'blue_mapped',
+            'close',
+            'neutral',
+            'green_mapped',
+            'open',
             #### close switch ####
-            # 'switch_pre',
-            # 'close',
-            # 'switch_off',
-            # 'switch_pre',
-            # 'switch_post',
-            # 'neutral'
+            'neutral',
+            'switch_pre',
+            'close',
+            'switch_off',
+            'switch_pre',
+            'switch_post',
+            'neutral',
+            'open'
         ]
 
         if mode == "servo":
@@ -378,18 +358,18 @@ class RobotCooking(object):
                     pt = self.get_target_frame('blue_mapped', pt_name)
                     done = action_fn(pt)
             elif pt_name == 'apply_condiment':
-                for i in range(70):
-                    vel_scale = 2. * np.sin(0.08*i)
+                for i in range(25):
+                    vel_scale = 2. * np.sin(0.3*i)
                     cls.driver_utils.pub_ee_frame_velocity(direction='z',vel_scale=vel_scale, duration_sec=0.1)
                     time.sleep(0.1)
             elif pt_name == 'flip_condiment':
                 self.driver_utils.pub_joint_velocity([0,0,0,0,0,0,20], duration_sec=10)
             elif pt_name == 'flip_condiment_back':
                 self.driver_utils.pub_joint_velocity([0,0,0,0,0,0,-20], duration_sec=10)
-            elif pt_name == 'blue_mapped':
+            elif pt_name == 'blue_mapped' or pt_name == 'green_mapped':
                 done = False
                 while not done:
-                    pt = self.get_target_frame("blue_mapped", "relative_plate")
+                    pt = self.get_target_frame(pt_name, "relative_plate")
                     done = action_fn(pt)
             else:
                 pt = waypoints_dict[pt_name]
