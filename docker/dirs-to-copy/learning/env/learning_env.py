@@ -69,10 +69,18 @@ class LearningEnv(object):
         else:
             self.set_seed(self.LearningEnv_config.get('seed'))
 
-            
+        self.sample_range = self.base_env.get_region_info(region='sample')
+        self.motion_range = self.base_env.get_region_info(region='motion')
+        
     def reset(self):
+        low = [self.sample_range['x'][0], self.sample_range['y'][0], self.sample_range['z'][0]]
+        high = [self.sample_range['x'][1], self.sample_range['y'][1], self.sample_range['z'][1]]
+        self.target_pos = np.random.uniform(low, high, 3)
+        
+        self.base_env.set_target_pose(np.concatenate([self.target_pos, np.array([0,0,0,1])]))
+        
         self.base_env.synchronous_trigger()
-
+        
     def get_info(self):
         return self.all_info
         
@@ -90,7 +98,6 @@ class LearningEnv(object):
             return self.LearningEnv_config.get('get_state')(self.all_info)
         else:
             return np.array([0])
-
         
     def get_reward(self, state=None, action=None, next_state=None):
         if self.LearningEnv_config.get('get_reward'):
@@ -167,6 +174,7 @@ if __name__ == "__main__":
     dmp_gen = {
         'type':DMP,
         'config': {
+            'initial_goal': [0,0,0,0,0,0,1],
             # gain on attractor term y dynamics (linear)
             'ay': 50,
             # gain on attractor term y dynamics (linear)
@@ -202,7 +210,7 @@ if __name__ == "__main__":
     config = default_config
     config['action_space'] = {'type': 'float', 'shape':(6, ), 'upper_bound': np.ones(6), 'lower_bound': -np.ones(6)}
     config['WPGenerator'] = dmp_gen
-
+    config['BaseEnv']['config']['particle_test'] = True
     
     cls = LearningEnv(config=config)
     
@@ -219,9 +227,13 @@ if __name__ == "__main__":
         'action_dim': 6,
     }
     policy = PytorchMlp(policy_config)
+
+    for i in range(10):
+        cls.reset()
+        time.sleep(0.5)
     
-    for i in range(1000):
-        s = np.random.rand(8)
-        a = policy.get_action(s)
-        cls.step(a)
-        cls.update_all_info()
+    # for i in range(1000):
+    #     s = np.random.rand(8)
+    #     a = policy.get_action(s)
+    #     cls.step(a)
+    #     cls.update_all_info()

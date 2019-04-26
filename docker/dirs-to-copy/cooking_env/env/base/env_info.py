@@ -16,7 +16,9 @@ robot_handles = {
         },
         'goal_handle': 'UR5_goal_dummy',
         'target_handle': 'Jaco_target',
-        'particle_handle': 'UR5_goal_test'
+        'particle_handle': 'UR5_goal_test',
+        'ee_sample_region_handle': "ee_sample_region",
+        'ee_motion_region_handle': "ee_motion_region"
     },
     'Jaco': {
         'joint_handles': jaco_joint_handles,
@@ -27,7 +29,9 @@ robot_handles = {
         },
         'goal_handle': 'Jaco_goal',
         'target_handle': 'Jaco_target_dummy',
-        'particle_handle': 'Jaco_goal'
+        'particle_handle': 'Jaco_goal_test',
+        'ee_sample_region_handle': "ee_sample_region",
+        'ee_motion_region_handle': "ee_motion_region"
     }
 }
 

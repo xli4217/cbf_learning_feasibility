@@ -107,16 +107,19 @@ class ExperimentConfig(object):
             
             
     def baxter_env_config(self):
+
+        #### State ####
         def get_state(all_info):
             mdp_state = np.array(list(all_info['target_pos']) + \
                                  list(all_info['target_quat']) + \
                                  list(all_info['button_rel_angle']))
             return mdp_state
-            
+
+        #### Reward ####
         def get_reward(state=None, action=None, next_state=None):
             return 0
         
-
+        #### Done ####
         def is_done(state=None, action=None, next_state=None):
             return False
             
@@ -125,6 +128,8 @@ class ExperimentConfig(object):
         action_coeff = 2.
         action_space = {'type': 'float', 'shape': (6, ), "upper_bound": np.array([1, 1, 1, 0.01, 0.01, 0.01]) * action_coeff, "lower_bound": np.array([1, 1, 1, 0.01, 0.01, 0.01]) * action_coeff}
 
+
+        #### Reset ####
         reset_config = {}
         
         from learning.reset.experiment_env_reset import ExperimentEnvVrepReset

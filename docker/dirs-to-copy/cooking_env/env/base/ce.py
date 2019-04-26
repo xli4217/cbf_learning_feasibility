@@ -100,16 +100,48 @@ class CookingEnv(VrepEnvBase):
         #### test particle ####
         self.test_particle_handle = None
         if self.CookingEnv_config.get('particle_test'):
-            _, self.test_particle_handle = vrep.simxGetObjectHandle(self.clientID, rh['particle_handle'], vrep.simx_opmode_oneshot_wait)
+            _, self.particle_handle = vrep.simxGetObjectHandle(self.clientID, rh['particle_handle'], vrep.simx_opmode_oneshot_wait)
         
+        #### ee sample region ####
+        _, self.ee_sample_region_handle = vrep.simxGetObjectHandle(self.clientID, rh['ee_sample_region_handle'], vrep.simx_opmode_oneshot_wait)
+
+        #### ee motion region ####
+        _, self.ee_motion_region_handle = vrep.simxGetObjectHandle(self.clientID, rh['ee_motion_region_handle'], vrep.simx_opmode_oneshot_wait)
         
-            
     # def set_velocity_control_mode(self):
     #    joint_handles = self.joint_handles[self.CookingEnv_config.get('arm')]
     #    for joint_handle in joint_handles:
     #       vrep.simxSetJointForce(self.clientID, joint_handle, 10000, vrep.simx_opmode_oneshot)
     #       vrep.simxSetObjectIntParameter(self.clientID, joint_handle, 2001, 0, vrep.simx_opmode_oneshot)
 
+    def get_region_info(self, region='sample_region'):
+        if region == 'sample_region':
+            handle = self.ee_sample_region_handle
+        elif region == 'motion_region':
+            handle = self.ee_motion_region_handle
+        else:
+            raise ValueError('unsupported region')
+        
+            
+        _, pos = vrep.simxGetObjectPosition(self.clientID, handle, -1, vrep.simx_opmode_blocking)
+
+        _, bb_min_x = vrep.simxGetObjectFloatParameter(self.clientID, handle, 15, vrep.simx_opmode_blocking)
+        _, bb_min_y = vrep.simxGetObjectFloatParameter(self.clientID, handle, 16, vrep.simx_opmode_blocking)
+        _, bb_min_z = vrep.simxGetObjectFloatParameter(self.clientID, handle, 17, vrep.simx_opmode_blocking)
+        
+        
+        _, bb_max_x = vrep.simxGetObjectFloatParameter(self.clientID, handle, 18, vrep.simx_opmode_blocking)
+        _, bb_max_y = vrep.simxGetObjectFloatParameter(self.clientID, handle, 19, vrep.simx_opmode_blocking)
+        _, bb_max_z = vrep.simxGetObjectFloatParameter(self.clientID, handle, 20, vrep.simx_opmode_blocking)
+
+        bb = {
+            'x': np.array([bb_min_x, bb_max_x]) + pos[0],
+            'y': np.array([bb_min_y, bb_max_y]) + pos[1],
+            'z': np.array([bb_min_z, bb_max_z]) + pos[2],
+        }
+
+        return bb
+        
     def set_position_control_mode(self):
        for jh in self.joint_handles:
           vrep.simxSetObjectIntParameter(self.clientID, jh, 2001, 1, vrep.simx_opmode_oneshot)
@@ -242,7 +274,7 @@ class CookingEnv(VrepEnvBase):
             for i in range(6):
                 return_code = vrep.simxSetJointTargetPosition(self.clientID, self.joint_handles[i], new_joint_angles[i], vrep.simx_opmode_oneshot)
             self.synchronous_trigger()
-        self.update_all_info()
+        
             
        # if self.CookingEnv_config.get('control_mode') == "velocity":
        #    print("vel control mode enable")
@@ -342,7 +374,7 @@ if __name__ == "__main__":
     env = CookingEnv(config)
     env.reset()
 
-    print(env.get_goal_pose())
+    print(env.get_sample_region_info())
     
     #### test grasping ####
     # target_pos = env.all_info['target_pose'][:3]
