@@ -57,7 +57,7 @@ class ExperimentConfig(object):
                     'type':DMP,
                     'config': {
                         # initial goal
-                        'initial_goal': [0.39, -1.9, 0.88, -0.42, 0.0723, -0.459 , 0.778],
+                        'initial_goal': [0.43, -1.85, 0.9, 0, 0, 0 ,1],
                         # gain on attractor term y dynamics (linear)
                         'ay': 50,
                         # gain on attractor term y dynamics (linear)
@@ -67,7 +67,7 @@ class ExperimentConfig(object):
                         # gain on attractor term y dynamics (angular)
                         'bz': None,
                         # timestep
-                        'dt': 0.008,
+                        'dt': 0.02,
                         # time scaling, increase tau to make the system execute faster
                         'tau': 1.0,
                         'use_canonical': False,
@@ -90,7 +90,7 @@ class ExperimentConfig(object):
                     'config': {
                         # specific to this env
                         "suffix": "",
-                        "particle_test": False,
+                        "particle_test": True,
                         "arm": "jaco",
                         "control_mode": "velocity"
                     }
@@ -116,12 +116,23 @@ class ExperimentConfig(object):
             return mdp_state
 
         #### Reward ####
-        def get_reward(state=None, action=None, next_state=None):
+        def get_reward(state=None, action=None, next_state=None, all_info=None):
             return 0
         
         #### Done ####
-        def is_done(state=None, action=None, next_state=None):
-            return False
+        def is_done(state=None, action=None, next_state=None, all_info=None):
+            motion_range = all_info['motion_range']
+            low = np.array([motion_range['x'][0], motion_range['y'][0], motion_range['z'][0]])
+            high = np.array([motion_range['x'][1], motion_range['y'][1], motion_range['z'][1]])
+
+            target_pos = state[:3]
+
+            
+            if all(target_pos < low) or all(target_pos > high):
+                return True
+            else:
+                return False
+
             
         state_space = {'type': 'float', 'shape': (8, ), 'upper_bound': [], 'lower_bound': []}
 

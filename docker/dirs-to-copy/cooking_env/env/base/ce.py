@@ -182,10 +182,7 @@ class CookingEnv(VrepEnvBase):
     def set_goal_pose(self, pt):
         pt = np.array(pt)
         assert pt.shape == (7,)
-        if self.CookingEnv_config.get('particle_test'):
-            handle = self.particle_handle
-        else:
-            handle = self.goal_handle
+        handle = self.goal_handle
 
         pos = pt[:3]
         quat = pt[3:]    
@@ -223,7 +220,11 @@ class CookingEnv(VrepEnvBase):
 
         rc, target_pos = vrep.simxGetObjectPosition(self.clientID, handle, -1, vrep.simx_opmode_oneshot)
         rc, target_quat = vrep.simxGetObjectQuaternion(self.clientID, handle, -1, vrep.simx_opmode_oneshot)
-        
+
+        while np.linalg.norm(target_pos) < 0.001:
+            rc, target_pos = vrep.simxGetObjectPosition(self.clientID, handle, -1, vrep.simx_opmode_oneshot)
+            rc, target_quat = vrep.simxGetObjectQuaternion(self.clientID, handle, -1, vrep.simx_opmode_oneshot)
+
         return np.array(target_pos), np.array(target_quat)
 
     def get_obstacle_info(self):

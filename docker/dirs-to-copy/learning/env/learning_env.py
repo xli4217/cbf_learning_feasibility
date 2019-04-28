@@ -60,7 +60,7 @@ class LearningEnv(object):
             self.wp_gen = wp_gen
 
         if self.wp_gen is not None:
-            self.set_goal_pose( self.LearningEnv_config['WPGenerator']['config']['initial_goal'])
+            self.set_goal_pose(self.LearningEnv_config['WPGenerator']['config']['initial_goal'])
             
         self.all_info = {}
 
@@ -69,8 +69,8 @@ class LearningEnv(object):
         else:
             self.set_seed(self.LearningEnv_config.get('seed'))
 
-        self.sample_range = self.base_env.get_region_info(region='sample')
-        self.motion_range = self.base_env.get_region_info(region='motion')
+        self.sample_range = self.base_env.get_region_info(region='sample_region')
+        self.motion_range = self.base_env.get_region_info(region='motion_region')
         
     def reset(self):
         low = [self.sample_range['x'][0], self.sample_range['y'][0], self.sample_range['z'][0]]
@@ -101,20 +101,19 @@ class LearningEnv(object):
         
     def get_reward(self, state=None, action=None, next_state=None):
         if self.LearningEnv_config.get('get_reward'):
-            return self.LearningEnv_config.get('get_reward')(state, action, next_state)
+            return self.LearningEnv_config.get('get_reward')(state, action, next_state, self.all_info)
         else:
             return 0
             
     def is_done(self, state=None, action=None, next_state=None):
         if self.LearningEnv_config.get('is_done'):
-            return self.LearningEnv_config.get('is_done')(state, action, next_state)
+            return self.LearningEnv_config.get('is_done')(state, action, next_state, self.all_info)
         else:
             return False
 
     def update_all_info(self):
         self.base_env.synchronous_trigger()
         target_pos, target_quat = self.base_env.get_target_pose()
-
         rc, button_rel_angle = vrep.simxGetObjectOrientation(self.base_env.clientID,
                                                              self.base_env.object_handles['toaster_button'],
                                                              self.base_env.object_handles['hotdog_cooker'],
@@ -123,7 +122,9 @@ class LearningEnv(object):
         self.all_info = {
             'target_pos': target_pos,
             'target_quat': target_quat,
-            'button_rel_angle': [button_rel_angle[1]]
+            'button_rel_angle': [button_rel_angle[1]],
+            'sample_range': self.sample_range,
+            'motion_range': self.motion_range
         }
         
     def step(self, action):
@@ -207,20 +208,27 @@ if __name__ == "__main__":
     #     'config': {}
     # }
     
-    config = default_config
-    config['action_space'] = {'type': 'float', 'shape':(6, ), 'upper_bound': np.ones(6), 'lower_bound': -np.ones(6)}
-    config['WPGenerator'] = dmp_gen
-    config['BaseEnv']['config']['particle_test'] = True
+    # config = default_config
+    # config['action_space'] = {'type': 'float', 'shape':(6, ), 'upper_bound': np.ones(6), 'lower_bound': -np.ones(6)}
+    # config['WPGenerator'] = dmp_gen
+    # config['BaseEnv']['config']['particle_test'] = True
     
-    cls = LearningEnv(config=config)
+    # cls = LearningEnv(config=config)
     
-    curr_pos, curr_quat = cls.base_env.get_target_pose()
-    goal_pos, goal_quat = cls.base_env.get_goal_pose()
-    goal = np.concatenate([goal_pos, goal_quat])
-    cls.set_goal_pose(goal)
+    # curr_pos, curr_quat = cls.base_env.get_target_pose()
+    # goal_pos, goal_quat = cls.base_env.get_goal_pose()
+    # goal = np.concatenate([goal_pos, goal_quat])
+    # cls.set_goal_pose(goal)
+
 
     #### test nn forcing function ####
     from rl_pipeline.algo_devel.ppo.pytorch.policy.mlp_policy import PytorchMlp
+    from learning.experiment_config import ExperimentConfig
+
+    exp_config = ExperimentConfig()
+
+    cls = exp_config.Environment['type'](exp_config.Environment['config'])
+    
     policy_config = {
         'scope': 'policy',
         'obs_dim': 8,
@@ -228,12 +236,14 @@ if __name__ == "__main__":
     }
     policy = PytorchMlp(policy_config)
 
-    for i in range(10):
-        cls.reset()
-        time.sleep(0.5)
-    
-    # for i in range(1000):
-    #     s = np.random.rand(8)
-    #     a = policy.get_action(s)
-    #     cls.step(a)
-    #     cls.update_all_info()
+    cls.reset()
+    for i in range(1000):
+        s = cls.get_state()
+        a = policy.get_action(s)
+        cls.step(a*10)
+        # cls.step(np.zeros(6))
+        # if cls.is_done(state=s):
+        #     cls.reset()
+        cls.update_all_info()
+
+   

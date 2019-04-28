@@ -80,7 +80,6 @@ class DMP(object):
         self.dmp_angular_vel = None
         
     def get_next_wp(self, action, curr_pose, curr_vel, dt=None):
-
         if dt is not None:
             self.dt = dt
 
@@ -112,7 +111,7 @@ class DMP(object):
             #### addy is anglar acceleration, ady is angular velocity, ay is quaternion
             addy, ady, ay= self.get_next_wp_quat(action_angular, curr_quat, curr_angular_vel, self.angular_front_terms)
 
-            
+        
         if self.DMP_config['use_canonical']:
             #### implement phase stopping ####
             linear_tracking_error = (curr_pos - ly)
@@ -143,7 +142,7 @@ class DMP(object):
 
         angular velocity is in rad/s
         '''
-        
+
         goal_quat = self.goal[3:]
 
         eta = self.tau * curr_angular_vel
