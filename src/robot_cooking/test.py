@@ -199,27 +199,44 @@ class RobotCooking(object):
         from waypoints import waypoints_dict
 
         ## open gripper
+        self.driver_utils.set_finger_positions([1., 1., 1.])
+     
+        ## open gripper
         self.driver_utils.set_finger_positions([0., 0., 0.])
        
-        
         curr_pose, curr_quat = self.driver_utils.get_ee_pose()
-        curr_pose += np.array([0.2, 0, 0])
+        curr_pose -= np.array([0.15, 0, 0])
         pt = np.concatenate([curr_pose, curr_quat])
         while not self.servo_to_pose_target(pt):
             pass
 
         ## close gripper
         self.driver_utils.set_finger_positions([0.9, 0.9, 0.9])
+        
+        curr_pose, curr_quat = self.driver_utils.get_ee_pose()
+        curr_pose += np.array([0.15, 0, 0])
+        pt = np.concatenate([curr_pose, curr_quat])
+        while not self.servo_to_pose_target(pt):
+            pass
 
-        ## rotate 
-        jv = np.array([0,0,0,0,0,0,10])
-        self.driver_utils.pub_joint_velocity(jv, duration_sec=4.)
+        # open gripper
+        self.driver_utils.set_finger_positions([0., 0., 0.])
 
-        ## open gripper
-        # self.driver_utils.set_finger_positions([0., 0., 0.])
+        time.sleep(0.5)
+        ## close gripper
+        self.driver_utils.set_finger_positions([0.9, 0.9, 0.9])
+        
+        curr_pose, curr_quat = self.driver_utils.get_ee_pose()
+        curr_pose -= np.array([0.15, 0, 0])
+        pt = np.concatenate([curr_pose, curr_quat])
+        while not self.servo_to_pose_target(pt):
+            pass
+
+        # open gripper
+        self.driver_utils.set_finger_positions([0., 0., 0.])
 
         curr_pose, curr_quat = self.driver_utils.get_ee_pose()
-        curr_pose += np.array([-0.2, 0, 0])
+        curr_pose += np.array([0.15, 0, 0])
         pt = np.concatenate([curr_pose, curr_quat])
         while not self.servo_to_pose_target(pt):
             pass

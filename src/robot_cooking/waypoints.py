@@ -16,3 +16,4 @@ waypoints_dict = {
     'place_condiment': np.array([0.488,-0.0669,0.038,0.6135,0.3485,0.6266,-0.33]),
     'post_place_condiment': np.array([0.488,-0.0669,0.3,0.6135,0.3485,0.6266,-0.33])
 }
+

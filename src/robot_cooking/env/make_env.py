@@ -30,18 +30,35 @@ class MakeEnv(object):
                 if value['marker_type'] == "interactive":
                     self.marker_pub.make6DofMarker(False, InteractiveMarkerControl.MOVE_ROTATE_3D, Point(value['init_pose'][0], value['init_pose'][1], value['init_pose'][2]), True)
                 else:
-                    if optitrack and value['require_motive2robot_transform'] == "True":
-                        # this is Y up motive configuration
-                        scale = [value['scale'][1], value['scale'][0], value['scale'][2]]
-                    else:
-                        scale = [value['scale'][0], value['scale'][1], value['scale'][2]]
-                    self.marker_pub.add_marker(
-                        key,
-                        value['init_pose'],
-                        scale,
-                        value['rgba'],
-                        value['marker_type']
-                    )
+                    if key != "fitted_elliptical_obstacles":
+            
+                        if optitrack and value['require_motive2robot_transform'] == "True":
+                            # this is Z up motive configuration
+                            scale = [value['scale'][1], value['scale'][0], value['scale'][2]]
+                        else:
+                            scale = [value['scale'][0], value['scale'][1], value['scale'][2]]
+                        self.marker_pub.add_marker(
+                            key,
+                            value['init_pose'],
+                            scale,
+                            value['rgba'],
+                            value['marker_type'])
+                        
+                    if key == "fitted_elliptical_obstacles":
+                        for obs_k, obs_v in viewitems(value['fitted_obstacles']):
+                            if optitrack and value['require_motive2robot_transform'] == "True":
+                                # this is Z up motive configuration
+                                scale = [obs_v['scale'][1], obs_v['scale'][0], obs_v['scale'][2]]
+                            else:
+                                scale = [obs_v['scale'][0], obs_v['scale'][1], obs_v['scale'][2]]
+                            self.marker_pub.add_marker(
+                                obs_k,
+                                obs_v['init_pose'],
+                                scale,
+                                obs_v['rgba'],
+                                value['marker_type']
+                            )
+               
 
         self.marker_pub.publish_marker_array()
 
@@ -51,15 +68,33 @@ class MakeEnv(object):
 
         obj_names = []
         topic_names = []
+        offsets = []
+        require_motive2robot_transform = []
+        parent_frame_id = []
+        child_frame_id = []
         for object_name, value in viewitems(self.json_config):
-            if 'vrpn_topic' in value.keys():
-                obj_names.append(object_name)
-                topic_names.append(value['vrpn_topic'])
-
+            if object_name != "fitted_elliptical_obstacles":
+                if 'vrpn_topic' in value.keys():
+                    obj_names.append(object_name)
+                    topic_names.append(value['vrpn_topic'])
+                    offsets.append(value['motive_offset'])
+                    require_motive2robot_transform.append(value['require_motive2robot_transform'])
+                    parent_frame_id.append(value['parent_frame_id'])
+                    child_frame_id.append(value['child_frame_id'])
+            #### for fitted_elliptical_obstacles ####
+            if object_name == "fitted_elliptical_obstacles":
+                for k, v in viewitems(value['fitted_obstacles']):
+                    obj_names.append(k)
+                    topic_names.append(v['vrpn_topic'])
+                    offsets.append(v['motive_offset'])
+                    require_motive2robot_transform.append(value['require_motive2robot_transform'])
+                    parent_frame_id.append(v['parent_frame_id'])
+                    child_frame_id.append(v['child_frame_id'])
+                    
         self.object_pose_dict = {}
 
         if optitrack: # use optitrack to get environment data
-            [rospy.Subscriber(topic_name, geometry_msgs.msg.PoseStamped, self.optitrack_callback, (obj_name), queue_size=1) for topic_name, obj_name in zip(topic_names, obj_names)]
+            [rospy.Subscriber(topic_name, geometry_msgs.msg.PoseStamped, self.optitrack_callback, (obj_name, offset, require_transform, pfid, cfid), queue_size=1) for topic_name, obj_name, offset, require_transform, pfid, cfid in zip(topic_names, obj_names, offsets, require_motive2robot_transform, parent_frame_id, child_frame_id)]
             while not rospy.is_shutdown():
                 pass
         else:
@@ -75,8 +110,9 @@ class MakeEnv(object):
                         pose = value['init_pose']
                     self.pub_transforms(obj_name, value['parent_frame_id'], value['child_frame_id'], pose)
             
-    def optitrack_callback(self, msg, obj_name):
-        if self.json_config[obj_name]['require_motive2robot_transform'] == "True":
+    def optitrack_callback(self, msg, arg):
+        obj_name, offset, require_transform, parent_frame_id, child_frame_id = arg
+        if require_transform == "True":
             quaternion =  [msg.pose.orientation.x,
                            msg.pose.orientation.y,
                            msg.pose.orientation.z,
@@ -99,6 +135,8 @@ class MakeEnv(object):
                 transformed_q[3],
             ]
 
+            pose[:3] = np.array(pose)[:3] + np.array(offset)[:3]
+
             # if obj_name == 'table':
             #     pose[2] -= 0.01
         else:
@@ -110,7 +148,7 @@ class MakeEnv(object):
                     msg.pose.orientation.z,
                     msg.pose.orientation.w]
             
-        self.pub_transforms(obj_name, self.json_config[obj_name]['parent_frame_id'], self.json_config[obj_name]['child_frame_id'], pose)
+        self.pub_transforms(obj_name, parent_frame_id, child_frame_id, pose)
         
         
             

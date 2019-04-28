@@ -4,6 +4,8 @@ import numpy as np
 import copy
 import os
 import time
+import json
+from future.utils import viewitems
 
 from kinova_api.kinova_driver_utils import KinovaDriverUtils
 from kinova_api.kinova_moveit_utils import KinovaMoveitUtils
@@ -97,7 +99,25 @@ class RobotCooking(object):
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
 
         self.last_quat_distance = None
+
+        #### load json config ####
+        with open(os.path.join(os.environ['RC_PATH'], 'src', 'robot_cooking', 'env', 'config', 'env_config.json')) as f:
+            self.config_json = json.loads(f.read())
         
+    def get_obstacle_info(self):
+        fitted_obstacles = self.config_json['fitted_elliptical_obstacles']['fitted_obstacles']
+        obs_info = []
+        for k, v in viewitems(fitted_obstacles):
+            obs_pose_tf_stamped = self.tf_buffer.lookup_transform(v['parent_frame_id'][1:], v['child_frame_id'][1:], rospy.Time())
+            obs_pos = [
+                obs_pose_tf_stamped.transform.translation.x,
+                obs_pose_tf_stamped.transform.translation.y,
+                obs_pose_tf_stamped.transform.translation.z
+            ]
+            obs_info.append({ 'name': k, 'position': obs_pos, 'radius':v['scale'][0]/2})
+
+        return obs_info
+            
     def update_goal_tf(self, pt):
         t = geometry_msgs.msg.TransformStamped()
         t.header.stamp = rospy.Time.now()
@@ -384,52 +404,91 @@ class RobotCooking(object):
 
         
 if __name__ == "__main__":
-    #### CLF-CBF ####
-
-    # from cooking_env.env.QP_waypoints.QPcontroller import QPcontroller
-
+    #### DMP ####
+    # from traj_generators.dmp.dmp import DMP
     # config = default_config
+    # config['rate'] = 30
     # config['WPGenerator'] = {
-    #     'type': QPcontroller,
-    #     'config': {}
+    #     'type': DMP,
+    #     'config': {
+    #         # gain on attractor term y dynamics (linear)
+    #         'ay': 55,
+    #         # gain on attractor term y dynamics (linear)
+    #         'by': None,
+    #         # gain on attractor term y dynamics (angular)
+    #         'az': 55,
+    #         # gain on attractor term y dynamics (angular)
+    #         'bz': None,
+    #         # timestep
+    #         'dt': 0.001,
+    #         # time scaling, increase tau to make the system execute faster
+    #         'tau': 1.,
+    #         'use_canonical': False,
+    #         # for canonical
+    #         'apx': 1.,
+    #         'gamma': 0.3,
+    #         # for faster convergence
+    #         'app': 0.5,
+    #         'apr': 0.5,
+    #         # for integrating goal
+    #         'ag': 3.0,
+    #         'ago': 3.0,
+    #         # if True, then update according to dmp_pose, else update according to current pose
+    #         'use_dmp_pose': True,
+    #         'n_linear_dmp': 3,
+    #         'n_angular_dmp': 3
+    #     }
     # }
 
-    #### DMP ####
-    from traj_generators.dmp.dmp import DMP
+    #### hybrid traj generator ####
+    from traj_generators.trajectory_generator import TrajectoryGenerator
     config = default_config
     config['rate'] = 30
     config['WPGenerator'] = {
-        'type': DMP,
+        'type': TrajectoryGenerator,
         'config': {
-            # gain on attractor term y dynamics (linear)
-            'ay': 55,
-            # gain on attractor term y dynamics (linear)
-            'by': None,
-            # gain on attractor term y dynamics (angular)
-            'az': 55,
-            # gain on attractor term y dynamics (angular)
-            'bz': None,
-            # timestep
-            'dt': 0.001,
-            # time scaling, increase tau to make the system execute faster
-            'tau': 1.,
-            'use_canonical': False,
-            # for canonical
-            'apx': 1.,
-            'gamma': 0.3,
-            # for faster convergence
-            'app': 0.5,
-            'apr': 0.5,
-            # for integrating goal
-            'ag': 3.0,
-            'ago': 3.0,
-            # if True, then update according to dmp_pose, else update according to current pose
-            'use_dmp_pose': True,
-            'n_linear_dmp': 3,
-            'n_angular_dmp': 3
+            'dmp_config': {
+                # gain on attractor term y dynamics (linear)
+                'ay': 55,
+                # gain on attractor term y dynamics (linear)
+                'by': None,
+                # gain on attractor term y dynamics (angular)
+                'az': 55,
+                # gain on attractor term y dynamics (angular)
+                'bz': None,
+                # timestep
+                'dt': 0.001,
+                # time scaling, increase tau to make the system execute faster
+                'tau': 1.,
+                'use_canonical': False,
+                # for canonical
+                'apx': 1.,
+                'gamma': 0.3,
+                # for faster convergence
+                'app': 0.5,
+                'apr': 0.5,
+               # for integrating goal
+                'ag': 3.0,
+                'ago': 3.0,
+                # if True, then update according to dmp_pose, else update according to current pose
+                'use_dmp_pose': True,
+                'n_linear_dmp': 3,
+                'n_angular_dmp': 3
+                
+            },
+            'clf_cbf_config': {
+                'k_cbf': 1,
+                'epsilon':0.8,
+                'num_states':3,
+                'action_space': {'shape': 3, 'upper_bound': [0.1, 0.1, 0.1], 'lower_bound': [-0.1,-0.1,-0.1]},
+                'dt': 0.2
+            },
+            'translation_gen': 'clf_cbf',
+            'orientation_gen': 'dmp'
+            
         }
     }
-
+    
     
     #### Initialize ####
     cls = RobotCooking(config)
@@ -451,5 +510,7 @@ if __name__ == "__main__":
     # cls.run()
     
     #### waypoint cooking ####
-    cls.waypoint_cooking(mode='plan')
+    # cls.waypoint_cooking(mode='plan')
 
+    for _ in range(19):
+        print(cls.get_obstacle_info())
