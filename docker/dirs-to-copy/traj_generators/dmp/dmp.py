@@ -79,7 +79,7 @@ class DMP(object):
         self.dmp_linear_vel = None
         self.dmp_angular_vel = None
         
-    def get_next_wp(self, action, curr_pose, curr_vel, dt=None):
+    def get_next_wp(self, action, curr_pose, curr_vel, dt=None, obs_info={}):
         if dt is not None:
             self.dt = dt
 

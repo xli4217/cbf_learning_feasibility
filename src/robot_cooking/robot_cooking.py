@@ -230,12 +230,10 @@ class RobotCooking(object):
 
         if (pose_distance > 0.01 or quat_distance > 0.15) and self.driver_utils.is_tool_in_safe_workspace():
         
-            # dt = 0.003 * np.exp(1./(pose_distance + quat_distance))
-            # dt = np.clip(dt, 0.015, 0.03)
-            
             action = np.array([0,0,0,0,0,0])
-            ddy, dy, y = self.wp_gen.get_next_wp(action, curr_pos, curr_vel, dt=None)
-            self.servo_to_pose_target(y, pos_th=0.005, quat_th=0.1)
+            ddy, dy, y = self.wp_gen.get_next_wp(action, curr_pos, curr_vel, obs_info=self.get_obstacle_info())
+            # self.servo_to_pose_target(y, pos_th=0.005, quat_th=0.1)
+            self.update_pose_target_tf(y)
             return False
         else:
             print("plan reached goal")
@@ -351,11 +349,18 @@ class RobotCooking(object):
             'open'
         ]
 
+        test_script = [
+            'toaster_absolute'
+        ]
+        
         if mode == "servo":
             script = servo_script
             action_fn = self.servo_to_pose_target
         elif mode == 'plan':
             script = plan_script
+            action_fn = self.plan_to_pose_target
+        elif mode == 'test':
+            script = test_script
             action_fn = self.plan_to_pose_target
         else:
             raise ValueError("mode not supported")
@@ -383,9 +388,9 @@ class RobotCooking(object):
                     cls.driver_utils.pub_ee_frame_velocity(direction='z',vel_scale=vel_scale, duration_sec=0.1)
                     time.sleep(0.1)
             elif pt_name == 'flip_condiment':
-                self.driver_utils.pub_joint_velocity([0,0,0,0,0,0,20], duration_sec=10)
+                self.driver_utils.pub_joint_velocity([0,0,0,0,0,0,20], duration_sec=9)
             elif pt_name == 'flip_condiment_back':
-                self.driver_utils.pub_joint_velocity([0,0,0,0,0,0,-20], duration_sec=10)
+                self.driver_utils.pub_joint_velocity([0,0,0,0,0,0,-20], duration_sec=9)
             elif pt_name == 'blue_mapped' or pt_name == 'green_mapped':
                 done = False
                 while not done:
@@ -478,14 +483,14 @@ if __name__ == "__main__":
             },
             'clf_cbf_config': {
                 'k_cbf': 1,
-                'epsilon':0.8,
+                'epsilon':1.8,
                 'num_states':3,
                 'action_space': {'shape': 3, 'upper_bound': [0.1, 0.1, 0.1], 'lower_bound': [-0.1,-0.1,-0.1]},
-                'dt': 0.2
+                'use_own_pose': True,
+                'dt': 0.015
             },
             'translation_gen': 'clf_cbf',
-            'orientation_gen': 'dmp'
-            
+            'orientation_gen': 'dmp'            
         }
     }
     
@@ -511,6 +516,4 @@ if __name__ == "__main__":
     
     #### waypoint cooking ####
     # cls.waypoint_cooking(mode='plan')
-
-    for _ in range(19):
-        print(cls.get_obstacle_info())
+    cls.waypoint_cooking(mode='test')

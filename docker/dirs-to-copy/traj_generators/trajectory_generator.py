@@ -40,6 +40,7 @@ default_config = {
         'epsilon':0.8,
         'num_states':3,
         'action_space': {'shape': 3, 'upper_bound': [0.1, 0.1, 0.1], 'lower_bound': [-0.1,-0.1,-0.1]},
+        'use_own_pose': False,
         'dt': 0.2
     },
     'translation_gen': 'clf_cbf',
@@ -63,11 +64,11 @@ class TrajectoryGenerator(object):
     def get_next_wp(self, action, curr_pose, curr_vel, obs_info={}):
 
         #### this include translation and orientation
-        dmp_ddy, dmp_dy, dmp_y = self.dmp.get_next_wp(action, curr_pose, curr_vel)
+        dmp_ddy, dmp_dy, dmp_y = self.dmp_gen.get_next_wp(action, curr_pose, curr_vel)
 
         #### this currently only includes orientation
         clf_cbf_ddy, clf_cbf_dy, clf_cbf_y = self.clf_cbf_gen.get_next_wp(action, curr_pose, curr_vel, obs_info)
-        
+
         #### translation generator ####
         if self.TrajectoryGenerator_config['translation_gen'] == 'dmp':
             ddy_trans = dmp_ddy[:3]
@@ -93,4 +94,4 @@ class TrajectoryGenerator(object):
             raise ValueError('trajectory generator not supported')
 
 
-        return np.concatenate([ddy_trans, ddy_ori]), np.concatenate([dy_trans, dy_ori]), np.concatenate([dy_trans, dy_ori])
+        return np.concatenate([ddy_trans, ddy_ori]), np.concatenate([dy_trans, dy_ori]), np.concatenate([y_trans, y_ori])
