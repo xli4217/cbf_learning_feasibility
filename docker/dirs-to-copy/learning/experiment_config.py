@@ -112,27 +112,45 @@ class ExperimentConfig(object):
         def get_state(all_info):
             mdp_state = np.array(list(all_info['target_pos']) + \
                                  list(all_info['target_quat']) + \
-                                 list(all_info['button_rel_angle']))
+                                 [all_info['button_rel_pose'][4]])
             return mdp_state
 
         #### Reward ####
         def get_reward(state=None, action=None, next_state=None, all_info=None):
+            button_rel_angle_beta = all_info['button_rel_angle'][4]
             return 0
         
         #### Done ####
         def is_done(state=None, action=None, next_state=None, all_info=None):
+            done = False
             motion_range = all_info['motion_range']
             low = np.array([motion_range['x'][0], motion_range['y'][0], motion_range['z'][0]])
             high = np.array([motion_range['x'][1], motion_range['y'][1], motion_range['z'][1]])
-
             target_pos = state[:3]
-
             
+            ## done if move outside of motion region
             if all(target_pos < low) or all(target_pos > high):
-                return True
-            else:
-                return False
+                print("done: moved outside of motion region")
+                done = True
 
+            ## done if reached goal
+            goal_dist = np.linalg.norm(target_pos - all_info['goal'][:3])
+            if goal_dist < 0.015:
+                print("done: reached goal")
+                done = True
+
+            ## done if hit button 
+            button_pose = all_info['button_rel_pose']
+            nominal_button_pos = np.array([1.00565851e-01,  2.49999285e-01,  1.08863473e-01])
+
+            button_pos_disturbance = np.linalg.norm(button_pose[:3] - nominal_button_pos)
+            if button_pos_disturbance > 0.005:
+                print('done: button pushed away from nominal')
+                done = True
+                
+            print(button_pose)
+            
+            return done
             
         state_space = {'type': 'float', 'shape': (8, ), 'upper_bound': [], 'lower_bound': []}
 
