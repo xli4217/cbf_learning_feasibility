@@ -127,7 +127,8 @@ class TestEnv(object):
 
 if __name__ == "__main__":
     from cooking_env.env.QP_waypoints.QPcontroller import QPcontroller
-    
+
+
     qp_gen = {
         'type': QPcontroller,
         'config': {}

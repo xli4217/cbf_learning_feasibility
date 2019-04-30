@@ -1,0 +1,124 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+from gurobipy import *
+import math
+import numpy as np
+
+default_config = {
+    'k_cbf': 1,
+    'epsilon':0.8,
+    'num_states':3,
+    'action_space': {'shape': 3, 'upper_bound': [0.1, 0.1, 0.1], 'lower_bound': [-0.1,-0.1,-0.1]},
+    'use_own_pose': False,
+    'dt': 0.2
+}
+
+class QPcontroller:
+    def __init__(self, config={}):
+        self.QPcontroller_config = default_config
+        self.QPcontroller_config.update(config)
+        
+        self.k_cbf = self.QPcontroller_config['k_cbf'] #CBF coefficient
+        self.epsilon = self.QPcontroller_config['epsilon'] #Finite time CLF coefficient
+        self.m = Model("CBF_CLF_QP")
+        self.num_of_states = self.QPcontroller_config['num_states']
+        self.num_of_control_inputs = self.QPcontroller_config['action_space']['shape']
+        self.u1_upper_lim = self.QPcontroller_config['action_space']['upper_bound'][0] # From Create Autonomy
+        self.u1_lower_lim =  self.QPcontroller_config['action_space']['lower_bound'][0]
+        self.u2_upper_lim =  self.QPcontroller_config['action_space']['upper_bound'][1]
+        self.u2_lower_lim =  self.QPcontroller_config['action_space']['lower_bound'][1]
+        self.u3_upper_lim =  self.QPcontroller_config['action_space']['upper_bound'][2]
+        self.u3_lower_lim =  self.QPcontroller_config['action_space']['lower_bound'][2]
+        #self.obs_x1 = 2
+        #self.obs_x2 = -2.3
+        #self.obs_x3 = 0.9 # Center Location of the obstacle
+        #self.obs_r = 0.3 # Radius of the obstacle
+
+        self.dt = self.QPcontroller_config['dt']
+        self.goal = None
+
+        # Control Variables
+        self.u1 = self.m.addVar(lb=self.u1_lower_lim, ub=self.u1_upper_lim,vtype=GRB.CONTINUOUS, name="x1_input_acceleration")
+        self.u2 = self.m.addVar(lb=self.u2_lower_lim, ub=self.u2_upper_lim,vtype=GRB.CONTINUOUS, name="x2_input_acceleration")
+        self.u3 = self.m.addVar(lb=self.u3_lower_lim, ub=self.u3_upper_lim,vtype=GRB.CONTINUOUS, name="x3_input_acceleration")
+        # Soft Constraint Variable for CLF
+        self.delta = self.m.addVar(lb=-30, ub=30,vtype=GRB.CONTINUOUS, name="relaxation_CLF")
+
+        self.own_pose = None
+
+    def set_goal(self, goal):
+        self.goal = goal
+
+    def get_next_wp(self, action=None, curr_pose=None, curr_vel=None, obs_info={}):
+        target_accel, target_vel, target_pose = self.generate_control(curr_pose[:3], obs_info)
+        return np.concatenate([target_accel, np.zeros(3)]), np.concatenate([target_vel, np.zeros(3)]), np.concatenate([target_pose, np.array([0,0,0,1])])
+
+    def generate_control(self,x_current, obs_info={}):
+        if self.QPcontroller_config['use_own_pose']:
+            if self.own_pose is None:
+                self.own_pose = x_current
+            else:
+                x_current = self.own_pose
+        
+        num_of_obstacles = len(obs_info) #For later use when more obstacles are involved
+
+        pos_sphere_left = obs_info[0]['position']
+        rad_sphere_left = obs_info[0]['radius']
+
+        pos_sphere_mid = obs_info[1]['position']
+        rad_sphere_mid = obs_info[1]['radius']
+
+        pos_sphere_right = obs_info[2]['position']
+        rad_sphere_right = obs_info[2]['radius']
+
+        # Initialize Cost Function
+        self.cost_func = self.u1*self.u1+self.u2*self.u2+self.u3*self.u3 + self.delta*self.delta
+        self.m.setObjective(self.cost_func,GRB.MINIMIZE)
+
+        # CBF constraint
+        h_left = (x_current[0]-pos_sphere_left[0])**2 + (x_current[1]-pos_sphere_left[1])**2 + (x_current[2]-pos_sphere_left[2])**2 - rad_sphere_left**2
+        self.m.addConstr(2*(x_current[0]-pos_sphere_left[0])*self.u1 + 2*(x_current[1]-pos_sphere_left[1])*self.u2 + 2*(x_current[2]-pos_sphere_left[2])*self.u3 + self.k_cbf*h_left >= 0, "CBF_Constraint_h_left")
+
+        h_mid = (x_current[0]-pos_sphere_mid[0])**2 + (x_current[1]-pos_sphere_mid[1])**2 + (x_current[2]-pos_sphere_mid[2])**2 - rad_sphere_mid**2
+        self.m.addConstr(2*(x_current[0]-pos_sphere_mid[0])*self.u1 + 2*(x_current[1]-pos_sphere_mid[1])*self.u2 + 2*(x_current[2]-pos_sphere_mid[2])*self.u3 + self.k_cbf*h_mid >= 0, "CBF_Constraint_h_left")
+
+        h_right = (x_current[0]-pos_sphere_right[0])**2 + (x_current[1]-pos_sphere_right[1])**2 + (x_current[2]-pos_sphere_right[2])**2 - rad_sphere_right**2
+        self.m.addConstr(2*(x_current[0]-pos_sphere_right[0])*self.u1 + 2*(x_current[1]-pos_sphere_right[1])*self.u2 + 2*(x_current[2]-pos_sphere_right[2])*self.u3 + self.k_cbf*h_right >= 0, "CBF_Constraint_h_left")
+
+
+        # CLF constraint
+        V = 0.5*(x_current[0]-self.goal[0])**2 + 0.5*(x_current[1]-self.goal[1])**2 + 0.5*(x_current[2]-self.goal[2])**2
+
+        partial_V_x1 = (x_current[0]-self.goal[0])
+        partial_V_x2 = (x_current[1]-self.goal[1])
+        partial_V_x3 = (x_current[2]-self.goal[2])
+
+
+        self.m.addConstr(partial_V_x1*self.u1 + partial_V_x2*self.u2 + partial_V_x3*self.u3 + self.epsilon +self.delta <= -20, "Relaxed_CLF_constraint")
+
+        #self.m.addConstr(partial_V_x1*self.u1 + partial_V_x2*self.u2 + partial_V_x3*self.u3 + self.epsilon * V - self.delta  <= 0, "Relaxed_CLF_constraint")
+
+
+        #Stop optimizer from publsihing results to console - remove if desired
+        self.m.Params.LogToConsole = 0
+
+        #Solve the optimization problem
+        self.m.optimize()
+        self.solution = self.m.getVars()
+
+        # get final decision variables
+        self.control_u1 = self.solution[0].x
+        self.control_u2 = self.solution[1].x
+        self.control_u3 = self.solution[2].x
+
+        # For debuging only, save model to view constraints etc.
+        self.m.write("qp_model.lp")
+
+        target_vel = np.array([self.control_u1, self.control_u2, self.control_u3])
+
+        target_pose = x_current + target_vel * self.dt
+
+        if self.QPcontroller_config['use_own_pose']:
+            self.own_pose = target_pose
+        
+        return np.zeros(3), target_vel, target_pose
