@@ -8,7 +8,7 @@ default_config = {
     'k_cbf': 1,
     'epsilon':0.8,
     'num_states':3,
-    'action_space': {'shape': 3, 'upper_bound': [0.1, 0.1, 0.1], 'lower_bound': [-0.1,-0.1,-0.1]},
+    'action_space': {'shape': (3,), 'upper_bound': [0.1, 0.1, 0.1], 'lower_bound': [-0.1,-0.1,-0.1]},
     'use_own_pose': False,
     'dt': 0.2
 }
@@ -22,17 +22,13 @@ class QPcontroller:
         self.epsilon = self.QPcontroller_config['epsilon'] #Finite time CLF coefficient
         self.m = Model("CBF_CLF_QP")
         self.num_of_states = self.QPcontroller_config['num_states']
-        self.num_of_control_inputs = self.QPcontroller_config['action_space']['shape']
+        self.num_of_control_inputs = self.QPcontroller_config['action_space']['shape'][0]
         self.u1_upper_lim = self.QPcontroller_config['action_space']['upper_bound'][0] # From Create Autonomy
         self.u1_lower_lim =  self.QPcontroller_config['action_space']['lower_bound'][0]
         self.u2_upper_lim =  self.QPcontroller_config['action_space']['upper_bound'][1]
         self.u2_lower_lim =  self.QPcontroller_config['action_space']['lower_bound'][1]
         self.u3_upper_lim =  self.QPcontroller_config['action_space']['upper_bound'][2]
         self.u3_lower_lim =  self.QPcontroller_config['action_space']['lower_bound'][2]
-        #self.obs_x1 = 2
-        #self.obs_x2 = -2.3
-        #self.obs_x3 = 0.9 # Center Location of the obstacle
-        #self.obs_r = 0.3 # Radius of the obstacle
 
         self.dt = self.QPcontroller_config['dt']
         self.goal = None

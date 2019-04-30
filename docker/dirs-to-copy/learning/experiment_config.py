@@ -6,8 +6,6 @@ from rl_pipeline.configuration.configuration import Configuration
 
 import json
 
-# env_cal = json.loads(open(os.path.join(os.environ['RLFPS_PATH'], 'examples', 'iros2019', 'env_config.json'), 'rb').read())
-
 env_cal = {}
 default_config = {
     'env_name': "vrep_baxter",
@@ -117,7 +115,9 @@ class ExperimentConfig(object):
 
         #### Reward ####
         def get_reward(state=None, action=None, next_state=None, all_info=None):
-            button_rel_angle_beta = all_info['button_rel_angle'][4]
+            button_joint_angle = all_info['button_joint_angle']
+            button_rel_pose = all_info['button_rel_pose']
+            
             return 0
         
         #### Done ####

@@ -236,10 +236,7 @@ class CookingEnv(VrepEnvBase):
         return obs_info
             
     def get_goal_pose(self):
-        if self.CookingEnv_config.get('particle_test'):
-            handle = self.particle_handle
-        else:
-            handle = self.goal_handle
+        handle = self.goal_handle
 
         _, goal_pos = vrep.simxGetObjectPosition(self.clientID, handle, -1, vrep.simx_opmode_blocking)
         _, goal_quat = vrep.simxGetObjectQuaternion(self.clientID, handle, -1, vrep.simx_opmode_blocking)
@@ -323,6 +320,7 @@ class CookingEnv(VrepEnvBase):
     def step(self, actions, axis=0):
         if actions.ndim == 2:
             actions = actions[0,:]
+
         # clip actions to limits
         if self.CookingEnv_config.get('action_space') is not None:
             clipped_actions = np.clip(np.array(actions), self.action_space['lower_bound'], self.action_space['upper_bound'])

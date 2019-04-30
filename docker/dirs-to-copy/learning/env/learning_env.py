@@ -115,23 +115,31 @@ class LearningEnv(object):
     def update_all_info(self):
         self.base_env.synchronous_trigger()
         target_pos, target_quat = self.base_env.get_target_pose()
-        rc, button_rel_pos = vrep.simxGetObjectPosition(self.base_env.clientID,
-                                                           self.base_env.object_handles['toaster_button'],
-                                                           self.base_env.object_handles['hotdog_cooker'],
-                                                           vrep.simx_opmode_oneshot)
 
-        rc, button_rel_angle = vrep.simxGetObjectOrientation(self.base_env.clientID,
-                                                             self.base_env.object_handles['toaster_button'],
-                                                             self.base_env.object_handles['hotdog_cooker'],
-                                                             vrep.simx_opmode_oneshot)
+        rc = 1
+        while rc != 0:
+            rc, button_rel_pos = vrep.simxGetObjectPosition(self.base_env.clientID,
+                                                            self.base_env.object_handles['toaster_button_joint'],
+                                                            self.base_env.object_handles['hotdog_cooker'],
+                                                            vrep.simx_opmode_oneshot)
 
-        button_rel_pose = np.concatenate([np.array(button_rel_pos), np.array(button_rel_angle)])
+            rc, button_rel_angle = vrep.simxGetObjectOrientation(self.base_env.clientID,
+                                                                 self.base_env.object_handles['toaster_button_joint'],
+                                                                 self.base_env.object_handles['hotdog_cooker'],
+                                                                 vrep.simx_opmode_oneshot)
+
+            button_rel_pose = np.concatenate([np.array(button_rel_pos), np.array(button_rel_angle)])
+            
+            rc, button_joint_angle = vrep.simxGetJointPosition(self.base_env.clientID,
+                                                               self.base_env.object_handles['toaster_button_joint'],
+                                                               vrep.simx_opmode_oneshot)
 
         self.all_info = {
             'goal': self.goal,
             'target_pos': target_pos,
             'target_quat': target_quat,
             'button_rel_pose': button_rel_pose,
+            'button_joint_angle': button_joint_angle,
             'sample_range': self.sample_range,
             'motion_range': self.motion_range
         }
@@ -247,11 +255,11 @@ if __name__ == "__main__":
 
     cls.reset()
     for i in range(1000):
-        s = cls.get_state()
-        a = policy.get_action(s)
-        cls.step(a*10)
-        if cls.is_done(state=s):
-            cls.reset()
+        # s = cls.get_state()
+        # a = policy.get_action(s)
+        # cls.step(a*10)
+        # if cls.is_done(state=s):
+        #     cls.reset()
         cls.update_all_info()
-
+        time.sleep(0.5)
    
