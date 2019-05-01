@@ -121,8 +121,7 @@ class ExperimentConfig(object):
             button_rel_pose = all_info['button_rel_pose']
             button_vel = all_info['button_vel']
             
-            r = 0.4 - button_joint_angle - np.linalg.norm(button_vel[:3])
-            
+            r = -0.4 - button_joint_angle - np.linalg.norm(button_vel[:3])
             return r
             
         
