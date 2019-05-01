@@ -50,7 +50,8 @@ default_config = {
     'dt': 0.01,
     # time scaling, increase tau to make the system execute faster
     'tau': 1.0,
-    'use_canonical': False,
+    'translation_front_term': False,
+    'rotation_front_term': False,
     # for canonical
     'apx': 1.,
     'gamma': 0.3,
@@ -94,11 +95,8 @@ class DMP(object):
 
         if self.DMP_config['use_dmp_pose']:
             if self.dmp_pos is None:
-                self.dmp_pos = curr_pos
-                self.dmp_quat = curr_quat
-                self.dmp_linear_vel = curr_linear_vel
-                self.dmp_angular_vel = curr_angular_vel
-      
+                self.reset(curr_pose, curr_vel)
+                
             lddy, ldy, ly = self.get_next_wp_pos(action_linear, self.dmp_pos, self.dmp_linear_vel, self.linear_front_terms)
             #### addy is anglar acceleration, ady is angular velocity, ay is quaternion
             addy, ady, ay= self.get_next_wp_quat(action_angular, self.dmp_quat, self.dmp_angular_vel, self.angular_front_terms)
@@ -112,16 +110,19 @@ class DMP(object):
             addy, ady, ay= self.get_next_wp_quat(action_angular, curr_quat, curr_angular_vel, self.angular_front_terms)
 
         
-        if self.DMP_config['use_canonical']:
-            #### implement phase stopping ####
-            linear_tracking_error = (curr_pos - ly)
-            angular_tracking_error = quaternion_dist(curr_quat, ay)
-            error_coupling = 1. / (1. + self.apx * (np.linalg.norm(linear_tracking_error) + self.gamma * angular_tracking_error))
-            cx = self.cs.step(tau=self.tau, error_coupling=error_coupling)
-            # generate forcing term
-            self.linear_front_terms = cx * linear_tracking_error
-            self.angular_front_terms = cx * angular_tracking_error
-
+        #### implement phase stopping ####
+        linear_tracking_error = (curr_pos - ly)
+        angular_tracking_error = quaternion_dist(curr_quat, ay)
+        error_coupling = 1. / (1. + self.apx * (np.linalg.norm(linear_tracking_error) + self.gamma * angular_tracking_error))
+        cx = self.cs.step(tau=self.tau, error_coupling=error_coupling)
+        
+        # generate forcing term
+        if self.DMP_config['translation_front_term']:
+            self.linear_front_terms = cx * abs((self.goal[:3] - curr_pos))
+        if self.DMP_config['rotation_front_term']:
+            self.angular_front_terms = cx * abs(quaternion_dist(self.goal[3:], curr_quat))
+        
+            
         #### continuous goal integrate ####
         # linear_goal = self.goal[:3] + self.ag * (self.new_goal[:3] - self.goal[:3]) / self.tau
         # goal_quat = copy.copy(self.goal[3:])
@@ -167,6 +168,12 @@ class DMP(object):
         pos_goal = self.goal[:3]
         point_attractor = self.ay * ( self.by * (pos_goal - curr_pos) - curr_linear_vel ) + action * front_terms
 
+        # print(self.ay * ( self.by * (pos_goal - curr_pos) - curr_linear_vel ))
+        # print(front_terms)
+        # print(action)
+        # print(action * front_terms)
+        # print('----')
+        
         lddy = ((point_attractor + action) * self.tau) / self.tau
         ldy = (curr_linear_vel + lddy * self.dt) / self.tau
 
@@ -187,28 +194,15 @@ class DMP(object):
                 print("initial position too close to goal, offsetting")
                 self.goal[d] += 1e-4
 
-    # def reset(self, y=None, dy=None, ddy=None):
-    #     if y is None:
-    #         self.y = copy.copy(self.y0).astype(np.float64)
-    #     else:
-    #         self.y = copy.copy(y).astype(np.float64)
-            
-    #     if dy is None:
-    #         self.dy = np.zeros(self.n_dmps).astype(np.float64)
-    #     else:
-    #         self.dy = copy.copy(dy).astype(np.float64)
 
-    #     if ddy is None:
-    #         self.ddy = np.zeros(self.n_dmps).astype(np.float64)
-    #     else:
-    #         self.ddy = copy.copy(ddy).astype(np.float64)
+    def reset(self, curr_pose, curr_vel):
+        self.dmp_pos = curr_pose[:3]
+        self.dmp_quat = curr_pose[3:]
+        self.dmp_linear_vel = curr_vel[:3]
+        self.dmp_angular_vel = curr_vel[3:]
 
-    #     self.ddy = np.zeros(self.n_dmps).astype(np.float64)
-    #     self.cs.reset_state()
-
-    #     if self.goal is not None:
-    #         self.check_offset()
-            
+        self.reset_cs()
+        
     def reset_cs(self):
         self.cs.reset_state()
 
@@ -218,9 +212,6 @@ class DMP(object):
 
     def set_goal(self, goal):
         self.goal = goal
-        # self.new_goal = goal
-        # if self.goal is None:
-        #     self.goal = goal
         
     def build_graph(self):
         self.new_goal = None

@@ -1,3 +1,7 @@
+- Test env cmd
+  - python ${LEARNING_PATH}learning/env/learning_env.py
+
 - Training cmd
+  - python ${LEARNING_PATH}experiments.py --max_episode_timesteps 30
 
 - Deploy cmd
