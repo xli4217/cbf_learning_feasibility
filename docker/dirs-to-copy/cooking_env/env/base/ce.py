@@ -1,11 +1,11 @@
-from vrep_env_base import VrepEnvBase
+from cooking_env.env.base.vrep_env_base import VrepEnvBase
 import cooking_env.vrep as vrep
 import numpy as np
 from utils.configuration import Configuration
 from future.utils import viewitems
 import time
 from utils import transformations
-from env_info import robot_handles, object_handles, obstacle_handles
+from cooking_env.env.base.env_info import robot_handles, object_handles, obstacle_handles
 
 default_config = {
     # Common to all envs
