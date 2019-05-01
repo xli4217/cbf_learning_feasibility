@@ -55,20 +55,21 @@ class ExperimentConfig(object):
                     'type':DMP,
                     'config': {
                         # initial goal
-                        'initial_goal': [0.43, -1.85, 0.9, 0, 0, 0 ,1],
+                        'initial_goal': [0.425, -1.85, 0.89, 0, 0, 0 ,1],
                         # gain on attractor term y dynamics (linear)
-                        'ay': 50,
+                        'ay': 35,
                         # gain on attractor term y dynamics (linear)
                         'by': None,
                         # gain on attractor term y dynamics (angular)
-                        'az': 50,
+                        'az': 35,
                         # gain on attractor term y dynamics (angular)
                         'bz': None,
                         # timestep
-                        'dt': 0.02,
+                        'dt': 0.01,
                         # time scaling, increase tau to make the system execute faster
                         'tau': 1.0,
-                        'use_canonical': False,
+                        'translation_front_term': True,
+                        'rotation_front_term': False,
                         # for canonical
                         'apx': 1.,
                         'gamma': 0.3,
@@ -78,6 +79,7 @@ class ExperimentConfig(object):
                         # for integrating goal
                         'ag': 3.0,
                         'ago': 3.0,
+                        'use_dmp_pose': True,
                         'n_linear_dmp': 3,
                         'n_angular_dmp': 3
                     }
@@ -117,8 +119,12 @@ class ExperimentConfig(object):
         def get_reward(state=None, action=None, next_state=None, all_info=None):
             button_joint_angle = all_info['button_joint_angle']
             button_rel_pose = all_info['button_rel_pose']
+            button_vel = all_info['button_vel']
             
-            return 0
+            r = 0.4 - button_joint_angle - np.linalg.norm(button_vel[:3])
+            
+            return r
+            
         
         #### Done ####
         def is_done(state=None, action=None, next_state=None, all_info=None):
@@ -127,35 +133,33 @@ class ExperimentConfig(object):
             low = np.array([motion_range['x'][0], motion_range['y'][0], motion_range['z'][0]])
             high = np.array([motion_range['x'][1], motion_range['y'][1], motion_range['z'][1]])
             target_pos = state[:3]
-            
+
             ## done if move outside of motion region
-            if all(target_pos < low) or all(target_pos > high):
+            if any(target_pos < low) or any(target_pos > high):
                 print("done: moved outside of motion region")
                 done = True
 
             ## done if reached goal
             goal_dist = np.linalg.norm(target_pos - all_info['goal'][:3])
-            if goal_dist < 0.015:
+            if goal_dist < 0.01:
                 print("done: reached goal")
                 done = True
 
             ## done if hit button 
-            button_pose = all_info['button_rel_pose']
-            nominal_button_pos = np.array([1.00565851e-01,  2.49999285e-01,  1.08863473e-01])
+            # button_pose = all_info['button_rel_pose']
+            # nominal_button_pos = np.array([1.00565851e-01,  2.49999285e-01,  1.08863473e-01])
 
-            button_pos_disturbance = np.linalg.norm(button_pose[:3] - nominal_button_pos)
-            if button_pos_disturbance > 0.005:
-                print('done: button pushed away from nominal')
-                done = True
-                
-            print(button_pose)
-            
+            # button_pos_disturbance = np.linalg.norm(button_pose[:3] - nominal_button_pos)
+            # if button_pos_disturbance > 0.005:
+            #     print('done: button pushed away from nominal')
+            #     done = True
+
             return done
             
         state_space = {'type': 'float', 'shape': (8, ), 'upper_bound': [], 'lower_bound': []}
 
-        action_coeff = 2.
-        action_space = {'type': 'float', 'shape': (6, ), "upper_bound": np.array([1, 1, 1, 0.01, 0.01, 0.01]) * action_coeff, "lower_bound": np.array([1, 1, 1, 0.01, 0.01, 0.01]) * action_coeff}
+        action_coeff = 100
+        action_space = {'type': 'float', 'shape': (6, ), "upper_bound": np.array([1, 1, 1, 0.01, 0.01, 0.01]) * action_coeff, "lower_bound": -np.array([1, 1, 1, 0.01, 0.01, 0.01]) * action_coeff}
 
 
         #### Reset ####

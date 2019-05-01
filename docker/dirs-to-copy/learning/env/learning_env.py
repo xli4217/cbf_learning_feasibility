@@ -76,8 +76,9 @@ class LearningEnv(object):
         low = [self.sample_range['x'][0], self.sample_range['y'][0], self.sample_range['z'][0]]
         high = [self.sample_range['x'][1], self.sample_range['y'][1], self.sample_range['z'][1]]
         self.target_pos = np.random.uniform(low, high, 3)
-        
+
         self.base_env.set_target_pose(np.concatenate([self.target_pos, np.array([0,0,0,1])]))
+        self.wp_gen.reset(np.concatenate([self.target_pos, np.array([0,0,0,1])]), np.zeros(6))
         
         self.base_env.synchronous_trigger()
         
@@ -113,7 +114,6 @@ class LearningEnv(object):
             return False
 
     def update_all_info(self):
-        self.base_env.synchronous_trigger()
         target_pos, target_quat = self.base_env.get_target_pose()
 
         rc = 1
@@ -121,25 +121,32 @@ class LearningEnv(object):
             rc, button_rel_pos = vrep.simxGetObjectPosition(self.base_env.clientID,
                                                             self.base_env.object_handles['toaster_button_joint'],
                                                             self.base_env.object_handles['hotdog_cooker'],
-                                                            vrep.simx_opmode_oneshot)
+                                                            vrep.simx_opmode_streaming)
 
             rc, button_rel_angle = vrep.simxGetObjectOrientation(self.base_env.clientID,
                                                                  self.base_env.object_handles['toaster_button_joint'],
                                                                  self.base_env.object_handles['hotdog_cooker'],
-                                                                 vrep.simx_opmode_oneshot)
+                                                                 vrep.simx_opmode_streaming)
 
             button_rel_pose = np.concatenate([np.array(button_rel_pos), np.array(button_rel_angle)])
             
             rc, button_joint_angle = vrep.simxGetJointPosition(self.base_env.clientID,
                                                                self.base_env.object_handles['toaster_button_joint'],
-                                                               vrep.simx_opmode_oneshot)
+                                                               vrep.simx_opmode_streaming)
 
+            rc, button_linear_vel, button_angular_vel = vrep.simxGetObjectVelocity(self.base_env.clientID,
+                                                                                   self.base_env.object_handles['toaster_button'],
+                                                                                   vrep.simx_opmode_streaming)
+
+        button_vel = np.concatenate([np.array(button_linear_vel), np.array(button_angular_vel)])
+            
         self.all_info = {
             'goal': self.goal,
             'target_pos': target_pos,
             'target_quat': target_quat,
             'button_rel_pose': button_rel_pose,
             'button_joint_angle': button_joint_angle,
+            'button_vel': button_vel,
             'sample_range': self.sample_range,
             'motion_range': self.motion_range
         }
@@ -150,6 +157,10 @@ class LearningEnv(object):
         '''
         action = np.array(action).flatten()
         assert action.size == self.action_space['shape'][0]
+
+        action *= 100
+        # clip action
+        action = np.clip(action, self.action_space['lower_bound'], self.action_space['upper_bound'])
 
         curr_pos, curr_quat = self.base_env.get_target_pose()
         curr_linear_vel, curr_angular_vel = self.base_env.get_target_velocity()

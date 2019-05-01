@@ -122,7 +122,6 @@ class CookingEnv(VrepEnvBase):
         else:
             raise ValueError('unsupported region')
         
-            
         _, pos = vrep.simxGetObjectPosition(self.clientID, handle, -1, vrep.simx_opmode_blocking)
 
         _, bb_min_x = vrep.simxGetObjectFloatParameter(self.clientID, handle, 15, vrep.simx_opmode_blocking)
@@ -218,19 +217,19 @@ class CookingEnv(VrepEnvBase):
         else:
             handle = self.target_handle
 
-        rc, target_pos = vrep.simxGetObjectPosition(self.clientID, handle, -1, vrep.simx_opmode_oneshot)
-        rc, target_quat = vrep.simxGetObjectQuaternion(self.clientID, handle, -1, vrep.simx_opmode_oneshot)
-
-        while np.linalg.norm(target_pos) < 0.001:
-            rc, target_pos = vrep.simxGetObjectPosition(self.clientID, handle, -1, vrep.simx_opmode_oneshot)
-            rc, target_quat = vrep.simxGetObjectQuaternion(self.clientID, handle, -1, vrep.simx_opmode_oneshot)
-
+        rc = 1
+        while rc != 0:    
+            rc, target_pos = vrep.simxGetObjectPosition(self.clientID, handle, -1, vrep.simx_opmode_streaming)
+            rc, target_quat = vrep.simxGetObjectQuaternion(self.clientID, handle, -1, vrep.simx_opmode_streaming)
+            
         return np.array(target_pos), np.array(target_quat)
 
     def get_obstacle_info(self):
         obs_info = []
         for obs in self.obstacle_handles:
-            _, pos = vrep.simxGetObjectPosition(self.clientID, obs['handle'], -1, vrep.simx_opmode_blocking)
+            rc = 1
+            while rc != 0:
+                rc, pos = vrep.simxGetObjectPosition(self.clientID, obs['handle'], -1, vrep.simx_opmode_streaming)
             obs_info.append({'name': obs['name'], 'position': pos, 'radius': 0.175})
 
         return obs_info
@@ -238,8 +237,10 @@ class CookingEnv(VrepEnvBase):
     def get_goal_pose(self):
         handle = self.goal_handle
 
-        _, goal_pos = vrep.simxGetObjectPosition(self.clientID, handle, -1, vrep.simx_opmode_blocking)
-        _, goal_quat = vrep.simxGetObjectQuaternion(self.clientID, handle, -1, vrep.simx_opmode_blocking)
+        rc = 1
+        while rc != 0:
+            rc, goal_pos = vrep.simxGetObjectPosition(self.clientID, handle, -1, vrep.simx_opmode_streaming)
+            rc, goal_quat = vrep.simxGetObjectQuaternion(self.clientID, handle, -1, vrep.simx_opmode_streaming)
     
             
         return np.array(goal_pos), np.array(goal_quat)
@@ -251,8 +252,11 @@ class CookingEnv(VrepEnvBase):
         else:
             handle = self.target_handle
 
-        return_code, linear_vel, angular_vel = vrep.simxGetObjectVelocity(self.clientID, handle, vrep.simx_opmode_blocking)
+        rc = 1
+        while rc != 0:    
+            rc, linear_vel, angular_vel = vrep.simxGetObjectVelocity(self.clientID, handle, vrep.simx_opmode_streaming)
 
+        
         return np.array(linear_vel), np.array(angular_vel)
         
         
@@ -293,13 +297,15 @@ class CookingEnv(VrepEnvBase):
             return_code, iteration2 = vrep.simxGetIntegerSignal(self.clientID, 'iteration', vrep.simx_opmode_buffer)
             if return_code != vrep.simx_return_ok:
                 iteration2 = -1
-                
+        
 
     def get_joint_angles(self):
         #### retrive joint angles ####
         joint_positions = []
         for joint_handle in self.joint_handles:
-            return_code, joint_position = vrep.simxGetJointPosition(self.clientID, joint_handle, vrep.simx_opmode_streaming)
+            rc = 1
+            while rc != 0:
+                rc, joint_position = vrep.simxGetJointPosition(self.clientID, joint_handle, vrep.simx_opmode_streaming)
             joint_positions.append(joint_position)
         return np.array(joint_positions)
      
@@ -308,8 +314,10 @@ class CookingEnv(VrepEnvBase):
         if self.object_handles is not None:
             object_pose = {}
             for obj_name, obj_handle in viewitems(self.object_handles):
-                return_code, object_position = vrep.simxGetObjectPosition(self.clientID, obj_handle, -1, vrep.simx_opmode_streaming)
-                return_code, object_quat = vrep.simxGetObjectQuaternion(self.clientID, obj_handle, -1, vrep.simx_opmode_streaming)
+                rc = 1
+                while rc != 0:
+                    rc, object_position = vrep.simxGetObjectPosition(self.clientID, obj_handle, -1, vrep.simx_opmode_streaming)
+                    rc, object_quat = vrep.simxGetObjectQuaternion(self.clientID, obj_handle, -1, vrep.simx_opmode_streaming)
                 object_pose[obj_name] = np.array(object_position + object_quat)
 
             return object_pose
