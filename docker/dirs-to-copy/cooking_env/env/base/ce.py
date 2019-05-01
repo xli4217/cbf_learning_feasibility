@@ -170,7 +170,7 @@ class CookingEnv(VrepEnvBase):
             handle = self.particle_handle
         else:
             handle = self.target_handle
-
+            
         pos = pt[:3]
         quat = pt[3:]    
         vrep.simxSetObjectPosition(self.clientID, handle, -1, pos, vrep.simx_opmode_oneshot)
@@ -210,7 +210,7 @@ class CookingEnv(VrepEnvBase):
       
         vrep.simxSetObjectOrientation(self.clientID, handle, -1, rpy, vrep.simx_opmode_oneshot)
         self.synchronous_trigger()
-
+        
     def get_target_pose(self):
         if self.CookingEnv_config.get('particle_test'):
             handle = self.particle_handle
@@ -218,10 +218,11 @@ class CookingEnv(VrepEnvBase):
             handle = self.target_handle
 
         rc = 1
-        while rc != 0:    
-            rc, target_pos = vrep.simxGetObjectPosition(self.clientID, handle, -1, vrep.simx_opmode_streaming)
-            rc, target_quat = vrep.simxGetObjectQuaternion(self.clientID, handle, -1, vrep.simx_opmode_streaming)
-            
+        target_pos = np.zeros(3)
+        while rc != 0 and np.linalg.norm(target_pos) < 0.001:    
+            rc, target_pos = vrep.simxGetObjectPosition(self.clientID, handle, -1, vrep.simx_opmode_blocking)
+            rc, target_quat = vrep.simxGetObjectQuaternion(self.clientID, handle, -1, vrep.simx_opmode_blocking)
+
         return np.array(target_pos), np.array(target_quat)
 
     def get_obstacle_info(self):
@@ -236,13 +237,12 @@ class CookingEnv(VrepEnvBase):
             
     def get_goal_pose(self):
         handle = self.goal_handle
-
         rc = 1
-        while rc != 0:
-            rc, goal_pos = vrep.simxGetObjectPosition(self.clientID, handle, -1, vrep.simx_opmode_streaming)
-            rc, goal_quat = vrep.simxGetObjectQuaternion(self.clientID, handle, -1, vrep.simx_opmode_streaming)
-    
-            
+        goal_pos = np.zeros(3)
+        while rc != 0 and np.linalg.norm(goal_pos) < 0.001:
+            rc, goal_pos = vrep.simxGetObjectPosition(self.clientID, handle, -1, vrep.simx_opmode_blocking)
+            rc, goal_quat = vrep.simxGetObjectQuaternion(self.clientID, handle, -1, vrep.simx_opmode_blocking)
+        
         return np.array(goal_pos), np.array(goal_quat)
 
         

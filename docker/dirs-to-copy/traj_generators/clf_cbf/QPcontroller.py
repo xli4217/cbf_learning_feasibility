@@ -52,9 +52,9 @@ class QPcontroller:
     def generate_control(self,x_current, obs_info={}):
         if self.QPcontroller_config['use_own_pose']:
             if self.own_pose is None:
-                self.own_pose = x_current
+                self.own_pose = np.array(x_current)
             else:
-                x_current = self.own_pose
+                x_current = np.array(self.own_pose)
         
         num_of_obstacles = len(obs_info) #For later use when more obstacles are involved
 
@@ -115,6 +115,6 @@ class QPcontroller:
         target_pose = x_current + target_vel * self.dt
 
         if self.QPcontroller_config['use_own_pose']:
-            self.own_pose = target_pose
+            self.own_pose = np.array(target_pose)
         
         return np.zeros(3), target_vel, target_pose

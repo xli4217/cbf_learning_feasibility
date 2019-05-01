@@ -61,9 +61,9 @@ class TestEnv(object):
         curr_vel = np.concatenate([curr_linear_vel, curr_angular_vel])
 
         obs_info = self.base_env.get_obstacle_info()
-        
-        ddy, dy, y = self.wp_gen.get_next_wp(action, curr_pose[:3], curr_vel, obs_info)
-        
+
+        ddy, dy, y = self.wp_gen.get_next_wp(action, curr_pose[:3], curr_vel, obs_info=obs_info)
+
         if len(y) < 7:
             y = np.concatenate([y, np.array([0,0,0,1])])
 
@@ -80,9 +80,9 @@ if __name__ == "__main__":
             'k_cbf': 1,
             'epsilon':0.8,
             'num_states':3,
-            'action_space': {'shape': (6, ), 'upper_bound': 0.1 * np.zeros(6), 'lower_bound': -0.1 * np.zeros(6)},
+            'action_space': {'shape': (6, ), 'upper_bound': 0.1 * np.ones(6), 'lower_bound': -0.1 * np.ones(6)},
             'use_own_pose': False,
-            'dt': 0.2
+            'dt': 0.02
         }
     }
     
@@ -92,7 +92,8 @@ if __name__ == "__main__":
     
     cls = TestEnv(config=config)
     goal_pos, goal_quat = cls.base_env.get_goal_pose()
-    goal = np.concatenate([goal_pos, goal_quat])
+    goal = np.concatenate([goal_pos, goal_quat])    
+    
     cls.set_goal_pos(goal)
     
     for i in range(1000):
