@@ -110,9 +110,9 @@ class ExperimentConfig(object):
 
         #### State ####
         def get_state(all_info):
-            mdp_state = np.array(list(all_info['target_pos']) + \
-                                 list(all_info['target_quat']) + \
-                                 [all_info['button_rel_pose'][4]])
+            # mdp_state = np.array(list(all_info['target_pos']) + \
+            #                      list(all_info['target_quat']))
+            mdp_state = np.array(all_info['target_pos'])
             return mdp_state
 
         #### Reward ####
@@ -122,6 +122,7 @@ class ExperimentConfig(object):
             button_vel = all_info['button_vel']
             
             r = -0.4 - button_joint_angle - np.linalg.norm(button_vel[:3])
+
             return r
             
         
@@ -155,10 +156,10 @@ class ExperimentConfig(object):
 
             return done
             
-        state_space = {'type': 'float', 'shape': (8, ), 'upper_bound': [], 'lower_bound': []}
+        state_space = {'type': 'float', 'shape': (3, ), 'upper_bound': [], 'lower_bound': []}
 
         action_coeff = 100
-        action_space = {'type': 'float', 'shape': (6, ), "upper_bound": np.array([1, 1, 1, 0.01, 0.01, 0.01]) * action_coeff, "lower_bound": -np.array([1, 1, 1, 0.01, 0.01, 0.01]) * action_coeff}
+        action_space = {'type': 'float', 'shape': (3, ), "upper_bound": np.ones(3) * action_coeff, "lower_bound": -np.ones(3) * action_coeff}
 
 
         #### Reset ####
