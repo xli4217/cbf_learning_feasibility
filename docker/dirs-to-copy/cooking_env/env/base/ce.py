@@ -220,8 +220,8 @@ class CookingEnv(VrepEnvBase):
         rc = 1
         target_pos = np.zeros(3)
         while rc != 0 and np.linalg.norm(target_pos) < 0.001:    
-            rc, target_pos = vrep.simxGetObjectPosition(self.clientID, handle, -1, vrep.simx_opmode_blocking)
-            rc, target_quat = vrep.simxGetObjectQuaternion(self.clientID, handle, -1, vrep.simx_opmode_blocking)
+            rc, target_pos = vrep.simxGetObjectPosition(self.clientID, handle, -1, vrep.simx_opmode_streaming)
+            rc, target_quat = vrep.simxGetObjectQuaternion(self.clientID, handle, -1, vrep.simx_opmode_streaming)
 
         return np.array(target_pos), np.array(target_quat)
 
@@ -240,8 +240,8 @@ class CookingEnv(VrepEnvBase):
         rc = 1
         goal_pos = np.zeros(3)
         while rc != 0 and np.linalg.norm(goal_pos) < 0.001:
-            rc, goal_pos = vrep.simxGetObjectPosition(self.clientID, handle, -1, vrep.simx_opmode_blocking)
-            rc, goal_quat = vrep.simxGetObjectQuaternion(self.clientID, handle, -1, vrep.simx_opmode_blocking)
+            rc, goal_pos = vrep.simxGetObjectPosition(self.clientID, handle, -1, vrep.simx_opmode_streaming)
+            rc, goal_quat = vrep.simxGetObjectQuaternion(self.clientID, handle, -1, vrep.simx_opmode_streaming)
         
         return np.array(goal_pos), np.array(goal_quat)
 

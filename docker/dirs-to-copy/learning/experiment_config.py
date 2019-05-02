@@ -146,13 +146,11 @@ class ExperimentConfig(object):
                 done = True
 
             ## done if hit button 
-            # button_pose = all_info['button_rel_pose']
-            # nominal_button_pos = np.array([1.00565851e-01,  2.49999285e-01,  1.08863473e-01])
-
-            # button_pos_disturbance = np.linalg.norm(button_pose[:3] - nominal_button_pos)
-            # if button_pos_disturbance > 0.005:
-            #     print('done: button pushed away from nominal')
-            #     done = True
+            button_vel = all_info['button_vel']
+            button_disturbance =  np.linalg.norm(np.concatenate([button_vel[:4], np.array([button_vel[-1]])]))
+            if button_disturbance > 0.001:
+                print('done: button pushed away from nominal')
+                done = True
 
             return done
             

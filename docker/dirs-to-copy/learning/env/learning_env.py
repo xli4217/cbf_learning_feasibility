@@ -145,7 +145,7 @@ class LearningEnv(object):
                                                                                    vrep.simx_opmode_streaming)
 
         button_vel = np.concatenate([np.array(button_linear_vel), np.array(button_angular_vel)])
-            
+        
         self.all_info = {
             'goal': self.goal,
             'target_pos': target_pos,
@@ -273,14 +273,13 @@ if __name__ == "__main__":
     }
     policy = PytorchMlp(policy_config)
 
-    cls.reset()
-    for i in range(1000):
+    # cls.reset()
+    while True:
         # s = cls.get_state()
         # a = policy.get_action(s)
         # cls.step(a*10)
         # if cls.is_done(state=s):
         #     cls.reset()
-        cls.reset()
         cls.update_all_info()
-        time.sleep(0.5)
+        cls.base_env.synchronous_trigger()
         
