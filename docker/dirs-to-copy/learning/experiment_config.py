@@ -120,8 +120,9 @@ class ExperimentConfig(object):
             button_joint_angle = all_info['button_joint_angle']
             button_rel_pose = all_info['button_rel_pose']
             button_vel = all_info['button_vel']
+            toaster_joint_frame_angle = all_info['button_joint_frame_angle']
             
-            r = -0.4 - button_joint_angle - np.linalg.norm(button_vel[:3])
+            r = toaster_joint_frame_angle[2] - 0.7 - np.linalg.norm(button_vel[:3])
 
             return r
             
@@ -152,6 +153,12 @@ class ExperimentConfig(object):
                 print('done: button pushed away from nominal')
                 done = True
 
+            ## done if finished task
+            toaster_joint_frame_angle = all_info['button_joint_frame_angle'][2]
+            if toaster_joint_frame_angle > 0.7:
+                print('done: turn on task done')
+                done = True
+                
             return done
             
         state_space = {'type': 'float', 'shape': (3, ), 'upper_bound': [], 'lower_bound': []}

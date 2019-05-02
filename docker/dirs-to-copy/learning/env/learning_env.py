@@ -140,6 +140,13 @@ class LearningEnv(object):
                                                                self.base_env.object_handles['toaster_button_joint'],
                                                                vrep.simx_opmode_streaming)
 
+
+            rc, button_joint_frame_angle = vrep.simxGetObjectOrientation(self.base_env.clientID,
+                                                                         self.base_env.object_handles['toaster_button'],
+                                                                         self.base_env.object_handles['hotdog_cooker'],
+                                                                         vrep.simx_opmode_streaming)
+
+                   
             rc, button_linear_vel, button_angular_vel = vrep.simxGetObjectVelocity(self.base_env.clientID,
                                                                                    self.base_env.object_handles['toaster_button'],
                                                                                    vrep.simx_opmode_streaming)
@@ -152,6 +159,7 @@ class LearningEnv(object):
             'target_quat': target_quat,
             'button_rel_pose': button_rel_pose,
             'button_joint_angle': button_joint_angle,
+            'button_joint_frame_angle': button_joint_frame_angle,
             'button_vel': button_vel,
             'sample_range': self.sample_range,
             'motion_range': self.motion_range
