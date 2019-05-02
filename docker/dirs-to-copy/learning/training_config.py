@@ -513,15 +513,15 @@ default_args = {
             "nb_steps": 100,
             "params_dict":{
                 #### Common ####
-                'lr': {"type": "float", "range": [1e-5, 1e-3], "prior": "log-uniform", "transform": "identity"},                                                                                                                        
-                "batch_size": {"type": "integer", "range": [32, 128], "prior": "uniform", "transform": "identity"},                                                                                                                         
+                'lr': {"type": "float", "range": [1e-5, 5e-3], "prior": "log-uniform", "transform": "identity"},                                                                                                                        
+                "batch_size": {"type": "integer", "range": [64, 256], "prior": "uniform", "transform": "identity"},                                                                                                                         
                 "nb_optimization_steps_per_itr": {"type": "integer", "range": [10, 50], "prior": "uniform", "transform": "identity"},                                                                                                                     
                 
                 'soft_target_update': {"type": "float", "range": [0.001, 0.005], "prior": "uniform", "transform": "identity"},
                 # 'per_alpha': {"type": "float", "range": [0., 0.6], "prior": "uniform", "transform": "identity"},
                 #### PPO agent ####
-                'policy_lr': {"type": "float", "range": [1e-5, 1e-3], "prior": "log-uniform", "transform": "identity"},                                                                                                                 
-                "minibatch_size": {"type": "integer", "range": [32, 128], "prior": "uniform", "transform": "identity"},                                                                                                 
+                'policy_lr': {"type": "float", "range": [1e-3, 5e-2], "prior": "log-uniform", "transform": "identity"},                                                                                                                 
+                "minibatch_size": {"type": "integer", "range": [64, 256], "prior": "uniform", "transform": "identity"},                                                                                                 
 
                 "nb_training_epoches": {"type": "integer", "range": [5, 10], "prior": "uniform", "transform": "identity"},                                                                                                                     
                 'value_loss_coef': {"type": "float", "range": [0.01, 0.1], "prior": "uniform", "transform": "identity"},                                                                                                                       
