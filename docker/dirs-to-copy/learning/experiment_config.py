@@ -121,9 +121,9 @@ class ExperimentConfig(object):
             button_rel_pose = all_info['button_rel_pose']
             button_vel = all_info['button_vel']
             toaster_joint_frame_angle = all_info['button_joint_frame_angle']
-            
-            r = toaster_joint_frame_angle[2] - 0.7 # - np.linalg.norm(button_vel[:3])
 
+            r = toaster_joint_frame_angle[2] # - np.linalg.norm(button_vel[:3])
+            
             return r
             
         
@@ -147,15 +147,15 @@ class ExperimentConfig(object):
                 done = True
 
             ## done if hit button 
-            # button_vel = all_info['button_vel']
-            # button_disturbance =  np.linalg.norm(np.concatenate([button_vel[:4], np.array([button_vel[-1]])]))
-            # if button_disturbance > 0.1:
-            #     print('done: button pushed away from nominal')
-            #     done = True
+            button_vel = all_info['button_vel']
+            button_disturbance =  np.linalg.norm(np.concatenate([button_vel[:4], np.array([button_vel[-1]])]))
+            if button_disturbance > 0.1:
+                print('done: button pushed away from nominal')
+                done = True
 
             ## done if finished task
             toaster_joint_frame_angle = all_info['button_joint_frame_angle'][2]
-            if toaster_joint_frame_angle > 0.7:
+            if toaster_joint_frame_angle > 0.4:
                 print('done: turn on task done')
                 done = True
                 
@@ -163,7 +163,7 @@ class ExperimentConfig(object):
             
         state_space = {'type': 'float', 'shape': (3, ), 'upper_bound': [], 'lower_bound': []}
 
-        action_coeff = 100
+        action_coeff = 70
         action_space = {'type': 'float', 'shape': (3, ), "upper_bound": np.ones(3) * action_coeff, "lower_bound": -np.ones(3) * action_coeff}
 
 

@@ -6,3 +6,10 @@
 
 - Hyperparam tuning cmd
   - python ${LEARNING_PATH}learning/experiments.py --max_episode_timesteps 50 --rollout_batch_size 20 --mode hyperparam_tuning
+
+
+- TODO
+  - rlfs-ppo, learning_env dimension assertion
+  - learning_env, traj_gen information output
+  - initialize final layer of policy small
+  - standardize observations, rescale / clip reward, standardize predication target, clip gradients

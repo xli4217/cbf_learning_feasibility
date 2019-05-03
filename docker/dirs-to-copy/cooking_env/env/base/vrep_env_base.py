@@ -39,10 +39,9 @@ class VrepEnvBase(object):
             else:
                 print ('Remote API function call returned with error code: ', res)
             print("connected through port number: {}".format(port_num))
-                
+    
             # used to connect multiple clients in synchronous mode http://www.coppeliarobotics.com/helpFiles/en/remoteApiModusOperandi.htm
             return_code, iteration = vrep.simxGetIntegerSignal(self.clientID, "iteration", vrep.simx_opmode_streaming)
-     
             time.sleep(2)
 
 

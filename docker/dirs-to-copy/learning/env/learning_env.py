@@ -85,7 +85,7 @@ class LearningEnv(object):
         #                                0,
         #                                vrep.simx_opmode_oneshot_wait)
 
-        
+        self.update_all_info()
         self.base_env.synchronous_trigger()
         
     def get_info(self):

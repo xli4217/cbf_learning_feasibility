@@ -27,7 +27,7 @@ class CookingEnv(VrepEnvBase):
     def __init__(self, config={}, port_num=19997, suffix="", reset=None, seed=None, logger=None):
 
         super(CookingEnv, self).__init__(config, port_num)
-
+        
         self.CookingEnv_config = Configuration(default_config)
         self.CookingEnv_config.update(config)
 
