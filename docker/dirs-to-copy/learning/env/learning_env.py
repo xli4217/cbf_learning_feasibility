@@ -213,6 +213,9 @@ class LearningEnv(object):
     def teleop(self, cmd):
         pass
 
+    def close(self):
+        pass
+        
 if __name__ == "__main__":
     # from cooking_env.env.QP_waypoints.QPcontroller import QPcontroller
     from traj_generators.dmp.dmp import DMP
