@@ -80,10 +80,10 @@ class LearningEnv(object):
         self.base_env.set_target_pose(np.concatenate([self.target_pos, np.array([0,0,0,1])]))
         self.wp_gen.reset(np.concatenate([self.target_pos, np.array([0,0,0,1])]), np.zeros(6))
 
-        rc = vrep.simxSetJointPosition(self.base_env.clientID,
-                                       self.base_env.object_handles['toaster_button_joint'],
-                                       0,
-                                       vrep.simx_opmode_oneshot_wait)
+        # rc = vrep.simxSetJointPosition(self.base_env.clientID,
+        #                                self.base_env.object_handles['toaster_button_joint'],
+        #                                0,
+        #                                vrep.simx_opmode_oneshot_wait)
 
         
         self.base_env.synchronous_trigger()

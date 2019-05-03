@@ -65,7 +65,7 @@ class ExperimentConfig(object):
                         # gain on attractor term y dynamics (angular)
                         'bz': None,
                         # timestep
-                        'dt': 0.01,
+                        'dt': 0.005,
                         # time scaling, increase tau to make the system execute faster
                         'tau': 1.0,
                         'translation_front_term': True,
@@ -122,7 +122,7 @@ class ExperimentConfig(object):
             button_vel = all_info['button_vel']
             toaster_joint_frame_angle = all_info['button_joint_frame_angle']
             
-            r = toaster_joint_frame_angle[2] - 0.7 - np.linalg.norm(button_vel[:3])
+            r = toaster_joint_frame_angle[2] - 0.7 # - np.linalg.norm(button_vel[:3])
 
             return r
             
@@ -147,11 +147,11 @@ class ExperimentConfig(object):
                 done = True
 
             ## done if hit button 
-            button_vel = all_info['button_vel']
-            button_disturbance =  np.linalg.norm(np.concatenate([button_vel[:4], np.array([button_vel[-1]])]))
-            if button_disturbance > 0.001:
-                print('done: button pushed away from nominal')
-                done = True
+            # button_vel = all_info['button_vel']
+            # button_disturbance =  np.linalg.norm(np.concatenate([button_vel[:4], np.array([button_vel[-1]])]))
+            # if button_disturbance > 0.1:
+            #     print('done: button pushed away from nominal')
+            #     done = True
 
             ## done if finished task
             toaster_joint_frame_angle = all_info['button_joint_frame_angle'][2]

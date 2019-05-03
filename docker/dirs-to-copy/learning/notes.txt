@@ -4,5 +4,5 @@
 - Training cmd
   - python ${LEARNING_PATH}learning/experiments.py --max_episode_timesteps 50 --minibatch_size 128 --lr 0.001 --nb_training_epoches 5
 
-- Deploy cmd
+- Hyperparam tuning cmd
   - python ${LEARNING_PATH}learning/experiments.py --max_episode_timesteps 50 --rollout_batch_size 20 --mode hyperparam_tuning
