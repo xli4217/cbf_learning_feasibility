@@ -14,6 +14,7 @@ from rl_pipeline.hyperparameter_tuner.random_search import RandomSearch
 from rl_pipeline.hyperparameter_tuner.skopt_tuner import SkoptTuner
 from rl_pipeline.algo_devel.agent_library import AgentLibrary
 from rl_pipeline.logging.tensorboardX_logger import TensorboardXLogger
+from rl_pipeline.preprocessor.running_average import RunningAverage
 
 
 ###################################
@@ -187,7 +188,7 @@ def construct_rl_base_runner_config(restore_runner_dir=None,
             }
         },
         "Preprocessors":{
-            "state_preprocessor": {"type": None, 'config':{"dim": None, "shift": True, "scale": True}},
+            "state_preprocessor": {"type": RunningAverage, 'config':{"dim": None, "shift": True, "scale": True}},
             "reward_preprocessor": {"type": None, 'config':{"dim": 1, "shift": False, "scale": True}}
         },
         'Exploration':Exploration,

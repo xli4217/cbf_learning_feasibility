@@ -1,5 +1,5 @@
 - Test env cmd
-  - python ${LEARNING_PATH}learning/env/learning_env.py
+  - python ${LEARNING_PATH}learning/experiments.py --max_episode_timesteps 10 --rollout_batch_size 2  
 
 - Training cmd
   - python ${LEARNING_PATH}learning/experiments.py --max_episode_timesteps 50 --minibatch_size 128 --lr 0.001 --nb_training_epoches 5
@@ -9,7 +9,4 @@
 
 
 - TODO
-  - rlfs-ppo, learning_env dimension assertion
-  - learning_env, traj_gen information output
-  - initialize final layer of policy small
-  - standardize observations, rescale / clip reward, standardize predication target, clip gradients
+  - Deploy code
