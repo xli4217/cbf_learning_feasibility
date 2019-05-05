@@ -48,6 +48,7 @@ def construct_rl_base_runner_config(restore_runner_dir=None,
                                     gamma=0.98,
                                     no_update_until=5000,
                                     save_replay_buffer=False,
+                                    log_components={},
                                     # -- ddpg configs
                                     batch_size=32,
                                     target_q_update_interval=10,
@@ -69,6 +70,9 @@ def construct_rl_base_runner_config(restore_runner_dir=None,
                                     max_episode_timesteps=100,
                                     log_episode=False,
                                     log_batch=False,
+                                    use_preprocessors=False,
+                                    update_preprocessors=False,
+                                    save_preprocessors=False,
                                     # construction config
                                     cmd_log=""):
 
@@ -108,18 +112,7 @@ def construct_rl_base_runner_config(restore_runner_dir=None,
         'target_q_update_interval': target_q_update_interval,
         'no_update_until': no_update_until,
         'save_replay_buffer': save_replay_buffer,
-        'log_components':{
-            'state_dist': False,
-            'action_dist': False,
-            'reward_dist': False,
-            'done_dist': False,
-            'adv_dist': False,
-            'policy_gradient_dist': False,
-            'value_gradient_dist':False,
-            'policy_weights': False,
-            'value_weights': False,
-            'other_dist': False
-        }
+        'log_components':log_components
     }
        
     #### Agent ####
@@ -201,8 +194,9 @@ def construct_rl_base_runner_config(restore_runner_dir=None,
                 'rollout_batch_size': rollout_batch_size, # in units of episodes (if ray is used, this is for each agent)
                 "max_episode_timesteps": max_episode_timesteps,  
                 "init_batch_size": 0, # run a few episode of untrained policy to initialize scaler
-                'update_preprocessors': False, # this might be false if multiple runners are used to collect sample, their preprocessors might need to be updated with all experiences
-                'save_preprocessors': False,
+                'use_preprocessors': use_preprocessors,
+                'update_preprocessors': update_preprocessors, # this might be false if multiple runners are used to collect sample, their preprocessors might need to be updated with all experiences
+                'save_preprocessors': save_preprocessors,
                 'log_info_keys': [],
                 'process_rewards': process_rewards,
                 'log_episode': log_episode,
@@ -254,6 +248,7 @@ def construct_rl_experiment_config(experiment_root_dir="",
                                    gamma=0.98,
                                    no_update_until=5000,
                                    save_replay_buffer=False,
+                                   log_components={},
                                    # -- ddpg config
                                    batch_size=32,
                                    soft_target_update=0.005,
@@ -274,6 +269,9 @@ def construct_rl_experiment_config(experiment_root_dir="",
                                    max_episode_timesteps=100,
                                    log_episode=False,
                                    log_batch=False,
+                                   use_preprocessors=False,
+                                   update_preprocessors=False,
+                                   save_preprocessors=False,
                                    cmd_log=""):
 
     if agent == 'sac':
@@ -326,6 +324,7 @@ def construct_rl_experiment_config(experiment_root_dir="",
                                                               gamma=gamma,
                                                               no_update_until=no_update_until,
                                                               save_replay_buffer=save_replay_buffer,
+                                                              log_components=log_components,
                                                               # -- ddpg config
                                                               target_q_update_interval=target_q_update_interval,
                                                               soft_target_update=soft_target_update,
@@ -340,7 +339,11 @@ def construct_rl_experiment_config(experiment_root_dir="",
                                                               lam=lam,
                                                               # sampler config
                                                               rollout_batch_size=rollout_batch_size,
-                                                              max_episode_timesteps=max_episode_timesteps,                                                             # replay buffer config
+                                                              max_episode_timesteps=max_episode_timesteps,
+                                                              use_preprocessors=use_preprocessors,
+                                                              update_preprocessors=update_preprocessors,
+                                                              save_preprocessors=save_preprocessors,
+                                                              # replay buffer config
                                                               log_episode=log_episode,
                                                               log_batch=log_batch,
                                                               per_alpha=per_alpha,
@@ -375,7 +378,7 @@ def construct_rl_experiment_config(experiment_root_dir="",
 #############################
 # construct deployer config #  
 #############################
-def construct_deployer_config(agent='sac',
+def construct_deployer_config(agent='ppo',
                               nb_trial_runs=10,
                               dmp_action=False,
                               clf_action=False,
@@ -397,7 +400,11 @@ def construct_deployer_config(agent='sac',
                               # sampler config
                               max_episode_timesteps=50,
                               log_episode=False,
-                              log_batch=False):
+                              log_batch=False,
+                              use_preprocessors=False,
+                              update_preprocessors=False,
+                              save_preprocessors=False
+):
 
     from rl_pipeline.logging.tensorboardX_logger import TensorboardXLogger
 
@@ -426,6 +433,7 @@ def construct_deployer_config(agent='sac',
         'max_episode_timesteps': max_episode_timesteps,
         'log_episode': log_episode,
         'log_batch': log_batch,
+        'use_preprocessors': use_preprocessors,
         # logger
         'Logger': {
             'type':TensorboardXLogger,
@@ -484,6 +492,18 @@ default_args = {
     'gamma':0.98,
     'no_update_until':5000,
     'save_replay_buffer': False,
+    'log_components':{
+        'state_dist': False,
+        'action_dist': False,
+        'reward_dist': False,
+        'done_dist': False,
+        'adv_dist': False,
+        'policy_gradient_dist': False,
+        'value_gradient_dist':False,
+        'policy_weights': False,
+        'value_weights': False,
+        'other_dist': False
+    },
     # -- ddpg configs
     'target_q_update_interval':1,
     'soft_target_update':0.005,
@@ -499,6 +519,9 @@ default_args = {
     #### sampler config ####
     'rollout_batch_size': 5,
     'max_episode_timesteps':100,
+    'use_preprocessors': False,
+    'update_preprocessors': False,
+    'save_preprocessors': False,
     #### deploy config ####
     'hyperparam_dir': 'seed0',
     'itr': 0,
@@ -575,6 +598,7 @@ def construct_experiment_config(experiment_root_dir=default_args['experiment_roo
                                 no_update_until=default_args['no_update_until'],
                                 nb_optimization_steps_per_itr=default_args['nb_optimization_steps_per_itr'],
                                 save_replay_buffer=default_args['save_replay_buffer'],
+                                log_components=default_args['log_components'],
                                 # -- ddpg configs
                                 target_q_update_interval=default_args['target_q_update_interval'],
                                 soft_target_update=default_args['soft_target_update'],
@@ -592,6 +616,9 @@ def construct_experiment_config(experiment_root_dir=default_args['experiment_roo
                                 max_episode_timesteps=default_args['max_episode_timesteps'],
                                 log_episode=default_args['log_episode'],
                                 log_batch=default_args['log_batch'],
+                                use_preprocessors=default_args['use_preprocessors'],
+                                update_preprocessors=default_args['update_preprocessors'],
+                                save_preprocessors=default_args['save_preprocessors'],
                                 #### replay buffer config ####
                                 per_alpha=default_args['per_alpha'],
                                 per_beta0=default_args['per_beta0'],
@@ -656,6 +683,7 @@ def construct_experiment_config(experiment_root_dir=default_args['experiment_roo
                                                                                gamma=gamma,
                                                                                no_update_until=no_update_until,
                                                                                save_replay_buffer=save_replay_buffer,
+                                                                               log_components=log_components,
                                                                                # -- ddpg configs
                                                                                target_q_update_interval=target_q_update_interval,
                                                                                soft_target_update=soft_target_update,
@@ -676,6 +704,9 @@ def construct_experiment_config(experiment_root_dir=default_args['experiment_roo
                                                                                max_episode_timesteps=max_episode_timesteps,
                                                                                log_episode=log_episode,
                                                                                log_batch=log_batch,
+                                                                               use_preprocessors=use_preprocessors,
+                                                                               update_preprocessors=update_preprocessors,
+                                                                               save_preprocessors=save_preprocessors,
                                                                                #### hyperparamter tuner ####
                                                                                HyperparameterTuner=HyperparameterTuner,
                                                                                cmd_log=cmd_log)
@@ -705,7 +736,8 @@ def construct_experiment_config(experiment_root_dir=default_args['experiment_roo
                                                 nb_trial_runs=nb_trial_runs,
                                                 max_episode_timesteps=max_episode_timesteps,
                                                 log_episode=log_episode,
-                                                log_batch=log_batch)
+                                                log_batch=log_batch,
+                                                use_preprocessors=use_preprocessors)
             
         }
     }

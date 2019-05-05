@@ -2,7 +2,7 @@
 
 #### copy from cloud ####
 
-gcloud compute scp --recurse xli4217@rlfps0:/home/xli4217/docker/docker_home/rlfps/examples/iros2019/experiments/test/* ${RLFPS_PATH}/examples/iros2019/experiments/cloud/rlfps0/
+gcloud compute scp --recurse xli4217@rlfps-small:/home/xli4217/docker/docker_home/robot_cooking/docker/dirs-to-copy/learning/experiments/* ${LEARNING_PATH}learning/experiments/cloud/rlfps-small/
 
 # gcloud compute scp --recurse xli4217@rlfps1:/home/xli4217/docker/docker_home/rlfps/examples/iros2019/experiments/test/* ${RLFPS_PATH}/examples/iros2019/experiments/cloud/rlfps1/
 

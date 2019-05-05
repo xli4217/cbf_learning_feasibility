@@ -117,9 +117,7 @@ class RunExperiment(object):
             #### construct reset ####
             reset_type = config.get(['Reset', 'type'])
             reset_config = config.get(['Reset', 'config'])
-            if 'baxter' in deploy_config['env_name']:
-                reset_config['joint_angles']['randomize'] = False
-
+           
             reset = None
             if reset_type is not None:
                 reset = reset_type(reset_config)
@@ -128,7 +126,7 @@ class RunExperiment(object):
             env_config = config.get(['Environment', 'config'])
             env_config['headless'] = False
 
-            env = config.get(['Environment', 'type'])(env_configs)
+            env = config.get(['Environment', 'type'])(env_config)
             
         else:
             #### construct fresh environment (useful if want to change param) ####
@@ -157,11 +155,28 @@ class RunExperiment(object):
         policy.restore(model_dir=itr_dir, model_name='policy')
         print("Loaded policy from {}".format(os.path.join(itr_dir, 'policy')))
 
+        #### load state preprocessor ####
+        state_preprocessor_config = config.get(['Preprocessors', 'state_preprocessor', 'config'])
+        state_preprocessor_config['dim'] = env.state_space['shape'][0]
+        state_preprocessor_type = config.get(['Preprocessors', 'state_preprocessor', 'type'])
+
+        state_preprocessor = None
+        if state_preprocessor_type is not None and deploy_config['use_preprocessors']:
+            state_preprocessor = state_preprocessor_type(state_preprocessor_config)
+            ## restore state preprocessor
+            state_preprocessor_restore_path = os.path.join(experiment_root_dir,
+                                                           'experiments',
+                                                           deploy_config['experiment_name'],
+                                                           'info',
+                                                           deploy_config['hyperparam_dir'],
+                                                           'state_preprocessor_params.pkl')
+            state_preprocessor.restore_preprocessor(state_preprocessor_restore_path)
+            
         #######
         # Run #
         #######
 
-        #### Episode control version ####
+        #### Finer episodic version ####
         # return_list = []
         # for _ in range(deploy_config['nb_trial_runs']):
         #     env.reset()
@@ -171,6 +186,8 @@ class RunExperiment(object):
         #     action_prev = None
         #     for i in range(deploy_config['max_episode_timesteps']):
         #         obs = env.get_state()
+        #         if state_preprocessor is not None and deploy_config['use_preprocessors']:
+        #             obs = state_preprocessor.get_scaled_x(obs)
         #         # print(obs[0])
         #         if env.is_done(obs):
         #             break
@@ -189,13 +206,23 @@ class RunExperiment(object):
         sampler_config = config.get(['Sampler', 'config'])
         sampler_config['log_episode'] = deploy_config['log_episode']
         sampler_config['log_batch'] = deploy_config['log_batch']
+        sampler_config['use_preprocessors'] = deploy_config['use_preprocessors']
+        sampler_config['update_preprocessors'] = False
+        sampler_config['save_preprocessors'] = False
         sampler_type = config.get(['Sampler', 'type'])
-        sampler = sampler_type(sampler_config, env=env, policy=policy, logger=logger)
+        sampler = sampler_type(sampler_config,
+                               env=env,
+                               policy=policy,
+                               state_preprocessor=state_preprocessor,
+                               logger=logger)
 
-        sampler.get_batch(batch_size=deploy_config['nb_trial_runs'],
-                          episode_horizon=deploy_config['max_episode_timesteps'],
-                          deterministic=True)
-        
+        unscaled_batch, scaled_batch = sampler.get_batch(batch_size=deploy_config['nb_trial_runs'],
+                                                         episode_horizon=deploy_config['max_episode_timesteps'],
+                                                         deterministic=True)
+        for traj in unscaled_batch:
+            R = np.sum(traj['Rewards'])
+            print("Return:", R)
+            
     def run(self):
         '''
         Function to run 

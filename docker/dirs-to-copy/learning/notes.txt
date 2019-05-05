@@ -2,11 +2,18 @@
   - python ${LEARNING_PATH}learning/experiments.py --max_episode_timesteps 10 --rollout_batch_size 2  
 
 - Training cmd
-  - python ${LEARNING_PATH}learning/experiments.py --max_episode_timesteps 50 --minibatch_size 128 --lr 0.001 --nb_training_epoches 5
-
+  - python ${LEARNING_PATH}learning/experiments.py --max_episode_timesteps 50 --max_itr 500 --policy_lr 0.005 --nb_training_epoches 5 --rollout_batch_size 10 --value_loss_coef 0.4 --minibatch_size 128 --use_preprocessors True --update_preprocessors True --save_preprocessors True
+  
 - Hyperparam tuning cmd
-  - python ${LEARNING_PATH}learning/experiments.py --max_episode_timesteps 50 --rollout_batch_size 20 --mode hyperparam_tuning
+  - python ${LEARNING_PATH}learning/experiments.py --max_episode_timesteps 50 --rollout_batch_size 10 --use_preprocessors True --update_preprocessors True --save_preprocessors True --mode hyperparam_tuning
 
+- Deploy cmd
+  - python ${LEARNING_PATH}learning/experiments.py --exp_name cloud/rlfps-small/test --hyperparam_dir seed0 --itr 100 --nb_trial_runs 10 --use_preprocessors True --mode deploy
 
 - TODO
-  - Deploy code
+  - deploy doesn't work
+  - ball jumps
+  - entropy always increasing
+  - value loss too large
+  - explained variance jumps (due to NaN, possibly associated with ball jumps)
+
