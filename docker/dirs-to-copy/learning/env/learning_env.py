@@ -73,6 +73,7 @@ class LearningEnv(object):
         self.motion_range = self.base_env.get_region_info(region='motion_region')
         
     def reset(self):
+        self.update_all_info()
         low = [self.sample_range['x'][0], self.sample_range['y'][0], self.sample_range['z'][0]]
         high = [self.sample_range['x'][1], self.sample_range['y'][1], self.sample_range['z'][1]]
         self.target_pos = np.random.uniform(low, high, 3)
@@ -80,13 +81,11 @@ class LearningEnv(object):
         self.base_env.set_target_pose(np.concatenate([self.target_pos, np.array([0,0,0,1])]))
         self.wp_gen.reset(np.concatenate([self.target_pos, np.array([0,0,0,1])]), np.zeros(6))
 
-        # rc = vrep.simxSetJointPosition(self.base_env.clientID,
-        #                                self.base_env.object_handles['toaster_button_joint'],
-        #                                0,
-        #                                vrep.simx_opmode_oneshot_wait)
-
-        self.update_all_info()
         self.base_env.synchronous_trigger()
+        while np.linalg.norm(self.all_info['button_vel']) > 0.01:
+            self.update_all_info()
+            self.base_env.synchronous_trigger()
+        
         
     def get_info(self):
         return self.all_info
@@ -152,7 +151,6 @@ class LearningEnv(object):
                                                                                    vrep.simx_opmode_streaming)
 
         button_vel = np.concatenate([np.array(button_linear_vel), np.array(button_angular_vel)])
-        
         self.all_info = {
             'goal': self.goal,
             'target_pos': target_pos,

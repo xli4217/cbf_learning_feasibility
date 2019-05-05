@@ -121,7 +121,7 @@ class ExperimentConfig(object):
             button_rel_pose = all_info['button_rel_pose']
             button_vel = all_info['button_vel']
             toaster_joint_frame_angle = all_info['button_joint_frame_angle']
-
+            
             r = toaster_joint_frame_angle[2] # - np.linalg.norm(button_vel[:3])
             
             return r
@@ -149,6 +149,7 @@ class ExperimentConfig(object):
             ## done if hit button 
             button_vel = all_info['button_vel']
             button_disturbance =  np.linalg.norm(np.concatenate([button_vel[:4], np.array([button_vel[-1]])]))
+
             if button_disturbance > 0.1:
                 print('done: button pushed away from nominal')
                 done = True
