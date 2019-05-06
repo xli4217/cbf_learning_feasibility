@@ -50,6 +50,8 @@ class QPcontroller:
         return np.concatenate([target_accel, np.zeros(3)]), np.concatenate([target_vel, np.zeros(3)]), np.concatenate([target_pose, np.array([0,0,0,1])])
 
     def generate_control(self,x_current, obs_info={}):
+        self.m.remove(self.m.getConstrs())
+
         if self.QPcontroller_config['use_own_pose']:
             if self.own_pose is None:
                 self.own_pose = np.array(x_current)
@@ -61,7 +63,8 @@ class QPcontroller:
         # Loop through sphereical obstacles and set constraints
         for i in range(0,num_of_obstacles):
             if obs_info[i]['name'] == 'table':
-                table_height = obs_info[i]['position'][2] + 0.05
+                table_height = obs_info[i]['position'][2] + 0.12
+
                 # Table Constraint
                 h_table = (x_current[2] - table_height)
                 self.m.addConstr(self.u3 + self.k_cbf*h_table >= 0, "CBF_Constraint_for_table")
@@ -83,7 +86,6 @@ class QPcontroller:
         partial_V_x2 = (x_current[1]-self.goal[1])
         partial_V_x3 = (x_current[2]-self.goal[2])
 
-
         self.m.addConstr(partial_V_x1*self.u1 + partial_V_x2*self.u2 + partial_V_x3*self.u3 + self.epsilon +self.delta <= -20, "Relaxed_CLF_constraint")
 
         # self.m.addConstr(partial_V_x1*self.u1 + partial_V_x2*self.u2 + partial_V_x3*self.u3 + self.epsilon * V - self.delta  <= 0, "Relaxed_CLF_constraint")
@@ -100,7 +102,7 @@ class QPcontroller:
         self.control_u1 = self.solution[0].x
         self.control_u2 = self.solution[1].x
         self.control_u3 = self.solution[2].x
-
+        
         # For debuging only, save model to view constraints etc.
         self.m.write("qp_model.lp")
 

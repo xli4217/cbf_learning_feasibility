@@ -243,8 +243,8 @@ class RobotCooking(object):
         
             action = np.array([0,0,0,0,0,0])
             ddy, dy, y = self.wp_gen.get_next_wp(action, curr_pos, curr_vel, obs_info=self.get_obstacle_info())
-            # self.servo_to_pose_target(y, pos_th=0.005, quat_th=0.1)
-            self.update_pose_target_tf(y)
+            self.servo_to_pose_target(y, pos_th=0.005, quat_th=0.1)
+            # self.update_pose_target_tf(y)
             return False
         else:
             print("plan reached goal")
@@ -493,7 +493,7 @@ if __name__ == "__main__":
                 
             },
             'clf_cbf_config': {
-                'k_cbf': 5,
+                'k_cbf': 1.1,
                 'epsilon':0.8,
                 'num_states':3,
                 'action_space': {'shape': (3,), 'upper_bound': [0.1, 0.1, 0.1], 'lower_bound': [-0.1,-0.1,-0.1]},

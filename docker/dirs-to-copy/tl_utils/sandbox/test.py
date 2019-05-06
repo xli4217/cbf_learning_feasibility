@@ -15,7 +15,7 @@ X = Next
 && = And
 || = Or
 '''
-
+get_fsa = True
 ###########
 # Get FSA #
 ###########
@@ -67,7 +67,7 @@ if get_fsa:
     print("number of edges: ", len(aut.g.edges()))
     # print(aut)
     # print(aut.g.nodes())
-    aut.visualize(draw='pydot', save_path=os.path.join(os.environ['RLFPS_PATH'], 'tl_tools', 'sandbox', 'figures'), dot_file_name='g', svg_file_name='file')
+    aut.visualize(draw='pydot', save_path=os.path.join(os.environ['LEARNING_PATH'], 'tl_utils', 'sandbox', 'figures'), dot_file_name='g', svg_file_name='file')
 
     # fsa_reward = FsaReward(fsa=aut)
     # Q = "T0_init"

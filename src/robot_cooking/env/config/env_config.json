@@ -51,7 +51,7 @@
         "child_frame_id": "/toaster_obs1",
         "init_pose": [0.743, -0.123, 0.05, 0, 0, 0, 1],
         "motive_offset": [0.2, 0.15, -0.03, 0, 0, 0, 1],
-        "scale": [0.2, 0.2, 0.2],
+        "scale": [0.25, 0.25, 0.25],
         "rgba": [0.8, 0.8, 0.8, 0.8]
       },
       "obs2": {
@@ -60,7 +60,7 @@
         "child_frame_id": "/toaster_obs2",
         "init_pose": [0.743, -0.123, 0.05, 0, 0, 0, 1],
         "motive_offset": [0.04, 0.15, -0.03, 0, 0, 0, 1],
-        "scale": [0.2, 0.2, 0.2],
+        "scale": [0.25, 0.25, 0.25],
         "rgba": [0.8, 0.8, 0.8, 0.8]
       },
       "obs3": {
@@ -69,7 +69,16 @@
         "child_frame_id": "/toaster_obs3",
         "init_pose": [0.743, -0.123, 0.05, 0, 0, 0, 1],
         "motive_offset": [-0.15, 0.15, -0.03, 0, 0, 0, 1],
-        "scale": [0.2, 0.2, 0.2],
+        "scale": [0.25, 0.25, 0.25],
+        "rgba": [0.8, 0.8, 0.8, 0.8]
+      },
+      "hand": {
+        "vrpn_topic": "/vrpn_client_node/hand/pose",
+        "parent_frame_id": "/world",
+        "child_frame_id": "/hand_mapped",
+        "init_pose": [0.743, -0.123, 0.05, 0, 0, 0, 1],
+        "motive_offset": [0, 0, 0, 0, 0, 0, 1],
+        "scale": [0.25, 0.25, 0.25],
         "rgba": [0.8, 0.8, 0.8, 0.8]
       }
     }
