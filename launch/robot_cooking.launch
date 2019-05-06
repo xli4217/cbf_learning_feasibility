@@ -6,7 +6,10 @@
   <include file="$(find vrpn_client_ros)/launch/sample.launch">
     <arg name="server" value="optitrack"/>
   </include>
+  
+  <!-- <include file="$(find realsense2_camera)/launch/rs_camera.launch"/> -->
 
+  
   <!-- <node name="cooking_environment" pkg="robot_cooking" type="make_env.py" respawn="false" output="screen" args="$(arg optitrack)"/> -->
 
 </launch>

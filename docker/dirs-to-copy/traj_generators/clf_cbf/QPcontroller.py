@@ -58,30 +58,24 @@ class QPcontroller:
         
         num_of_obstacles = len(obs_info) #For later use when more obstacles are involved
 
-        pos_sphere_left = obs_info[0]['position']
-        rad_sphere_left = obs_info[0]['radius']
+        # Loop through sphereical obstacles and set constraints
+        for i in range(0,num_of_obstacles):
+            if obs_info[i]['name'] == 'table':
+                table_height = obs_info[i]['position'][2] + 0.05
+                # Table Constraint
+                h_table = (x_current[2] - table_height)
+                self.m.addConstr(self.u3 + self.k_cbf*h_table >= 0, "CBF_Constraint_for_table")
+            else:
+                pos = obs_info[i]['position']
+                rad = obs_info[i]['radius']
+                h = (x_current[0]-pos[0])**2 + (x_current[1]-pos[1])**2 + (x_current[2]-pos[2])**2 - rad**2
+                self.m.addConstr(2*(x_current[0]-pos[0])*self.u1 + 2*(x_current[1]-pos[1])*self.u2 + 2*(x_current[2]-pos[2])*self.u3 + self.k_cbf*h >= 0, "CBF_Constraint_"+obs_info[i]['name'])
 
-        pos_sphere_mid = obs_info[1]['position']
-        rad_sphere_mid = obs_info[1]['radius']
-
-        pos_sphere_right = obs_info[2]['position']
-        rad_sphere_right = obs_info[2]['radius']
-
+      
         # Initialize Cost Function
         self.cost_func = self.u1*self.u1+self.u2*self.u2+self.u3*self.u3 + self.delta*self.delta
         self.m.setObjective(self.cost_func,GRB.MINIMIZE)
-
-        # CBF constraint
-        h_left = (x_current[0]-pos_sphere_left[0])**2 + (x_current[1]-pos_sphere_left[1])**2 + (x_current[2]-pos_sphere_left[2])**2 - rad_sphere_left**2
-        self.m.addConstr(2*(x_current[0]-pos_sphere_left[0])*self.u1 + 2*(x_current[1]-pos_sphere_left[1])*self.u2 + 2*(x_current[2]-pos_sphere_left[2])*self.u3 + self.k_cbf*h_left >= 0, "CBF_Constraint_h_left")
-
-        h_mid = (x_current[0]-pos_sphere_mid[0])**2 + (x_current[1]-pos_sphere_mid[1])**2 + (x_current[2]-pos_sphere_mid[2])**2 - rad_sphere_mid**2
-        self.m.addConstr(2*(x_current[0]-pos_sphere_mid[0])*self.u1 + 2*(x_current[1]-pos_sphere_mid[1])*self.u2 + 2*(x_current[2]-pos_sphere_mid[2])*self.u3 + self.k_cbf*h_mid >= 0, "CBF_Constraint_h_left")
-
-        h_right = (x_current[0]-pos_sphere_right[0])**2 + (x_current[1]-pos_sphere_right[1])**2 + (x_current[2]-pos_sphere_right[2])**2 - rad_sphere_right**2
-        self.m.addConstr(2*(x_current[0]-pos_sphere_right[0])*self.u1 + 2*(x_current[1]-pos_sphere_right[1])*self.u2 + 2*(x_current[2]-pos_sphere_right[2])*self.u3 + self.k_cbf*h_right >= 0, "CBF_Constraint_h_left")
-
-
+      
         # CLF constraint
         V = 0.5*(x_current[0]-self.goal[0])**2 + 0.5*(x_current[1]-self.goal[1])**2 + 0.5*(x_current[2]-self.goal[2])**2
 
@@ -92,7 +86,7 @@ class QPcontroller:
 
         self.m.addConstr(partial_V_x1*self.u1 + partial_V_x2*self.u2 + partial_V_x3*self.u3 + self.epsilon +self.delta <= -20, "Relaxed_CLF_constraint")
 
-        #self.m.addConstr(partial_V_x1*self.u1 + partial_V_x2*self.u2 + partial_V_x3*self.u3 + self.epsilon * V - self.delta  <= 0, "Relaxed_CLF_constraint")
+        # self.m.addConstr(partial_V_x1*self.u1 + partial_V_x2*self.u2 + partial_V_x3*self.u3 + self.epsilon * V - self.delta  <= 0, "Relaxed_CLF_constraint")
 
 
         #Stop optimizer from publsihing results to console - remove if desired
@@ -113,7 +107,7 @@ class QPcontroller:
         target_vel = np.array([self.control_u1, self.control_u2, self.control_u3])
 
         target_pose = x_current + target_vel * self.dt
-
+        
         if self.QPcontroller_config['use_own_pose']:
             self.own_pose = np.array(target_pose)
         

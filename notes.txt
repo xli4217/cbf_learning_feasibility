@@ -30,6 +30,9 @@
     * http://wiki.ros.org/robotiq/Tutorials/Control%20of%20a%202-Finger%20Gripper%20using%20the%20Modbus%20RTU%20protocol%20%28ros%20kinetic%20and%20newer%20releases%29
     * need to install and build against ros_canopen
     * need to execute sudo chmod 777 /dev/ttyUSB0
+  * RealSense
+    * https://github.com/IntelRealSense/librealsense/blob/master/doc/distribution_linux.md#installing-the-packages
+    * https://github.com/intel-ros/realsense
 
 * Executing Cartesian Path
   * https://answers.ros.org/question/308358/moveit-low-precision-when-executing-cartesian-path/

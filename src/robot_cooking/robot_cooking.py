@@ -116,6 +116,17 @@ class RobotCooking(object):
             ]
             obs_info.append({ 'name': k, 'position': obs_pos, 'radius':v['scale'][0]/2})
 
+
+        table_pose_tf_stamped  = self.tf_buffer.lookup_transform('world', 'table_mapped', rospy.Time())
+        table_pos = [
+            table_pose_tf_stamped.transform.translation.x,
+            table_pose_tf_stamped.transform.translation.y,
+            table_pose_tf_stamped.transform.translation.z
+        ]
+          
+        table_info = {'name': 'table', 'position': table_pos}
+        obs_info.append(table_info)
+        
         return obs_info
             
     def update_goal_tf(self, pt):
@@ -482,10 +493,10 @@ if __name__ == "__main__":
                 
             },
             'clf_cbf_config': {
-                'k_cbf': 1,
-                'epsilon':1.8,
+                'k_cbf': 5,
+                'epsilon':0.8,
                 'num_states':3,
-                'action_space': {'shape': 3, 'upper_bound': [0.1, 0.1, 0.1], 'lower_bound': [-0.1,-0.1,-0.1]},
+                'action_space': {'shape': (3,), 'upper_bound': [0.1, 0.1, 0.1], 'lower_bound': [-0.1,-0.1,-0.1]},
                 'use_own_pose': True,
                 'dt': 0.015
             },
