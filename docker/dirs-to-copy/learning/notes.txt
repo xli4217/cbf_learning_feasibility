@@ -12,6 +12,10 @@
 
 - TODO
   - entropy always increasing
-  - value loss too large
-  - explained variance jumps (due to NaN, possibly associated with ball jumps)
+
+- Done
+  - value loss too large (pytorch MSELoss() implementation has bug, not giving right value in value_loss())
+  - ball jumps (after reset, getObjectPosition still reads old data - button_vel, added a loop in reset until button_vel close to zero is read)
+  - explained_var sometimes NaN (given batch of 1, which happens to be rollout_batch_data_size % minibatch_size and the last minibatch has a small number of samples)
+  - deploy doesn't work (forgot to use and restore state_preprocessor in deploy())
 
