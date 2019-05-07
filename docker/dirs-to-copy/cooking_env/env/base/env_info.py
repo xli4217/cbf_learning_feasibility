@@ -4,7 +4,7 @@ ur5_joint_handles = ["UR5_joint"+str(i+1) for i in range(6)]
 
 jaco_joint_handles = ["Jaco_joint"+str(i+1) for i in range(6)]
 
-    
+world_frame_handle = "Jaco_World_Frame"    
     
 robot_handles = {
     'UR5':{

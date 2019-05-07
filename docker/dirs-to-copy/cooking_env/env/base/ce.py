@@ -5,7 +5,7 @@ from utils.configuration import Configuration
 from future.utils import viewitems
 import time
 from utils import transformations
-from cooking_env.env.base.env_info import robot_handles, object_handles, obstacle_handles
+from cooking_env.env.base.env_info import robot_handles, object_handles, obstacle_handles, world_frame_handle
 
 default_config = {
     # Common to all envs
@@ -51,6 +51,9 @@ class CookingEnv(VrepEnvBase):
         else:
             raise ValueError('arm not supported')
 
+        #### world frame ####
+        rc, self.world_frame_handle = vrep.simxGetObjectHandle(self.clientID, world_frame_handle, vrep.simx_opmode_blocking)
+        
         #### joint handles ####
         self.joint_handles = []
         for jh in rh['joint_handles']:
@@ -77,11 +80,11 @@ class CookingEnv(VrepEnvBase):
         #### target handle ####
         _, self.target_handle = vrep.simxGetObjectHandle(self.clientID,
                                                          rh['target_handle'],
-                                                         vrep.simx_opmode_oneshot_wait)
+                                                         vrep.simx_opmode_blocking)
         #### goal handle ####
         _, self.goal_handle = vrep.simxGetObjectHandle(self.clientID,
                                                          rh['goal_handle'],
-                                                         vrep.simx_opmode_oneshot_wait)
+                                                         vrep.simx_opmode_blocking)
   
         
         #### object handles ####
@@ -122,7 +125,7 @@ class CookingEnv(VrepEnvBase):
         else:
             raise ValueError('unsupported region')
         
-        _, pos = vrep.simxGetObjectPosition(self.clientID, handle, -1, vrep.simx_opmode_blocking)
+        _, pos = vrep.simxGetObjectPosition(self.clientID, handle, self.world_frame_handle, vrep.simx_opmode_blocking)
 
         _, bb_min_x = vrep.simxGetObjectFloatParameter(self.clientID, handle, 15, vrep.simx_opmode_blocking)
         _, bb_min_y = vrep.simxGetObjectFloatParameter(self.clientID, handle, 16, vrep.simx_opmode_blocking)
@@ -172,9 +175,10 @@ class CookingEnv(VrepEnvBase):
             handle = self.target_handle
             
         pos = pt[:3]
-        quat = pt[3:]    
-        vrep.simxSetObjectPosition(self.clientID, handle, -1, pos, vrep.simx_opmode_oneshot)
-        vrep.simxSetObjectQuaternion(self.clientID, handle, -1, quat, vrep.simx_opmode_oneshot)
+        quat = pt[3:]
+    
+        vrep.simxSetObjectPosition(self.clientID, handle, self.world_frame_handle, pos, vrep.simx_opmode_oneshot)
+        vrep.simxSetObjectQuaternion(self.clientID, handle, self.world_frame_handle, quat, vrep.simx_opmode_oneshot)
         self.synchronous_trigger()
 
         
@@ -185,8 +189,9 @@ class CookingEnv(VrepEnvBase):
 
         pos = pt[:3]
         quat = pt[3:]    
-        vrep.simxSetObjectPosition(self.clientID, handle, -1, pos, vrep.simx_opmode_oneshot)
-        vrep.simxSetObjectQuaternion(self.clientID, handle, -1, quat, vrep.simx_opmode_oneshot)
+
+        vrep.simxSetObjectPosition(self.clientID, handle, self.world_frame_handle, pos, vrep.simx_opmode_oneshot)
+        vrep.simxSetObjectQuaternion(self.clientID, handle, self.world_frame_handle, quat, vrep.simx_opmode_oneshot)
         self.synchronous_trigger()
 
         
@@ -197,7 +202,7 @@ class CookingEnv(VrepEnvBase):
         else:
             handle = self.target_handle
       
-        vrep.simxSetObjectQuaternion(self.clientID, handle, -1, quat, vrep.simx_opmode_oneshot)
+        vrep.simxSetObjectQuaternion(self.clientID, handle, self.world_frame_handle, quat, vrep.simx_opmode_oneshot)
         self.synchronous_trigger()
         
     def set_target_euler_angles(self, rpy):
@@ -208,7 +213,7 @@ class CookingEnv(VrepEnvBase):
         else:
             handle = self.target_handle
       
-        vrep.simxSetObjectOrientation(self.clientID, handle, -1, rpy, vrep.simx_opmode_oneshot)
+        vrep.simxSetObjectOrientation(self.clientID, handle, self.world_frame_handle, rpy, vrep.simx_opmode_oneshot)
         self.synchronous_trigger()
         
     def get_target_pose(self):
@@ -220,8 +225,8 @@ class CookingEnv(VrepEnvBase):
         rc = 1
         target_pos = np.zeros(3)
         while rc != 0 and np.linalg.norm(target_pos) < 0.001:    
-            rc, target_pos = vrep.simxGetObjectPosition(self.clientID, handle, -1, vrep.simx_opmode_streaming)
-            rc, target_quat = vrep.simxGetObjectQuaternion(self.clientID, handle, -1, vrep.simx_opmode_streaming)
+            rc, target_pos = vrep.simxGetObjectPosition(self.clientID, handle, self.world_frame_handle, vrep.simx_opmode_streaming)
+            rc, target_quat = vrep.simxGetObjectQuaternion(self.clientID, handle, self.world_frame_handle, vrep.simx_opmode_streaming)
 
         return np.array(target_pos), np.array(target_quat)
 
@@ -230,7 +235,7 @@ class CookingEnv(VrepEnvBase):
         for obs in self.obstacle_handles:
             rc = 1
             while rc != 0:
-                rc, pos = vrep.simxGetObjectPosition(self.clientID, obs['handle'], -1, vrep.simx_opmode_streaming)
+                rc, pos = vrep.simxGetObjectPosition(self.clientID, obs['handle'], self.world_frame_handle, vrep.simx_opmode_streaming)
             obs_info.append({'name': obs['name'], 'position': pos, 'radius': 0.175})
 
         return obs_info
@@ -240,8 +245,8 @@ class CookingEnv(VrepEnvBase):
         rc = 1
         goal_pos = np.zeros(3)
         while rc != 0 and np.linalg.norm(goal_pos) < 0.001:
-            rc, goal_pos = vrep.simxGetObjectPosition(self.clientID, handle, -1, vrep.simx_opmode_streaming)
-            rc, goal_quat = vrep.simxGetObjectQuaternion(self.clientID, handle, -1, vrep.simx_opmode_streaming)
+            rc, goal_pos = vrep.simxGetObjectPosition(self.clientID, handle, self.world_frame_handle, vrep.simx_opmode_streaming)
+            rc, goal_quat = vrep.simxGetObjectQuaternion(self.clientID, handle, self.world_frame_handle, vrep.simx_opmode_streaming)
         
         return np.array(goal_pos), np.array(goal_quat)
 
@@ -297,8 +302,8 @@ class CookingEnv(VrepEnvBase):
             return_code, iteration2 = vrep.simxGetIntegerSignal(self.clientID, 'iteration', vrep.simx_opmode_buffer)
             if return_code != vrep.simx_return_ok:
                 iteration2 = -1
+            
         
-
     def get_joint_angles(self):
         #### retrive joint angles ####
         joint_positions = []
@@ -316,8 +321,8 @@ class CookingEnv(VrepEnvBase):
             for obj_name, obj_handle in viewitems(self.object_handles):
                 rc = 1
                 while rc != 0:
-                    rc, object_position = vrep.simxGetObjectPosition(self.clientID, obj_handle, -1, vrep.simx_opmode_streaming)
-                    rc, object_quat = vrep.simxGetObjectQuaternion(self.clientID, obj_handle, -1, vrep.simx_opmode_streaming)
+                    rc, object_position = vrep.simxGetObjectPosition(self.clientID, obj_handle, self.world_frame_handle, vrep.simx_opmode_streaming)
+                    rc, object_quat = vrep.simxGetObjectQuaternion(self.clientID, obj_handle, self.world_frame_handle, vrep.simx_opmode_streaming)
                 object_pose[obj_name] = np.array(object_position + object_quat)
 
             return object_pose

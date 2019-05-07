@@ -60,7 +60,9 @@ class LearningEnv(object):
             self.wp_gen = wp_gen
 
         if self.wp_gen is not None:
-            self.set_goal_pose(self.LearningEnv_config['WPGenerator']['config']['initial_goal'])
+            # self.set_goal_pose(self.LearningEnv_config['WPGenerator']['config']['initial_goal'])
+            goal_pos, goal_quat = self.base_env.get_goal_pose()
+            self.set_goal_pose(np.concatenate([goal_pos, goal_quat]))
             
         self.all_info = {}
 
@@ -78,8 +80,9 @@ class LearningEnv(object):
         high = [self.sample_range['x'][1], self.sample_range['y'][1], self.sample_range['z'][1]]
         self.target_pos = np.random.uniform(low, high, 3)
 
-        self.base_env.set_target_pose(np.concatenate([self.target_pos, np.array([0,0,0,1])]))
-        self.wp_gen.reset(np.concatenate([self.target_pos, np.array([0,0,0,1])]), np.zeros(6))
+        quat = np.array([1.73648193e-01, 0,  0, 9.84807789e-01])
+        self.base_env.set_target_pose(np.concatenate([self.target_pos, quat]))
+        self.wp_gen.reset(np.concatenate([self.target_pos, quat]), np.zeros(6))
 
         self.base_env.synchronous_trigger()
         while np.linalg.norm(self.all_info['button_vel']) > 0.01:
@@ -151,6 +154,7 @@ class LearningEnv(object):
                                                                                    vrep.simx_opmode_streaming)
 
         button_vel = np.concatenate([np.array(button_linear_vel), np.array(button_angular_vel)])
+        
         self.all_info = {
             'goal': self.goal,
             'target_pos': target_pos,
@@ -291,4 +295,5 @@ if __name__ == "__main__":
         #     cls.reset()
         cls.update_all_info()
         cls.base_env.synchronous_trigger()
+        time.sleep(0.05)
         

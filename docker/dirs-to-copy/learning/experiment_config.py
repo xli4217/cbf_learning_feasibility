@@ -65,7 +65,7 @@ class ExperimentConfig(object):
                         # gain on attractor term y dynamics (angular)
                         'bz': None,
                         # timestep
-                        'dt': 0.005,
+                        'dt': 0.001,
                         # time scaling, increase tau to make the system execute faster
                         'tau': 1.0,
                         'translation_front_term': True,
@@ -120,9 +120,9 @@ class ExperimentConfig(object):
             button_joint_angle = all_info['button_joint_angle']
             button_rel_pose = all_info['button_rel_pose']
             button_vel = all_info['button_vel']
-            toaster_joint_frame_angle = all_info['button_joint_frame_angle']
-            
-            r = toaster_joint_frame_angle[2] # - np.linalg.norm(button_vel[:3])
+            button_joint_frame_angle = all_info['button_joint_frame_angle']
+
+            r = button_joint_frame_angle[2]/10. # - np.linalg.norm(button_vel[:3])
             
             return r
             

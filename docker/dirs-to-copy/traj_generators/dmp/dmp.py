@@ -176,7 +176,7 @@ class DMP(object):
         
         lddy = ((point_attractor + action) * self.tau) / self.tau
         ldy = (curr_linear_vel + lddy * self.dt) / self.tau
-
+        
         # ldy += self.app * (pos_goal - curr_pos)
         ly = curr_pos + ldy * self.dt
 
