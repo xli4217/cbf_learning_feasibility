@@ -49,9 +49,11 @@ STATE_IDX_MAP = {
 ##############
 # TL Related #
 ##############
+state_idx_map = STATE_IDX_MAP
 
 PREDICATES = {
-    'MoveTo': lambda s, g, state_idx_map: np.minimum(0.01 - pos_distance(s[state_idx_map['end_effector_pose'][0]:state_idx_map['end_effector_pose'][1]], g), 0.1 - quat_distance(s[state_idx_map['end_effector_pose'][0]:state_idx_map['end_effector_pose'][1]], g)),
-    'CloseGripper': lambda s, g, state_idx_map: 0.2 - 0
+    'move_to': lambda s, a=None, sp=None,  g=None: np.minimum(0.01 - pos_distance(s[state_idx_map['end_effector_pose'][0]:state_idx_map['end_effector_pose'][1]], g), 0.1 - quat_distance(s[state_idx_map['end_effector_pose'][0]:state_idx_map['end_effector_pose'][1]], g)),
+    'close_gripper': lambda s, a=None, sp=None, g=None:  s[state_idx_map['gripper_position']] - 0.8,
+    'open_gripper': lambda s, a=None, sp=None, g=None:  0.2 - s[state_idx_map['gripper_position']]
 }
 
