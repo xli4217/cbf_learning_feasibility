@@ -20,16 +20,16 @@ get_fsa = True
 # Get FSA #
 ###########
 if get_fsa:
-    spec_without_serve = "(grill_on && X F (PP_raw_dog_grill && X F (wait_2 && X F (PP_cooked_dog_bun && X F ( apply_condiment && X F (grill_off) )))))"
+    spec_without_serve = "F((grill_on && X F (PP_raw_dog_grill && X F (wait_2 && X F (PP_cooked_dog_bun && X F ( apply_condiment && X F (grill_off) ))))))"
 
     spec_with_serve = spec_without_serve + "&&" + 'G (customer -> X serve)'
 
-    spec = spec_with_serve
+    spec = spec_without_serve
     
     #### add task specific conditions and constraints ####
     conditions = ['(! serve U apply_condiment)']
-    for condition in conditions:
-        spec += "&& " + condition
+    # for condition in conditions:
+    #     spec += "&& " + condition
 
     ######
     # KB #
@@ -50,8 +50,8 @@ if get_fsa:
         'G ( ! (PP_raw_dog_grill && serve))',
         'G ( ! (PP_cooked_dog_bun && serve))',
     ]
-    for ep in edge_prune_KB:
-        spec += "&&" + ep
+    # for ep in edge_prune_KB:
+    #     spec += "&&" + ep
    
     #### feasibility KB ####
     feasibility_KB = ['G(!serve)']    
