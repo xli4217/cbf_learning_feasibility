@@ -76,15 +76,25 @@ class LearningEnv(object):
         
     def reset(self):
         self.update_all_info()
+
+        ## sampel target
         low = [self.sample_range['x'][0], self.sample_range['y'][0], self.sample_range['z'][0]]
         high = [self.sample_range['x'][1], self.sample_range['y'][1], self.sample_range['z'][1]]
         self.target_pos = np.random.uniform(low, high, 3)
 
-        quat = np.array([1.73648193e-01, 0,  0, 9.84807789e-01])
+        quat = np.array([0, 0,  0, 1])
         self.base_env.set_target_pose(np.concatenate([self.target_pos, quat]))
         self.wp_gen.reset(np.concatenate([self.target_pos, quat]), np.zeros(6))
 
+        ## reset button
+        rc = vrep.simxSetJointTargetPosition(self.base_env.clientID,
+                                             self.base_env.object_handles['toaster_button_joint'],
+                                             5.5*np.pi,
+                                             vrep.simx_opmode_blocking)
+            
+        
         self.base_env.synchronous_trigger()
+        
         while np.linalg.norm(self.all_info['button_vel']) > 0.01:
             self.update_all_info()
             self.base_env.synchronous_trigger()
@@ -123,7 +133,6 @@ class LearningEnv(object):
 
     def update_all_info(self):
         target_pos, target_quat = self.base_env.get_target_pose()
-
         rc = 1
         while rc != 0:
             rc, button_rel_pos = vrep.simxGetObjectPosition(self.base_env.clientID,
@@ -175,9 +184,11 @@ class LearningEnv(object):
         assert action.size == self.action_space['shape'][0]
 
         action *= 100
+
         # clip action
         action = np.clip(action, self.action_space['lower_bound'], self.action_space['upper_bound'])
 
+        
         curr_pos, curr_quat = self.base_env.get_target_pose()
         curr_linear_vel, curr_angular_vel = self.base_env.get_target_velocity()
         curr_angular_vel = curr_angular_vel * np.pi / 180
@@ -192,7 +203,8 @@ class LearningEnv(object):
 
         if len(y) < 7:
             y = np.concatenate([y, np.array([0,0,0,1])])
-            
+
+        # time.sleep(0.05)
         self.base_env.set_target_pose(y)
         
     def set_seed(self, seed):
@@ -288,12 +300,16 @@ if __name__ == "__main__":
 
     # cls.reset()
     while True:
-        # s = cls.get_state()
+        # cls.reset()
+        #s = cls.get_state()
         # a = policy.get_action(s)
         # cls.step(a*10)
+        #print(cls.is_done(state=s))
         # if cls.is_done(state=s):
         #     cls.reset()
         cls.update_all_info()
         cls.base_env.synchronous_trigger()
-        time.sleep(0.05)
-        
+        # time.sleep(0.05)
+        # target_pos = np.concatenate([cls.all_info['target_pos'], cls.all_info['target_quat']])
+        # target_pos += np.array([0.01,0,0,0,0,0,0])
+        # cls.base_env.set_target_pose(target_pos)

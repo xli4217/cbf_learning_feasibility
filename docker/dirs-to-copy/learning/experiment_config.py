@@ -57,15 +57,15 @@ class ExperimentConfig(object):
                         # initial goal
                         'initial_goal': [0.425, -1.85, 0.89, 0, 0, 0 ,1],
                         # gain on attractor term y dynamics (linear)
-                        'ay': 35,
+                        'ay': 55,
                         # gain on attractor term y dynamics (linear)
                         'by': None,
                         # gain on attractor term y dynamics (angular)
-                        'az': 35,
+                        'az': 55,
                         # gain on attractor term y dynamics (angular)
                         'bz': None,
                         # timestep
-                        'dt': 0.001,
+                        'dt': 0.003,
                         # time scaling, increase tau to make the system execute faster
                         'tau': 1.0,
                         'translation_front_term': True,
@@ -148,8 +148,7 @@ class ExperimentConfig(object):
 
             ## done if hit button 
             button_vel = all_info['button_vel']
-            button_disturbance =  np.linalg.norm(np.concatenate([button_vel[:4], np.array([button_vel[-1]])]))
-
+            button_disturbance =  np.linalg.norm(np.concatenate([button_vel[:3], button_vel[-2:]]))
             if button_disturbance > 0.1:
                 print('done: button pushed away from nominal')
                 done = True

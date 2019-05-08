@@ -11,7 +11,7 @@ def quaternion_log(q):
     u = q[:3]
     v = q[3]
 
-    if np.linalg.norm(u) == 0:
+    if np.linalg.norm(u) < 0.0001:
         return np.array([0,0,0])
     else:
         if v > 0.999:
@@ -24,8 +24,8 @@ def quaternion_exp(q):
     '''
     u = q[:3]
     u_norm = np.linalg.norm(u)
-    if u_norm == 0:
-        return np.zeros(4)
+    if u_norm < 0.001:
+        return np.array([0,0,0,1])
     else:
         return np.concatenate([np.sin(u_norm) * (u / u_norm), np.array([ np.cos(u_norm)])])
 
@@ -145,30 +145,50 @@ class DMP(object):
         '''
 
         goal_quat = self.goal[3:]
-
+        
         eta = self.tau * curr_angular_vel
 
+        
         log_conjugate_product = quaternion_log(t.quaternion_multiply(goal_quat, t.quaternion_conjugate(curr_quat)))
 
+        # print('goal_quat:', goal_quat)
+        # print('curr_quat:', curr_quat)
+        # print('eta:', eta)
+        # print('log_c:', log_conjugate_product)
+        
         # eta_dot
         addy = (1 / self.tau) * (self.az * ( self.bz * 2 * log_conjugate_product - eta ) + action * front_terms)
-        
+
+        # print('addy:', addy)
         # eta
         ady = (eta + addy * self.dt) / self.tau
         # ady +=  self.apr * 2 * quaternion_log(t.quaternion_multiply(goal_quat, t.quaternion_conjugate(curr_quat)))
+
         
+        # print('ady:', ady)
+        # print("curr_quat:", curr_quat)
+
         # target quat
         ay = t.quaternion_multiply( quaternion_exp((self.dt / 2) * ( ady / self.tau) ), curr_quat )
         
-                
+        # print('ay:',ay)
+        # print('----')
+        
         return self.tau * addy, self.tau * ady, ay
         
     def get_next_wp_pos(self, action, curr_pos, curr_linear_vel, front_terms):
+
+        # print('goal:', self.goal)
+        # print('pose:', curr_pos)
+        # print('action:', action)
+        # print('vel:', curr_linear_vel)
+        # print('front_terms:', front_terms)
 
         pos_goal = self.goal[:3]
         point_attractor = self.ay * ( self.by * (pos_goal - curr_pos) - curr_linear_vel ) + action * front_terms
 
         # print(self.ay * ( self.by * (pos_goal - curr_pos) - curr_linear_vel ))
+        # print(point_attractor)
         # print(front_terms)
         # print(action)
         # print(action * front_terms)
@@ -180,6 +200,10 @@ class DMP(object):
         # ldy += self.app * (pos_goal - curr_pos)
         ly = curr_pos + ldy * self.dt
 
+        # print('lddy:', lddy)
+        # print('ldy:', ldy)
+        # print('ly:', ly)
+        
         return lddy, ldy, ly
         
     def set_seed(self, seed):
