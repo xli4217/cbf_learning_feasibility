@@ -80,8 +80,13 @@ class GenerateAutomata(object):
 
                         if self.FSA.sorted_props[i] == 'move_to' and bin_string[i] == 1:
                             ee_goal = g
+                        else:
+                            ee_goal = None
                             
-                        
+                        #     print(self.FSA.sorted_props[i])
+                        #     print(bin_string[i])
+                    # print("--")
+
                             
             #### get constraints from the connecting trap state ####
             if edge[1] == 'trap':
