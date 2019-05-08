@@ -65,29 +65,41 @@ class GenerateAutomata(object):
         out_edges = self.FSA.g.out_edges(self.Q, data=True)
         for edge in out_edges:
             #### get goal from the closest outgoing edge ####
-            if edge[1] != self.Q and edge[1] != 'trap':
+            edge_pred_rob_list = []
+            edge_action_list = []
+            if edge[1] != self.Q and edge[1] != 'trap': # for each edge (guarding pred in dnf)
                 input_list = edge[2]['input']
-                for input_pred in input_list:
+                input_pred_rob_list = []
+                input_pred_action_list = []
+                for input_pred in input_list: # for each conjunction in dnf
                     b = self.FSA.to_binary(input_pred)
                     bin_string = str(b)[::-1]
                     for i in range(len(bin_string)):
-                        if self.FSA.sorted_props[i] == 'open_gripper' and bin_string[i] == 1:
+                        if self.FSA.sorted_props[i] == 'open_gripper' and int(bin_string[i]) == 1:
                             gripper_pos = 0.2
-                        elif self.FSA.sorted_props[i] == 'close_gripper' and bin_string[i] == 1:
+                        if self.FSA.sorted_props[i] == 'close_gripper' and int(bin_string[i]) == 1:
                             gripper_pos = 0.8
-                        else:
-                            gripper_pos = None
 
-                        if self.FSA.sorted_props[i] == 'move_to' and bin_string[i] == 1:
+                        if self.FSA.sorted_props[i] == 'move_to' and int(bin_string[i]) == 1:
                             ee_goal = g
-                        else:
-                            ee_goal = None
                             
-                        #     print(self.FSA.sorted_props[i])
-                        #     print(bin_string[i])
-                    # print("--")
+                        print(self.FSA.sorted_props[i])
+                        print(bin_string[i])
+                    print("--")
 
-                            
+                    ## this is robustness of each conjunction in the dnf
+                    r, r_list = self.FSA.get_r_from_input(input_pred, s, a=None, sp=None, phi_b_truth=None, g=g)
+                
+                    input_pred_rob_list.append(r)
+                    input_pred_action_list.append(dict(ee_goal=ee_goal, gripper_pos=gripper_pos))
+                max_input_pred_idx = np.argmax(np.array(input_pred_rob_list))
+                best_edge_action = input_pred_action_list[max_input_pred_idx]
+
+        
+                edge_pred_rob_list.append(np.max(input_pred_rob_list))
+                edge_action_list.append(best_edge_action)
+
+            
             #### get constraints from the connecting trap state ####
             if edge[1] == 'trap':
                 trap_input_list = edge[2]['input']
@@ -99,8 +111,15 @@ class GenerateAutomata(object):
                     #     print(self.FSA.sorted_props[i])
                     #     print(bin_string[i])
                     # print("--")
-           
 
+        #### Get best action ####
+        if len(edge_pred_rob_list) == 1:
+            best_node_action = best_edge_action
+        elif len(edge_pred_rob_list) > 0:
+            best_node_action = edge_action_list[np.argmax(np.array(edge_pred_rob_list))]
+        else:
+            best_node_action = None
+      
 if __name__ == "__main__":
     from tl_config import KEY_POSITIONS, OBJECT_RELATIVE_POSE, STATE_IDX_MAP, PREDICATES
 

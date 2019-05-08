@@ -27,7 +27,7 @@ if get_fsa:
     spec = spec_without_serve
 
     # spec = "F(move_to_switch && X F (close_gripper && X F flip_switch_off))"
-    spec = "F (move_to && XF open_gripper) && ((keep_up && close_gripper) U open_gripper)"
+    spec = "F ((move_to && XF open_gripper)) && G(maintain_ori)"
     
     #### add task specific conditions and constraints ####
     conditions = ['(! serve U apply_condiment)']
