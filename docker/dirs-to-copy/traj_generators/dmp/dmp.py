@@ -75,10 +75,10 @@ class DMP(object):
 
         self.build_graph()
 
-        self.dmp_pos = None
-        self.dmp_quat = None
-        self.dmp_linear_vel = None
-        self.dmp_angular_vel = None
+        self.pos = None
+        self.quat = None
+        self.linear_vel = None
+        self.angular_vel = None
         
     def get_next_wp(self, action, curr_pose, curr_vel, dt=None, obs_info={}):
         if dt is not None:
@@ -94,16 +94,16 @@ class DMP(object):
         action_angular = action[3:]
 
         if self.DMP_config['use_dmp_pose']:
-            if self.dmp_pos is None:
+            if self.pos is None:
                 self.reset(curr_pose, curr_vel)
                 
-            lddy, ldy, ly = self.get_next_wp_pos(action_linear, self.dmp_pos, self.dmp_linear_vel, self.linear_front_terms)
+            lddy, ldy, ly = self.get_next_wp_pos(action_linear, self.pos, self.linear_vel, self.linear_front_terms)
             #### addy is anglar acceleration, ady is angular velocity, ay is quaternion
-            addy, ady, ay= self.get_next_wp_quat(action_angular, self.dmp_quat, self.dmp_angular_vel, self.angular_front_terms)
-            self.dmp_pos = ly
-            self.dmp_quat = ay
-            self.dmp_linear_vel = ldy
-            self.dmp_angular_vel = ady
+            addy, ady, ay= self.get_next_wp_quat(action_angular, self.quat, self.angular_vel, self.angular_front_terms)
+            self.pos = ly
+            self.quat = ay
+            self.linear_vel = ldy
+            self.angular_vel = ady
         else:
             lddy, ldy, ly = self.get_next_wp_pos(action_linear, curr_pos, curr_linear_vel, self.linear_front_terms)
             #### addy is anglar acceleration, ady is angular velocity, ay is quaternion
@@ -220,10 +220,10 @@ class DMP(object):
 
 
     def reset(self, curr_pose, curr_vel):
-        self.dmp_pos = curr_pose[:3]
-        self.dmp_quat = curr_pose[3:]
-        self.dmp_linear_vel = curr_vel[:3]
-        self.dmp_angular_vel = curr_vel[3:]
+        self.pos = curr_pose[:3]
+        self.quat = curr_pose[3:]
+        self.linear_vel = curr_vel[:3]
+        self.angular_vel = curr_vel[3:]
 
         self.reset_cs()
         

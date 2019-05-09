@@ -6,6 +6,7 @@ import os
 import time
 import json
 from future.utils import viewitems
+import cloudpickle
 
 from kinova_api.kinova_driver_utils import KinovaDriverUtils
 from kinova_api.kinova_moveit_utils import KinovaMoveitUtils
@@ -37,7 +38,14 @@ def quaternion_dist(q1, q2):
 
 
 default_config = {
-    'rate': 10,
+    "rate": 10,
+    "policy_info": {
+        "state_space": None,
+        "action_space": None,
+        "training_config_restore_path": None,
+        "policy_restore_path": None,
+        "state_preprocessor_restore_path": None
+    },
     "WPGenerator": {
         'type': None,
         'config': {}
@@ -103,6 +111,64 @@ class RobotCooking(object):
         #### load json config ####
         with open(os.path.join(os.environ['RC_PATH'], 'src', 'robot_cooking', 'env', 'config', 'env_config.json')) as f:
             self.config_json = json.loads(f.read())
+
+        #### all info ####
+        self.all_info = None
+
+        self.goal = None
+        self.target = None
+        self.obs_info = None
+        
+        #### load ####
+        self.load_policy_and_preprocessor()
+
+    def load_policy_and_preprocessor(self):
+        self.policy = None
+        self.state_preprocessor = None
+
+        config_restore_path = self.RobotCooking_config['policy_info']['training_config_restore_path']
+        
+        if config_restore_path is not None:
+            training_config = cloudpickle.loads(open(config_restore_path, 'rb').read())
+
+        #### load policy ####
+        policy_restore_path = self.RobotCooking_config['policy_info']['policy_restore_path']
+        if policy_restore_path is not None:
+            policy_config = training_config.get(['Actor', 'config'])
+            policy_config['obs_dim'] = self.RobotCooking_config['policy_info']['state_space']['shape'][0]
+            policy_config['action_dim'] = self.RobotCooking_config['policy_info']['action_space']['shape'][0]
+            policy_config['action_space'] = self.RobotCooking_config['policy_info']['action_space']
+            self.policy = training_config.get(['Actor', 'type'])(policy_config)
+            self.policy.restore(model_dir=policy_restore_path, model_name='policy')
+            print("Loaded policy from {}".format(os.path.join(policy_restore_path, 'policy')))
+
+        #### load state preprocessor ####
+        state_preprocessor_restore_path = self.RobotCooking_config['policy_info']['state_preprocessor_restore_path']
+        if state_preprocessor_restore_path is not None:    
+            state_preprocessor_config = training_config.get(['Preprocessors', 'state_preprocessor', 'config'])
+            state_preprocessor_config['dim'] = self.RobotCooking_config['policy_info']['state_space']['shape'][0]
+            state_preprocessor_type = training_config.get(['Preprocessors', 'state_preprocessor', 'type'])
+
+            if state_preprocessor_type is not None:
+                self.state_preprocessor = state_preprocessor_type(state_preprocessor_config)
+                self.state_preprocessor.restore_preprocessor(state_preprocessor_restore_path)
+
+    def get_policy_output(self):
+        s = self.all_info['target_pose'][:3]
+        if self.state_preprocessor is not None:
+            s = self.state_preprocessor.get_scaled_x(s)
+            
+        if self.policy is not None:
+            action = self.policy.get_action(s, deterministic=True)
+        else:
+            action = np.zeros(3)
+
+        action = np.concatenate([action.flatten(), np.zeros(3)])
+        # action *= 100
+
+        action = np.zeros(6)
+        
+        return action
         
     def get_obstacle_info(self):
         fitted_obstacles = self.config_json['fitted_elliptical_obstacles']['fitted_obstacles']
@@ -126,10 +192,29 @@ class RobotCooking(object):
           
         table_info = {'name': 'table', 'position': table_pos}
         obs_info.append(table_info)
+
+        self.obs_info = obs_info
+
+        self.update_all_info()
         
-        return obs_info
-            
+        return self.obs_info
+
+
+    def update_all_info(self):
+        if self.target is None:
+            target_pos, target_quat = self.driver_utils.get_ee_pose()
+            self.target = np.concatenate([target_pos, target_quat])
+
+        self.all_info = {
+            'obs_info': self.obs_info,
+            'target_pose': self.target,
+            'goal_pose': self.goal
+        }
+        
     def update_goal_tf(self, pt):
+        self.goal = pt
+        self.update_all_info()
+        
         t = geometry_msgs.msg.TransformStamped()
         t.header.stamp = rospy.Time.now()
         t.header.frame_id = "world"
@@ -148,6 +233,9 @@ class RobotCooking(object):
        
         
     def update_pose_target_tf(self, pt):
+        self.target = pt
+        self.update_all_info()
+        
         t = geometry_msgs.msg.TransformStamped()
         t.header.stamp = rospy.Time.now()
         t.header.frame_id = "world"
@@ -211,9 +299,13 @@ class RobotCooking(object):
             return("servo reached goal")
             return True
 
+    
     def plan_to_pose_target(self, pt):
         self.wp_gen.set_goal(pt)
         self.update_goal_tf(pt)
+
+        self.get_obstacle_info()
+        
         ee_pos, ee_quat = self.driver_utils.get_ee_pose()
         ee_linear_vel, ee_angular_vel = self.driver_utils.get_ee_velocity()
 
@@ -241,10 +333,10 @@ class RobotCooking(object):
 
         if (pose_distance > 0.01 or quat_distance > 0.15) and self.driver_utils.is_tool_in_safe_workspace():
         
-            action = np.array([0,0,0,0,0,0])
+            action = self.get_policy_output()
             ddy, dy, y = self.wp_gen.get_next_wp(action, curr_pos, curr_vel, obs_info=self.get_obstacle_info())
-            self.servo_to_pose_target(y, pos_th=0.005, quat_th=0.1)
-            # self.update_pose_target_tf(y)
+            #self.servo_to_pose_target(y, pos_th=0.005, quat_th=0.1)
+            self.update_pose_target_tf(y)
             return False
         else:
             print("plan reached goal")
@@ -361,7 +453,8 @@ class RobotCooking(object):
         ]
 
         test_script = [
-            'toaster_absolute'
+            # 'toaster_absolute'
+            'switch_on'
         ]
         
         if mode == "servo":
@@ -500,11 +593,27 @@ if __name__ == "__main__":
                 'use_own_pose': True,
                 'dt': 0.015
             },
-            'translation_gen': 'clf_cbf',
+            # 'translation_gen': 'clf_cbf',
+            'translation_gen': 'dmp',
             'orientation_gen': 'dmp'            
         }
     }
-    
+
+
+    #### Learned policy restoration ####
+    experiment_root_dir = os.path.join(os.environ['LEARNING_PATH'], 'learning', 'experiments')
+    experiment_name = 'test'
+    hyperparam_dir = 'seed0'
+    itr = 200
+
+    config['policy_info'] = {
+        "state_space": {'type': 'float', 'shape': (3, ), "upper_bound": [], 'lower_bound': []},
+        "action_space": {'type': 'float', 'shape': (3, ), "upper_bound": 70*np.ones(3), 'lower_bound': -70*np.ones(3)},
+        "training_config_restore_path": os.path.join(experiment_root_dir, experiment_name, 'config', hyperparam_dir, 'config.pkl'),
+        "policy_restore_path": os.path.join(experiment_root_dir, experiment_name, 'transitions', hyperparam_dir, 'itr_'+str(itr)),
+        "state_preprocessor_restore_path": os.path.join(experiment_root_dir, experiment_name, 'info', hyperparam_dir, 'state_preprocessor_params.pkl')
+    }
+
     
     #### Initialize ####
     cls = RobotCooking(config)
