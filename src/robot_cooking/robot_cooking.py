@@ -160,13 +160,18 @@ class RobotCooking(object):
             
         if self.policy is not None:
             action = self.policy.get_action(s, deterministic=True)
+            action *= 100
+            action = np.clip(action,
+                             self.RobotCooking_config['policy_info']['action_space']['lower_bound'],
+                             self.RobotCooking_config['policy_info']['action_space']['upper_bound'])
+        
         else:
-            action = np.zeros(3)
+            action = np.zeros(self.RobotCooking_config['policy_info']['action_space']['shape'][0])
 
         action = np.concatenate([action.flatten(), np.zeros(3)])
-        # action *= 100
 
-        action = np.zeros(6)
+        # print(action)
+        # action = np.zeros(6)
         
         return action
         
@@ -335,8 +340,8 @@ class RobotCooking(object):
         
             action = self.get_policy_output()
             ddy, dy, y = self.wp_gen.get_next_wp(action, curr_pos, curr_vel, obs_info=self.get_obstacle_info())
-            #self.servo_to_pose_target(y, pos_th=0.005, quat_th=0.1)
-            self.update_pose_target_tf(y)
+            self.servo_to_pose_target(y, pos_th=0.005, quat_th=0.1)
+            # self.update_pose_target_tf(y)
             return False
         else:
             print("plan reached goal")
@@ -593,7 +598,7 @@ if __name__ == "__main__":
                 'use_own_pose': True,
                 'dt': 0.015
             },
-            # 'translation_gen': 'clf_cbf',
+            #'translation_gen': 'clf_cbf',
             'translation_gen': 'dmp',
             'orientation_gen': 'dmp'            
         }
@@ -604,7 +609,7 @@ if __name__ == "__main__":
     experiment_root_dir = os.path.join(os.environ['LEARNING_PATH'], 'learning', 'experiments')
     experiment_name = 'test'
     hyperparam_dir = 'seed0'
-    itr = 200
+    itr = 100
 
     config['policy_info'] = {
         "state_space": {'type': 'float', 'shape': (3, ), "upper_bound": [], 'lower_bound': []},

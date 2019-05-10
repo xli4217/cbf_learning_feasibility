@@ -381,6 +381,7 @@ def construct_rl_experiment_config(experiment_root_dir="",
 #############################
 def construct_deployer_config(agent='ppo',
                               nb_trial_runs=10,
+                              sampler_traj=True,
                               dmp_action=False,
                               clf_action=False,
                               cbf_action=False,
@@ -413,6 +414,7 @@ def construct_deployer_config(agent='ppo',
         'agent': agent,
         'env_name': env_name,
         'env_from_config': env_from_config,
+        'sampler_traj': sampler_traj,
         'exp_config': {
             'env_name': env_name,
             'task': task,
@@ -495,7 +497,7 @@ default_args = {
     'save_replay_buffer': False,
     'log_components':{
         'state_dist': False,
-        'action_dist': False,
+        'action_dist': True,
         'reward_dist': False,
         'done_dist': False,
         'adv_dist': False,
@@ -527,6 +529,7 @@ default_args = {
     'hyperparam_dir': 'seed0',
     'itr': 0,
     'nb_trial_runs': 10,
+    'sampler_traj': True,
     'env_from_config': True,
     'log_episode': False,
     'log_batch': False,
@@ -629,6 +632,7 @@ def construct_experiment_config(experiment_root_dir=default_args['experiment_roo
                                 hyperparam_dir=default_args['hyperparam_dir'],
                                 itr=default_args['itr'],
                                 nb_trial_runs=default_args['nb_trial_runs'],
+                                sampler_traj=default_args['sampler_traj'],
                                 env_from_config=default_args['env_from_config'],
                                 cmd_log=""):
 
@@ -717,6 +721,7 @@ def construct_experiment_config(experiment_root_dir=default_args['experiment_roo
         'Deployer': {
             'type': None,
             'config': construct_deployer_config(agent=agent,
+                                                sampler_traj=sampler_traj,
                                                 dmp_action=dmp_action,
                                                 clf_action=clf_action,
                                                 cbf_action=cbf_action,

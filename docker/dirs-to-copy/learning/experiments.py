@@ -177,51 +177,53 @@ class RunExperiment(object):
         #######
 
         #### Finer episodic version ####
-        # return_list = []
-        # for _ in range(deploy_config['nb_trial_runs']):
-        #     env.reset()
-        #     print('reset!')
-        #     R = 0
-        #     obs_prev = None
-        #     action_prev = None
-        #     for i in range(deploy_config['max_episode_timesteps']):
-        #         obs = env.get_state()
-        #         if state_preprocessor is not None and deploy_config['use_preprocessors']:
-        #             obs = state_preprocessor.get_scaled_x(obs)
-        #         # print(obs[0])
-        #         if env.is_done(obs):
-        #             break
-        #         action = policy.get_action(obs, deterministic=True)
-        #         env.step(action)
-        #         if i > 0:
-        #             R += env.get_reward(obs_prev, action_prev, obs)
-        #         obs_prev = obs
-        #         action_prev = action
-        #     print("episode return: {}".format(R))
-        #     return_list.append(R)
-        # print("average return: {}".format(np.mean(np.array(return_list))))
-        # print("return std: {}".format(np.std(np.array(return_list))))
+        if not deploy_config['sampler_traj']:
+            return_list = []
+            for _ in range(deploy_config['nb_trial_runs']):
+                env.reset(s=None)
+                print('reset!')
+                R = 0
+                obs_prev = None
+                action_prev = None
+                for i in range(deploy_config['max_episode_timesteps']):
+                    obs = env.get_state()
+                    if env.is_done(obs):
+                        break
+                    if state_preprocessor is not None and deploy_config['use_preprocessors']:
+                        obs = state_preprocessor.get_scaled_x(obs)
+                    # print(obs[0])
+                    action = policy.get_action(obs, deterministic=True)
+                    env.step(action)
+                    if i > 0:
+                        R += env.get_reward(obs_prev, action_prev, obs)
+                    obs_prev = obs
+                    action_prev = action
+                print("episode return: {}".format(R))
+                return_list.append(R)
+            print("average return: {}".format(np.mean(np.array(return_list))))
+            print("return std: {}".format(np.std(np.array(return_list))))
 
         #### Sampler version ####
-        sampler_config = config.get(['Sampler', 'config'])
-        sampler_config['log_episode'] = deploy_config['log_episode']
-        sampler_config['log_batch'] = deploy_config['log_batch']
-        sampler_config['use_preprocessors'] = deploy_config['use_preprocessors']
-        sampler_config['update_preprocessors'] = False
-        sampler_config['save_preprocessors'] = False
-        sampler_type = config.get(['Sampler', 'type'])
-        sampler = sampler_type(sampler_config,
-                               env=env,
-                               policy=policy,
-                               state_preprocessor=state_preprocessor,
-                               logger=logger)
+        if deploy_config['sampler_traj']:
+            sampler_config = config.get(['Sampler', 'config'])
+            sampler_config['log_episode'] = deploy_config['log_episode']
+            sampler_config['log_batch'] = deploy_config['log_batch']
+            sampler_config['use_preprocessors'] = deploy_config['use_preprocessors']
+            sampler_config['update_preprocessors'] = False
+            sampler_config['save_preprocessors'] = False
+            sampler_type = config.get(['Sampler', 'type'])
+            sampler = sampler_type(sampler_config,
+                                   env=env,
+                                   policy=policy,
+                                   state_preprocessor=state_preprocessor,
+                                   logger=logger)
 
-        unscaled_batch, scaled_batch = sampler.get_batch(batch_size=deploy_config['nb_trial_runs'],
-                                                         episode_horizon=deploy_config['max_episode_timesteps'],
-                                                         deterministic=True)
-        for traj in unscaled_batch:
-            R = np.sum(traj['Rewards'])
-            print("Return:", R)
+            unscaled_batch, scaled_batch = sampler.get_batch(batch_size=deploy_config['nb_trial_runs'],
+                                                             episode_horizon=deploy_config['max_episode_timesteps'],
+                                                             deterministic=True)
+            for traj in unscaled_batch:
+                R = np.sum(traj['Rewards'])
+                print("Return:", R)
             
     def run(self):
         '''

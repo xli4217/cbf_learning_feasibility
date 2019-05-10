@@ -74,14 +74,17 @@ class LearningEnv(object):
         self.sample_range = self.base_env.get_region_info(region='sample_region')
         self.motion_range = self.base_env.get_region_info(region='motion_region')
         
-    def reset(self):
+    def reset(self, s=None):
         self.update_all_info()
 
-        ## sampel target
-        low = [self.sample_range['x'][0], self.sample_range['y'][0], self.sample_range['z'][0]]
-        high = [self.sample_range['x'][1], self.sample_range['y'][1], self.sample_range['z'][1]]
-        self.target_pos = np.random.uniform(low, high, 3)
-
+        if s is None:
+            ## sampel target
+            low = [self.sample_range['x'][0], self.sample_range['y'][0], self.sample_range['z'][0]]
+            high = [self.sample_range['x'][1], self.sample_range['y'][1], self.sample_range['z'][1]]
+            self.target_pos = np.random.uniform(low, high, 3)
+        else:
+            self.target_pos = s
+            
         quat = np.array([0, 0,  0, 1])
         self.base_env.set_target_pose(np.concatenate([self.target_pos, quat]))
         self.wp_gen.reset(np.concatenate([self.target_pos, quat]), np.zeros(6))
@@ -198,9 +201,8 @@ class LearningEnv(object):
 
         if len(action) == 3:
             action = np.concatenate([action, np.zeros(3)])
-        
         ddy, dy, y = self.wp_gen.get_next_wp(action, curr_pose, curr_vel)
-
+        
         if len(y) < 7:
             y = np.concatenate([y, np.array([0,0,0,1])])
 
@@ -309,6 +311,8 @@ if __name__ == "__main__":
         #     cls.reset()
         cls.update_all_info()
         cls.base_env.synchronous_trigger()
+        cls.get_reward(state=cls.all_info['target_pos'])
+        #print(cls.is_done(state=cls.all_info['target_pos']))
         # time.sleep(0.05)
         # target_pos = np.concatenate([cls.all_info['target_pos'], cls.all_info['target_quat']])
         # target_pos += np.array([0.01,0,0,0,0,0,0])

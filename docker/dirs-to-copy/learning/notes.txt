@@ -8,7 +8,7 @@
   - python ${LEARNING_PATH}learning/experiments.py --max_episode_timesteps 50 --rollout_batch_size 10 --use_preprocessors True --update_preprocessors True --save_preprocessors True --mode hyperparam_tuning
 
 - Deploy cmd
-  - python ${LEARNING_PATH}learning/experiments.py --exp_name cloud/rlfps-small/test --hyperparam_dir seed0 --itr 100 --nb_trial_runs 10 --use_preprocessors True --mode deploy
+  - python ${LEARNING_PATH}learning/experiments.py --exp_name cloud/rlfps-small/test --hyperparam_dir seed0 --itr 100 --nb_trial_runs 10 --use_preprocessors True --mode deploy --sampler_traj False
 
 - TODO
   - entropy always increasing
