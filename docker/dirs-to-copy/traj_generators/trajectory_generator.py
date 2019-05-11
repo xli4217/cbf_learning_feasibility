@@ -56,25 +56,23 @@ class TrajectoryGenerator(object):
         self.dmp_gen = DMP(self.TrajectoryGenerator_config['dmp_config'])
         self.clf_cbf_gen = QPcontroller(self.TrajectoryGenerator_config['clf_cbf_config'])
 
-
     def set_goal(self, goal):
         self.dmp_gen.set_goal(goal)
         self.clf_cbf_gen.set_goal(goal)
         
     def get_next_wp(self, action, curr_pose, curr_vel, obs_info={}):
-
-        #### this include translation and orientation
-        dmp_ddy, dmp_dy, dmp_y = self.dmp_gen.get_next_wp(action, curr_pose, curr_vel)
-
-        #### this currently only includes orientation
-        clf_cbf_ddy, clf_cbf_dy, clf_cbf_y = self.clf_cbf_gen.get_next_wp(action, curr_pose, curr_vel, obs_info)
-
+      
         #### translation generator ####
         if self.TrajectoryGenerator_config['translation_gen'] == 'dmp':
+            #### this include translation and orientation
+            dmp_ddy, dmp_dy, dmp_y = self.dmp_gen.get_next_wp(action, curr_pose, curr_vel)
             ddy_trans = dmp_ddy[:3]
             dy_trans = dmp_dy[:3]
             y_trans = dmp_y[:3]
         elif self.TrajectoryGenerator_config['translation_gen'] == 'clf_cbf':
+            #### this currently only includes translation
+            clf_cbf_ddy, clf_cbf_dy, clf_cbf_y = self.clf_cbf_gen.get_next_wp(action, curr_pose, curr_vel, obs_info)
+
             ddy_trans = clf_cbf_ddy[:3]
             dy_trans = clf_cbf_dy[:3]
             y_trans = clf_cbf_y[:3]
@@ -83,10 +81,15 @@ class TrajectoryGenerator(object):
 
         #### orientation generator ####
         if self.TrajectoryGenerator_config['orientation_gen'] == 'dmp':
+            #### this include translation and orientation
+            dmp_ddy, dmp_dy, dmp_y = self.dmp_gen.get_next_wp(action, curr_pose, curr_vel)
             ddy_ori = dmp_ddy[3:]
             dy_ori = dmp_dy[3:]
             y_ori = dmp_y[3:]
         elif self.TrajectoryGenerator_config['orientation_gen'] == 'clf_cbf':
+            #### this currently only includes translation
+            clf_cbf_ddy, clf_cbf_dy, clf_cbf_y = self.clf_cbf_gen.get_next_wp(action, curr_pose, curr_vel, obs_info)
+
             ddy_ori = clf_cbf_ddy[3:]
             dy_ori = clf_cbf_dy[3:]
             y_ori = clf_cbf_y[3:]

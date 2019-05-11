@@ -37,6 +37,18 @@ def quaternion_dist(q1, q2):
         return 2 * np.linalg.norm(quaternion_log(conjugate_product))
 
 
+def get_p2(p1, Mp1p2):
+    Mp1 = tf.transformations.quaternion_matrix(p1[3:])
+    Mp1[:3,3] = p1[:3]
+
+    Mp2 = Mp1.dot(Mp1p2)
+
+    p2_quat = tf.transformations.quaternion_from_matrix(Mp2)
+
+    p2 = np.concatenate([Mp2[:3,3], p2_quat])
+
+    return p2
+        
 default_config = {
     "rate": 10,
     "policy_info": {
@@ -101,6 +113,13 @@ class RobotCooking(object):
         self.rate = rospy.Rate(self.RobotCooking_config['rate'])
 
         self.wp_gen = self.RobotCooking_config['WPGenerator']['type'](self.RobotCooking_config['WPGenerator']['config'])
+
+        # self.M_finger2ee_offset = np.eye(4)
+        # self.M_finger2ee_offset[0,3] = -0.05
+        # self.M_finger2ee_offset[2,3] = -0.1
+
+        # self.M_ee2finger_offset = np.linalg.inv(self.M_finger2ee_offset)
+        
         #### Initialize tf ####
         self.tf_broadcaster = tf2_ros.TransformBroadcaster()
         self.tf_buffer = tf2_ros.Buffer()
@@ -153,6 +172,62 @@ class RobotCooking(object):
                 self.state_preprocessor = state_preprocessor_type(state_preprocessor_config)
                 self.state_preprocessor.restore_preprocessor(state_preprocessor_restore_path)
 
+    def finger2ee_pose_hack(self, finger_pose=None):
+        assert isinstance(finger_pose, np.ndarray)
+        assert len(finger_pose) == 7
+
+        M_finger_pose = tf.transformations.quaternion_matrix(finger_pose[3:])
+        M_finger_pose[:3,3] = finger_pose[:3]
+
+    
+        M_ee = M_finger_pose.dot(self.M_finger2ee_offset)
+
+        ## transform to vector
+        ee_quat = tf.transformations.quaternion_from_matrix(M_ee)
+
+        ee_pose = np.concatenate([M_ee[:3,3], ee_quat])
+
+        return ee_pose
+
+        
+    def ee2finger_pose(self, ee_pose=None):
+        
+        assert isinstance(ee_pose, np.ndarray)
+        assert len(ee_pose) == 7
+
+        M_ee_pose = tf.transformations.quaternion_matrix(ee_pose[3:])
+        M_ee_pose[:3,3] = ee_pose[:3]
+
+        ee2finger_pose_tf_stamped = self.tf_buffer.lookup_transform('j2s7s300_end_effector', 'j2s7s300_link_finger_tip_2', rospy.Time())
+        ee2finger_pose = [
+            ee2finger_pose_tf_stamped.transform.translation.x,
+            ee2finger_pose_tf_stamped.transform.translation.y,
+            ee2finger_pose_tf_stamped.transform.translation.z,
+            ee2finger_pose_tf_stamped.transform.rotation.x,
+            ee2finger_pose_tf_stamped.transform.rotation.y,
+            ee2finger_pose_tf_stamped.transform.rotation.z,
+            ee2finger_pose_tf_stamped.transform.rotation.w,
+        ]
+
+        M_ee2finger = tf.transformations.quaternion_matrix(ee2finger_pose[3:])
+        M_ee2finger[:3,3] = ee2finger_pose[:3]
+
+        ## this is the finger_tip link pose in tf
+        M_finger_tip_link = M_ee_pose.dot(M_ee2finger)
+
+        ## this is the desired finger pose (more towards the tip)
+        M_tiplink2finger_offset = np.eye(4)
+        M_tiplink2finger_offset[0,3] = 0.1
+
+        M_finger = M_finger_tip_link.dot(M_tiplink2finger_offset)
+
+        ## transform to vector
+        finger_quat = tf.transformations.quaternion_from_matrix(M_finger)
+
+        finger_pose = np.concatenate([M_finger[:3,3], finger_quat])
+
+        return finger_pose
+        
     def get_policy_output(self):
         s = self.all_info['target_pose'][:3]
         if self.state_preprocessor is not None:
@@ -257,7 +332,7 @@ class RobotCooking(object):
 
         self.tf_broadcaster.sendTransform(t)
         
-    def servo_to_pose_target(self, pt, pos_th=0.01, quat_th=0.1):
+    def servo_to_pose_target(self, pt, pos_th=0.01, quat_th=0.1, dry_run=True):
         assert len(pt) == 7
 
         # update tf
@@ -297,7 +372,8 @@ class RobotCooking(object):
 
         # start servoing
         if (pose_distance > pos_th or quat_distance > quat_th) and self.driver_utils.is_tool_in_safe_workspace():
-            self.driver_utils.pub_joint_velocity(jv, duration_sec=1./self.RobotCooking_config['rate'])
+            if not dry_run:
+                self.driver_utils.pub_joint_velocity(jv, duration_sec=1./self.RobotCooking_config['rate'])
             self.rate.sleep()
             return False
         else:
@@ -305,7 +381,11 @@ class RobotCooking(object):
             return True
 
     
-    def plan_to_pose_target(self, pt):
+    def plan_to_pose_target(self, pt, control_point='ee', dry_run=True):
+        '''
+        control_point can be 'ee' or 'finger_tip'
+        '''
+        
         self.wp_gen.set_goal(pt)
         self.update_goal_tf(pt)
 
@@ -314,12 +394,16 @@ class RobotCooking(object):
         ee_pos, ee_quat = self.driver_utils.get_ee_pose()
         ee_linear_vel, ee_angular_vel = self.driver_utils.get_ee_velocity()
 
-        curr_pos = np.concatenate([ee_pos, ee_quat])
+        curr_pose = np.concatenate([ee_pos, ee_quat])
         curr_vel = np.concatenate([ee_linear_vel, ee_angular_vel])
 
-        pose_distance = np.linalg.norm(ee_pos - pt[:3])
-
-        quat_dist_arg = 2 * np.inner(ee_quat, pt[3:]) - 1
+        if control_point == 'finger_tip':
+            curr_pose[0] -= 0.19
+            curr_pose[2] -= 0.1
+        
+        pose_distance = np.linalg.norm(curr_pose[:3] - pt[:3])
+        
+        quat_dist_arg = 2 * np.inner(curr_pose[3:], pt[3:]) - 1
         quat_dist_arg = np.modf(quat_dist_arg)[0]
         
         if quat_dist_arg > 0.99:
@@ -330,7 +414,7 @@ class RobotCooking(object):
             quat_distance = np.arccos(quat_dist_arg)
 
         quat_distance = np.arccos(quat_dist_arg)
-            
+
         
         if not self.driver_utils.is_tool_in_safe_workspace():
             print('tool not in safe workspace')
@@ -339,9 +423,18 @@ class RobotCooking(object):
         if (pose_distance > 0.01 or quat_distance > 0.15) and self.driver_utils.is_tool_in_safe_workspace():
         
             action = self.get_policy_output()
-            ddy, dy, y = self.wp_gen.get_next_wp(action, curr_pos, curr_vel, obs_info=self.get_obstacle_info())
-            self.servo_to_pose_target(y, pos_th=0.005, quat_th=0.1)
-            # self.update_pose_target_tf(y)
+            ddy, dy, y = self.wp_gen.get_next_wp(action, curr_pose, curr_vel, obs_info=self.get_obstacle_info())
+            
+            if control_point == 'finger_tip':
+                # y = get_p2(y, self.M_finger2ee_offset)
+                y[0] += 0.19
+                y[2] += 0.1
+                
+            if not dry_run:
+                self.servo_to_pose_target(y, pos_th=0.005, quat_th=0.1, dry_run=dry_run)  
+            else:
+                self.update_pose_target_tf(y)
+                self.rate.sleep()
             return False
         else:
             print("plan reached goal")
@@ -395,7 +488,7 @@ class RobotCooking(object):
         return np.concatenate([target_pos, target_quat])
 
         
-    def waypoint_cooking(self, mode="servo"):
+    def waypoint_cooking(self, mode="servo", dry_run=True):
         from waypoints import waypoints_dict
 
         servo_script = []
@@ -459,6 +552,7 @@ class RobotCooking(object):
 
         test_script = [
             # 'toaster_absolute'
+            'close',
             'switch_on'
         ]
         
@@ -485,12 +579,12 @@ class RobotCooking(object):
                 done = False
                 while not done:
                     pt = self.get_target_frame('condiment_mapped', pt_name)
-                    done = action_fn(pt)
+                    done = action_fn(pt, dry_run=dry_run)
             elif pt_name == 'relative_plate_apply_condiment_pre':
                 done = False
                 while not done:
                     pt = self.get_target_frame('blue_mapped', pt_name)
-                    done = action_fn(pt)
+                    done = action_fn(pt, dry_run=dry_run)
             elif pt_name == 'apply_condiment':
                 for i in range(25):
                     vel_scale = 2. * np.sin(0.3*i)
@@ -504,10 +598,14 @@ class RobotCooking(object):
                 done = False
                 while not done:
                     pt = self.get_target_frame(pt_name, "relative_plate")
-                    done = action_fn(pt)
+                    done = action_fn(pt, dry_run=dry_run)
+            elif pt_name == 'switch_on':
+                pt = waypoints_dict[pt_name]
+                while not action_fn(pt, dry_run=dry_run, control_point='finger_tip'):
+                    pass
             else:
                 pt = waypoints_dict[pt_name]
-                while not action_fn(pt):
+                while not action_fn(pt, dry_run=dry_run):
                     pass
         
                 
@@ -641,4 +739,7 @@ if __name__ == "__main__":
     
     #### waypoint cooking ####
     # cls.waypoint_cooking(mode='plan')
-    cls.waypoint_cooking(mode='test')
+    cls.waypoint_cooking(mode='test', dry_run=False)
+
+    ### test finger2ee_pose ####
+    # cls.finger2ee_pose(finger_pose=np.array([1,2,3,0,0,0,1]))
