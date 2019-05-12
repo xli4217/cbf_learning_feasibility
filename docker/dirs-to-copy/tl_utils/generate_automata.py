@@ -25,6 +25,7 @@ class GenerateAutomata(object):
         self.GenerateAutomata_config.update(config)
 
         self.formula = self.GenerateAutomata_config['formula']
+
         if formula is not None:
             self.formula = formula
 

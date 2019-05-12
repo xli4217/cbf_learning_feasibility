@@ -44,6 +44,8 @@ obstacle_handles = [
 object_handles = [
     {'name': 'hotdog_cooker', 'handle': 'hotdog_cooker'},
     {'name': 'toaster_button', 'handle': 'toaster_joint_frame'},
-    {'name': 'toaster_button_joint', 'handle': 'button_revolute_joint'}
+    {'name': 'toaster_button_joint', 'handle': 'button_revolute_joint'},
+    {'name': 'hotdog_plate', 'handle': 'hotdog_plate'},
+    {'name': 'bun_plate', 'handle': 'bun_plate'},
 ]
 

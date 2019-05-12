@@ -1,6 +1,6 @@
 import numpy as np
 from lomap.classes import Fsa
-from utils.utils import *
+from utils.utils import pos_distance, quat_distance
         
 ############# 
 # Key Poses #
@@ -8,7 +8,8 @@ from utils.utils import *
 
 KEY_POSITIONS = {
     'neutral': np.array([0.178, -0.28, 0.228, 0.991, 0.13, 0.011, -0.016]),
-    'condiment_placement_location': np.array([0.488,-0.0669,0.038,0.6135,0.3485,0.6266,-0.33]),
+    'condiment_placement_goal': np.array([0.488,-0.0669,0.038,0.6135,0.3485,0.6266,-0.33]),
+    'switch_on_goal': np.array([ -0.054, -0.569, 0.144, 0,0,0,1])
 }
 
 OBJECT_RELATIVE_POSE = {

@@ -1,0 +1,10 @@
+digraph "" {
+T0_init;
+T0_S1;
+accept_all;
+T0_init -> T0_init  [guard="((!(move_to)) || (!(open_gripper)))", input="set([0, 1, 2, 3, 4, 6])", key=0, label="((!(move_to)) || (!(open_gripper)))", weight=0];
+T0_init -> T0_S1  [guard="((move_to) && (open_gripper))", input="set([5, 7])", key=0, label="((move_to) && (open_gripper))", weight=0];
+T0_S1 -> T0_S1  [guard="(!(close_gripper))", input="set([0, 1, 4, 5])", key=0, label="(!(close_gripper))", weight=0];
+T0_S1 -> accept_all  [guard="(close_gripper)", input="set([2, 3, 6, 7])", key=0, label="(close_gripper)", weight=0];
+accept_all -> accept_all  [guard="(1)", input="set([0, 1, 2, 3, 4, 5, 6, 7])", key=0, label="(1)", weight=0];
+}

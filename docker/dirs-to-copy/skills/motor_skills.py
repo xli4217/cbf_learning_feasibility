@@ -22,7 +22,7 @@ default_config = {
     }
 }
 
-class Skills(object):
+class MotorSkills(object):
 
     def __init__(self, config={}):
         self.Skills_config = default_config
@@ -44,15 +44,15 @@ class Skills(object):
             }
 
             
-    def skill_close_gripper(self):
+    def skill_closegripper(self):
         percentage_close = 0.3
         return percentage_close
 
-    def skill_open_gripper(self):
+    def skill_opengripper(self):
         percentage_close = 0.9
         return percentage_close
 
-    def skill_move_to(self, goal, forcing, curr_pose, curr_vel, obs_info):
+    def skill_moveto(self, goal, forcing, curr_pose, curr_vel, obs_info):
         self.traj_generator.set_goal(goal)
         ddy, dy ,y = self.traj_generator.get_next_wp(action=forcing,
                                                      curr_pose=curr_pose,
@@ -60,25 +60,26 @@ class Skills(object):
                                                      obs_info=obs_info)
         return ddy, dy, y
 
-    def skill_flip_switch_on(self, goal, curr_pose, curr_vel, obs_info):
+    def skill_flipswitchon(self, goal, curr_pose, curr_vel, obs_info):
         self.traj_generator.set_goal(goal)
 
-        policy = self.learned_skills_dict['flip_switch_on']['policy']
-        state_preprocessor = self.learned_skills_dict['flip_switch_on']['state_preprocessor']
+        policy = self.learned_skills_dict['flipswitchon']['policy']
+        state_preprocessor = self.learned_skills_dict['flipswitchon']['state_preprocessor']
 
-        state_dim = self.Skills_config['LearnedSkills']['flip_switch_on']['state_space']['shape'][0]
+        state_dim = self.Skills_config['LearnedSkills']['flipswitchon']['state_space']['shape'][0]
         
         s = curr_pose[:state_dim]
 
         if state_preprocessor is not None:
             s = state_preprocessor.get_scaled_x(s)
+            
+        forcing = policy.get_action(s, deterministic=True).flatten()
 
-        forcing = policy.get_action(s, deterministic=True)
         forcing *= 100
 
-        action_space = self.Skills_config['LearnedSkills']['flip_switch_on']['action_space']
+        action_space = self.Skills_config['LearnedSkills']['flipswitchon']['action_space']
         forcing = np.clip(forcing, action_space['lower_bound'], action_space['upper_bound'])
-        forcing = np.concatenate([action, np.zeros(3)])
+        forcing = np.concatenate([forcing, np.zeros(3)])
 
         ddy, dy, y = self.traj_generator.get_next_wp(action=forcing,
                                                      curr_pose=curr_pose,
@@ -88,26 +89,26 @@ class Skills(object):
 
         
     def get_action(self, skill_name=None, skill_arg={}):
-        if skill_name == 'close_gripper':
+        if skill_name == 'closegripper':
             action = {
                 'description': 'percentage_gripper_close',
                 'value': self.skill_close_gripper()
             }
             return action
-        elif skill_name == 'open_gripper':
+        elif skill_name == 'opengripper':
             action = {
                 'description': 'percentage_gripper_close',
                 'value': self.skill_open_gripper()
             }
             return action
-        elif skill_name == 'move_to':
+        elif skill_name == 'moveto':
             curr_pose = skill_arg['curr_pose']
             curr_vel = skill_arg['curr_vel']
             obs_info = skill_arg['obs_info']
             goal = skill_arg['goal']
 
             ddy, dy, y = self.skill_move_to(goal=goal,
-                                            action=np.zeros(6),
+                                            forcing=np.zeros(6),
                                             curr_pose=curr_pose,
                                             curr_vel=curr_vel,
                                             obs_info=obs_info)
@@ -117,7 +118,7 @@ class Skills(object):
             }
 
             return action
-        elif skill_name == 'flip_switch_on':
+        elif skill_name == 'flipswitchon':
             curr_pose = skill_arg['curr_pose']
             curr_vel = skill_arg['curr_vel']
             obs_info = skill_arg['obs_info']
@@ -206,13 +207,13 @@ if __name__ == "__main__":
         "policy_restore_path": os.path.join(experiment_root_dir, experiment_name, 'transitions', hyperparam_dir, 'itr_'+str(itr)),
         "state_preprocessor_restore_path": os.path.join(experiment_root_dir, experiment_name, 'info', hyperparam_dir, 'state_preprocessor_params.pkl')
     }
-    config['LearnedSkills']['flip_switch_on'] = skill_config
+    config['LearnedSkills']['flipswitchon'] = skill_config
 
 
     ##############
     # Initialize #
     ##############
-    cls = Skills(config)
+    cls = MotorSkills(config)
 
 
     ########

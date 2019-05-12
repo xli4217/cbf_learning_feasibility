@@ -3,6 +3,7 @@
 from gurobipy import *
 import math
 import numpy as np
+import os
 
 default_config = {
     'k_cbf': 1,
@@ -10,7 +11,8 @@ default_config = {
     'num_states':3,
     'action_space': {'shape': (3,), 'upper_bound': [0.1, 0.1, 0.1], 'lower_bound': [-0.1,-0.1,-0.1]},
     'use_own_pose': False,
-    'dt': 0.2
+    'dt': 0.2,
+    'log_dir': os.getcwd()
 }
 
 class QPcontroller:
@@ -104,7 +106,7 @@ class QPcontroller:
         self.control_u3 = self.solution[2].x
         
         # For debuging only, save model to view constraints etc.
-        self.m.write("qp_model.lp")
+        self.m.write(os.path.join(self.QPcontroller_config['log_dir'], "qp_model.lp"))
 
         target_vel = np.array([self.control_u1, self.control_u2, self.control_u3])
 

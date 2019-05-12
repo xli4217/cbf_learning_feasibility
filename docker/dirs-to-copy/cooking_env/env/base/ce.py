@@ -166,6 +166,16 @@ class CookingEnv(VrepEnvBase):
         # close gripper
         vrep.simxSetIntegerSignal(self.clientID, self.gripper_toggle_signal_name, 1, vrep.simx_opmode_oneshot)
         self.synchronous_trigger()
+
+    def set_gripper_state(self, gripper_state):
+        if self.CookingEnv_config.get('particle_test'):
+            if gripper_state < 0.5:
+                vrep.simxSetIntegerSignal(self.clientID, 'open_gripper', 1, vrep.simx_opmode_oneshot)
+            else:
+                vrep.simxSetIntegerSignal(self.clientID, 'open_gripper', 0, vrep.simx_opmode_oneshot)
+        
+    def move_to(self, pt):
+        self.set_target_pose(pt)
         
     def set_target_pose(self, pt):
         assert pt.shape == (7,)
@@ -185,7 +195,7 @@ class CookingEnv(VrepEnvBase):
       
         self.synchronous_trigger()
 
-        
+    
     def set_goal_pose(self, pt):
         pt = np.array(pt)
         assert pt.shape == (7,)

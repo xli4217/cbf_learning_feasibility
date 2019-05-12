@@ -43,11 +43,9 @@ def pos_distance(p1, p2):
 def quat_distance(p1, p2):
     quat_dist_arg = 2 * np.inner(p1[3:], p2[3:]) - 1
     quat_dist_arg = np.modf(quat_dist_arg)[0]
-
-    if quat_dist_arg > 0.99:
+    
+    if quat_dist_arg > 0.99 or quat_dist_arg < -0.99 or np.abs(quat_dist_arg) < 0.005:
         quat_distance = 0.
-    elif quat_dist_arg < -0.99:
-        quat_distance = 0
     else:
         quat_distance = np.arccos(quat_dist_arg)
 
@@ -57,10 +55,10 @@ def quat_distance(p1, p2):
 def pose_distance(p1, p2):
     assert len(p1) == len(p2) == 7
 
-    pos_distance = pos_distance(p1[:3], p2[:3])
-    quat_distance = quat_distance(p1[3:], p2[3:])
+    pos_dist = pos_distance(p1[:3], p2[:3])
+    quat_dist = quat_distance(p1[3:], p2[3:])
     
-    return pos_distance, quat_dist
+    return pos_dist, quat_dist
 
 
 def load_policy_and_preprocessor(loading_config):

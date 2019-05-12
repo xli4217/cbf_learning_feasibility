@@ -10,6 +10,9 @@
 - Deploy cmd
   - python ${LEARNING_PATH}learning/experiments.py --exp_name cloud/rlfps-small/test --hyperparam_dir seed0 --itr 100 --nb_trial_runs 10 --use_preprocessors True --mode deploy --sampler_traj False
 
+
+- flip switch on goal pose: 0.757, -1.83, 0.76 (world)
+
 - TODO
   - entropy always increasing
 
