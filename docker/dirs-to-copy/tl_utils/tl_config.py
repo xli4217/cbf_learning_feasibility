@@ -1,26 +1,6 @@
 import numpy as np
 from lomap.classes import Fsa
-
-#########
-# Utils # 
-#########
-
-def pos_distance(p1, p2):
-    pos_dist = np.linalg.norm(p1[:3] - p2[:3])
-    return pos_dist
-
-def quat_distance(p1, p2):
-    quat_dist_arg = 2 * np.inner(p1[3:], p2[3:]) - 1
-    quat_dist_arg = np.modf(quat_dist_arg)[0]
-
-    if quat_dist_arg > 0.99:
-        quat_distance = 0.
-    elif quat_dist_arg < -0.99:
-        quat_distance = 0
-    else:
-        quat_distance = np.arccos(quat_dist_arg)
-
-    return quat_distance
+from utils.utils import *
         
 ############# 
 # Key Poses #

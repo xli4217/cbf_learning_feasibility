@@ -16,38 +16,7 @@ import tf
 from visualization_msgs.msg import *
 from  geometry_msgs.msg import *
 
-def quaternion_log(q):
-    u = q[:3]
-    v = q[3]
-
-    if np.linalg.norm(u) == 0:
-        return np.array([0,0,0])
-    else:
-        if v > 0.999:
-            v = 0.999
-        return np.arccos(v) * (u / np.linalg.norm(u))
-
-
-def quaternion_dist(q1, q2):
-    conjugate_product = tf.transformations.quaternion_multiply(q1, tf.transformations.quaternion_conjugate(q2))
-
-    if all(conjugate_product == np.array([0,0,0,-1])):
-        return 2*np.pi
-    else:
-        return 2 * np.linalg.norm(quaternion_log(conjugate_product))
-
-
-def get_p2(p1, Mp1p2):
-    Mp1 = tf.transformations.quaternion_matrix(p1[3:])
-    Mp1[:3,3] = p1[:3]
-
-    Mp2 = Mp1.dot(Mp1p2)
-
-    p2_quat = tf.transformations.quaternion_from_matrix(Mp2)
-
-    p2 = np.concatenate([Mp2[:3,3], p2_quat])
-
-    return p2
+from utils.utils import *
         
 default_config = {
     "rate": 10,
@@ -139,38 +108,8 @@ class RobotCooking(object):
         self.obs_info = None
         
         #### load ####
-        self.load_policy_and_preprocessor()
+        self.policy, self.state_preprocessor = load_policy_and_preprocessor(slef.RobotCooking_config['policy_info'])
 
-    def load_policy_and_preprocessor(self):
-        self.policy = None
-        self.state_preprocessor = None
-
-        config_restore_path = self.RobotCooking_config['policy_info']['training_config_restore_path']
-        
-        if config_restore_path is not None:
-            training_config = cloudpickle.loads(open(config_restore_path, 'rb').read())
-
-        #### load policy ####
-        policy_restore_path = self.RobotCooking_config['policy_info']['policy_restore_path']
-        if policy_restore_path is not None:
-            policy_config = training_config.get(['Actor', 'config'])
-            policy_config['obs_dim'] = self.RobotCooking_config['policy_info']['state_space']['shape'][0]
-            policy_config['action_dim'] = self.RobotCooking_config['policy_info']['action_space']['shape'][0]
-            policy_config['action_space'] = self.RobotCooking_config['policy_info']['action_space']
-            self.policy = training_config.get(['Actor', 'type'])(policy_config)
-            self.policy.restore(model_dir=policy_restore_path, model_name='policy')
-            print("Loaded policy from {}".format(os.path.join(policy_restore_path, 'policy')))
-
-        #### load state preprocessor ####
-        state_preprocessor_restore_path = self.RobotCooking_config['policy_info']['state_preprocessor_restore_path']
-        if state_preprocessor_restore_path is not None:    
-            state_preprocessor_config = training_config.get(['Preprocessors', 'state_preprocessor', 'config'])
-            state_preprocessor_config['dim'] = self.RobotCooking_config['policy_info']['state_space']['shape'][0]
-            state_preprocessor_type = training_config.get(['Preprocessors', 'state_preprocessor', 'type'])
-
-            if state_preprocessor_type is not None:
-                self.state_preprocessor = state_preprocessor_type(state_preprocessor_config)
-                self.state_preprocessor.restore_preprocessor(state_preprocessor_restore_path)
 
     def finger2ee_pose_hack(self, finger_pose=None):
         assert isinstance(finger_pose, np.ndarray)
@@ -355,23 +294,15 @@ class RobotCooking(object):
         
         ee_pos, ee_quat = self.driver_utils.get_ee_pose()
 
-        pose_distance = np.linalg.norm(ee_pos - pt[:3])
-        quat_dist_arg = 2 * np.inner(ee_quat, pt[3:]) - 1
-        quat_dist_arg = np.modf(quat_dist_arg)[0]
-
-        if quat_dist_arg > 0.99:
-            quat_distance = 0.
-        elif quat_dist_arg < -0.99:
-            quat_distance = 0
-        else:
-            quat_distance = np.arccos(quat_dist_arg)
-
+        ee_pose = np.concatenate([ee_pos, ee_quat])
+        pos_distance, quat_distance = pose_distance(ee_pose, pt)
+            
         if not self.driver_utils.is_tool_in_safe_workspace():
             print('tool not in safe workspace')
             return True
 
         # start servoing
-        if (pose_distance > pos_th or quat_distance > quat_th) and self.driver_utils.is_tool_in_safe_workspace():
+        if (pos_distance > pos_th or quat_distance > quat_th) and self.driver_utils.is_tool_in_safe_workspace():
             if not dry_run:
                 self.driver_utils.pub_joint_velocity(jv, duration_sec=1./self.RobotCooking_config['rate'])
             self.rate.sleep()
@@ -400,27 +331,14 @@ class RobotCooking(object):
         if control_point == 'finger_tip':
             curr_pose[0] -= 0.19
             curr_pose[2] -= 0.1
-        
-        pose_distance = np.linalg.norm(curr_pose[:3] - pt[:3])
-        
-        quat_dist_arg = 2 * np.inner(curr_pose[3:], pt[3:]) - 1
-        quat_dist_arg = np.modf(quat_dist_arg)[0]
-        
-        if quat_dist_arg > 0.99:
-            quat_distance = 0.
-        elif quat_dist_arg < -0.99:
-            quat_distance = 0
-        else:
-            quat_distance = np.arccos(quat_dist_arg)
 
-        quat_distance = np.arccos(quat_dist_arg)
-
-        
+        pos_distance, quat_distance = pose_distance(curr_pose, pt)
+            
         if not self.driver_utils.is_tool_in_safe_workspace():
             print('tool not in safe workspace')
             return True
 
-        if (pose_distance > 0.01 or quat_distance > 0.15) and self.driver_utils.is_tool_in_safe_workspace():
+        if (pos_distance > 0.01 or quat_distance > 0.15) and self.driver_utils.is_tool_in_safe_workspace():
         
             action = self.get_policy_output()
             ddy, dy, y = self.wp_gen.get_next_wp(action, curr_pose, curr_vel, obs_info=self.get_obstacle_info())

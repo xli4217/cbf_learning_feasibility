@@ -6,6 +6,8 @@ from future.utils import viewitems
 from cooking_env.env.base.ce import CookingEnv
 import cooking_env.vrep as vrep
 
+from utils.utils import *
+
 default_config = {
     # Common to all envs
     "seed": 10,
@@ -190,7 +192,6 @@ class LearningEnv(object):
 
         # clip action
         action = np.clip(action, self.action_space['lower_bound'], self.action_space['upper_bound'])
-
         
         curr_pos, curr_quat = self.base_env.get_target_pose()
         curr_linear_vel, curr_angular_vel = self.base_env.get_target_velocity()
@@ -208,7 +209,7 @@ class LearningEnv(object):
 
         # time.sleep(0.05)
         self.base_env.set_target_pose(y)
-        
+            
     def set_seed(self, seed):
         np.random.seed(seed)
 

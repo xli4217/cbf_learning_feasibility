@@ -7,6 +7,7 @@ from lomap.classes import Fsa
 from tl_tools.fsa_reward import FsaReward
 
 default_config = {
+    'formula': None,
     'key_positions': None,
     'object_relative_pose': None,
     'state_idx_map': None,
@@ -19,12 +20,16 @@ default_config = {
 
 class GenerateAutomata(object):
 
-    def __init__(self, formula, config={}):
+    def __init__(self, formula=None, config={}):
         self.GenerateAutomata_config = default_config
         self.GenerateAutomata_config.update(config)
 
+        self.formula = self.GenerateAutomata_config['formula']
+        if formula is not None:
+            self.formula = formula
+
         self.fsa = Fsa()
-        self.fsa.from_formula(formula)
+        self.fsa.from_formula(self.formula)
         self.fsa.add_trap_state()
         self.fsa.visualize(draw='pydot',
                            save_path=self.GenerateAutomata_config['fsa_save_dir'],
