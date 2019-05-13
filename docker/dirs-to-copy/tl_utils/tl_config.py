@@ -1,7 +1,24 @@
 import numpy as np
 from lomap.classes import Fsa
 from utils.utils import pos_distance, quat_distance
-        
+from utils import transformations
+
+def get_object_goal_pose(object_pose, goal_rel_pose):
+    assert len(object_pose) == len(goal_rel_pose) == 7
+    
+    Ms = transformations.quaternion_matrix(object_pose[3:])
+    Ms[:3,3] = object_pose[:3]
+
+    M_rel = transformations.quaternion_matrix(goal_rel_pose[3:])
+    M_rel[:3,3] = goal_rel_pose[:3]
+
+    M = Ms.dot(M_rel)
+
+    quat_M = transformations.quaternion_from_matrix(M)
+    pose_M = np.concatenate([M[:3,3], quat_M])
+
+    return pose_M
+    
 ############# 
 # Key Poses #
 #############
@@ -21,20 +38,47 @@ OBJECT_RELATIVE_POSE = {
 
 STATE_IDX_MAP = {
     'end_effector_pose': [0, 7],
-    'gripper_position': [7],
-    'condiment_pose': [8, 15],
-    'plate_pose': [15, 22],
+    'gripper_state': [7],
+    'condiment': [8, 15],
+    'hotdogplate': [15, 22],
+    'bunplate': [22, 29],
 }
 
+def construct_skill_state(skill_arg):
+    state = np.zeros(29)
 
+    state[STATE_IDX_MAP['end_effector_pose'][0]:STATE_IDX_MAP['end_effector_pose'][1]] = skill_arg['curr_pose']
+    state[STATE_IDX_MAP['gripper_state'][0]] = skill_arg['gripper_state']
+    state[STATE_IDX_MAP['condiment'][0]:STATE_IDX_MAP['condiment'][1]] = skill_arg['obj_poses']['condiment']
+    state[STATE_IDX_MAP['hotdogplate'][0]:STATE_IDX_MAP['hotdogplate'][1]] = skill_arg['obj_poses']['hotdogplate']
+    state[STATE_IDX_MAP['bunplate'][0]:STATE_IDX_MAP['bunplate'][1]] = skill_arg['obj_poses']['bunplate']
+
+    return state
+    
 ##############
 # TL Related #
 ##############
 state_idx_map = STATE_IDX_MAP
 
+def moveto_robustness(s=None, a=None, sp=None, object_name=None):
+    ee_pose = s[state_idx_map['end_effector_pose'][0]:state_idx_map['end_effector_pose'][1]]
+    object_pose = s[state_idx_map[object_name][0]:state_idx_map[object_name][1]]
+    if object_name == 'hotdogplate' or object_name == 'bunplate':
+        goal_pose = get_object_goal_pose(object_pose, OBJECT_RELATIVE_POSE['plate'])
+    elif object_name == 'grill':
+        goal_pose = get_object_goal_pose(object_pose, OBJECT_RELATIVE_POSE['grill'])
+    elif object_name == 'condiment':
+        goal_pose = get_object_goal_pose(object_pose, OBJECT_RELATIVE_POSE['condiment'])
+    else:
+        raise ValueError('object not supported')
+
+    return np.minimum(0.01 - pos_distance(ee_pose, goal_pose), 0.1 - quat_distance(object_pose, goal_pose))
+        
+        
+
 PREDICATES = {
-    'move_to': lambda s, a=None, sp=None,  g=None: np.minimum(0.01 - pos_distance(s[state_idx_map['end_effector_pose'][0]:state_idx_map['end_effector_pose'][1]], g), 0.1 - quat_distance(s[state_idx_map['end_effector_pose'][0]:state_idx_map['end_effector_pose'][1]], g)),
-    'close_gripper': lambda s, a=None, sp=None, g=None:  s[state_idx_map['gripper_position']] - 0.8,
-    'open_gripper': lambda s, a=None, sp=None, g=None:  0.2 - s[state_idx_map['gripper_position']]
+    'moveto_hotdogplate': lambda s, a=None, sp=None: moveto_robustness(s,a,sp,'hotdogplate'),
+    'closegripper': lambda s, a=None, sp=None:  s[state_idx_map['gripper_state']] - 0.8,
+    'opengripper': lambda s, a=None, sp=None:  0.2 - s[state_idx_map['gripper_state']]
 }
 

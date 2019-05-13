@@ -74,8 +74,8 @@ class CookingEnv(VrepEnvBase):
         # rc, ds, dp, dh, dn = vrep.simxReadProximitySensor(self.clientID, self.gripper_prox_sensor_handle, vrep.simx_opmode_streaming)
         # while rc != 0:
         #     rc, ds, dp, dh, dn = vrep.simxReadProximitySensor(self.clientID, self.gripper_prox_sensor_handle, vrep.simx_opmode_buffer)
-            
-            
+        self.gripper_state = 0
+        self.set_gripper_state(self.gripper_state)    
         
         #### target handle ####
         _, self.target_handle = vrep.simxGetObjectHandle(self.clientID,
@@ -170,10 +170,15 @@ class CookingEnv(VrepEnvBase):
     def set_gripper_state(self, gripper_state):
         if self.CookingEnv_config.get('particle_test'):
             if gripper_state < 0.5:
-                vrep.simxSetIntegerSignal(self.clientID, 'open_gripper', 1, vrep.simx_opmode_oneshot)
-            else:
                 vrep.simxSetIntegerSignal(self.clientID, 'open_gripper', 0, vrep.simx_opmode_oneshot)
-        
+                self.gripper_state = 0
+            else:
+                vrep.simxSetIntegerSignal(self.clientID, 'open_gripper', 1, vrep.simx_opmode_oneshot)
+                self.gripper_state = 1
+
+    def get_gripper_state(self):
+        return self.gripper_state
+                
     def move_to(self, pt):
         self.set_target_pose(pt)
         

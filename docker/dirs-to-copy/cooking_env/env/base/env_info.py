@@ -42,10 +42,11 @@ obstacle_handles = [
 ]
 
 object_handles = [
-    {'name': 'hotdog_cooker', 'handle': 'hotdog_cooker'},
+    {'name': 'hotdog_cooker', 'handle': 'grill_mapped'},
     {'name': 'toaster_button', 'handle': 'toaster_joint_frame'},
     {'name': 'toaster_button_joint', 'handle': 'button_revolute_joint'},
-    {'name': 'hotdog_plate', 'handle': 'hotdog_plate'},
-    {'name': 'bun_plate', 'handle': 'bun_plate'},
+    {'name': 'hotdogplate', 'handle': 'hotdogplate'},
+    {'name': 'bunplate', 'handle': 'bunplate'},
+    {'name': 'condiment', 'handle': 'ketchup_bottle_bounding_box'},
 ]
 

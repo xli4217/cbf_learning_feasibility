@@ -16,13 +16,16 @@ default_config = {
         'type': None,
         'config': {}
     },
-    'Automata': {
-        'type': None,
-        'config':{}
-    },
     'Skills':{
-        'type': None,
-        'config':{}
+        'construct_skill_state': None,
+        'MotorSkills': {
+            'type': None,
+            'config':{}
+        },
+        'LowLevelTLSkills': {
+            'type': None,
+            'config': {}
+        }
     }
 }
 
@@ -38,11 +41,11 @@ class RunRobotCooking(object):
             self.env = self.RunRobotCooking_config['ExperimentEnv']['type']( self.RunRobotCooking_config['ExperimentEnv']['config'])
         else:
             raise ValueError('unsupported mode')
-
-        self.aut = self.RunRobotCooking_config['Automata']['type'](config=self.RunRobotCooking_config['Automata']['config'])
         
-        self.skills = self.RunRobotCooking_config['Skills']['type'](config=self.RunRobotCooking_config['Skills']['config'])
-
+        self.motor_skills = self.RunRobotCooking_config['Skills']['MotorSkills']['type'](config=self.RunRobotCooking_config['Skills']['MotorSkills']['config'])
+        
+        self.ll_tl_skills = self.RunRobotCooking_config['Skills']['LowLevelTLSkills']['type'](config=self.RunRobotCooking_config['Skills']['LowLevelTLSkills']['config'])
+        
         self.skill_arg = {}
         
     def update_skill_arg(self):
@@ -52,14 +55,18 @@ class RunRobotCooking(object):
         linear_vel, angular_vel = self.env.get_target_velocity()
         curr_vel = np.concatenate([linear_vel, angular_vel])
 
+        object_poses = self.env.get_object_pose()
+        
         self.skill_arg.update({
             'curr_pose': curr_pose,
             'curr_vel': curr_vel,
-            'obs_info': self.env.get_obstacle_info()
+            'gripper_state': self.env.get_gripper_state(),
+            'obs_info': self.env.get_obstacle_info(),
+            'obj_poses': object_poses
         })
+
         
-        
-    def move_to_target_with_skill(self, pt, skill_name):
+    def move_to_target_with_motor_skill(self, pt, skill_name):
         self.update_skill_arg()
         
         self.env.set_goal_pose(pt)
@@ -75,7 +82,7 @@ class RunRobotCooking(object):
             self.env.move_to(action['value'])
             self.update_skill_arg()
 
-    def execute_skill(self, skill_name):
+    def execute_motor_skill(self, skill_name):
         from tl_utils.tl_config import KEY_POSITIONS, OBJECT_RELATIVE_POSE, STATE_IDX_MAP, PREDICATES
 
         if skill_name == 'opengripper':
@@ -84,15 +91,22 @@ class RunRobotCooking(object):
             self.env.set_gripper_state(0.5)
         elif skill_name == "flipswitchon":
             pt = KEY_POSITIONS['switch_on_goal']
-            self.move_to_target_with_skill(pt, skill_name='flipswitchon')
+            self.move_to_target_with_motor_skill(pt, skill_name='flipswitchon')
         else:
             raise ValueError('unsupported skill')
-            
+
+    def get_low_level_tl_skill_actions(self):
+        self.update_skill_arg()
+        s = self.RunRobotCooking_config['Skills']['construct_skill_state'](self.skill_arg)
+        ll_skill_action_n_constraint = self.ll_tl_skills.step(s)
+        print(ll_skill_action_n_constraint)
+        
     def run(self):
         pass
         
     def test(self):
-        self.execute_skill('flipswitchon')
+        self.get_low_level_tl_skill_actions()
+        # self.execute_skill('flipswitchon')
             
 if __name__ == "__main__":
     config = default_config
@@ -104,11 +118,11 @@ if __name__ == "__main__":
     ####################
     # Setup simulation #
     ####################
-    from cooking_env.env.base.ce import CookingEnv
-
+    cls_type, cls_config = exe_config.simulation_config()
+    
     config['SimulationEnv'] = {
-        'type': CookingEnv,
-        'config': exe_config.simulation_config()
+        'type': cls_type,
+        'config': cls_config 
     }
 
     ####################
@@ -116,39 +130,30 @@ if __name__ == "__main__":
     ####################
     # from robot_cooking.robot_cooking import RobotCooking
 
-    ###################
-    # Set up automata #
-    ###################
-    from tl_utils.generate_automata import GenerateAutomata
-    from tl_utils.tl_config import KEY_POSITIONS, OBJECT_RELATIVE_POSE, STATE_IDX_MAP, PREDICATES
-    
-    config['Automata'] = {
-        'type': GenerateAutomata,
-        'config': {
-            'formula':"F((move_to && open_gripper) && X F (close_gripper))",
-            'key_positions': KEY_POSITIONS,
-            'object_relative_pose': OBJECT_RELATIVE_POSE,
-            'state_idx_map': STATE_IDX_MAP,
-            'predicate_robustness': PREDICATES,
-            'fsa_save_dir': os.path.join(os.environ['LEARNING_PATH'], 'execution', 'figures'),
-            'dot_file_name': 'fsa',
-            'svg_file_name': 'fsa',
-            'mdp_state_space': {'type': 'float', 'shape': (22, ), 'upper_bound':[], 'lower_bound': []}
-        }
-    }
-    
-
     ################
     # Setup Skills #
     ################
-    from skills.skills import MotorSkills
-    config['Skills']['type'] = MotorSkills
-    config['Skills']['config'] = exe_config.motor_skill_config()
+    motor_skill_type, motor_skill_config = exe_config.motor_skill_config()
+    low_level_tl_skill_type, low_level_tl_skill_config = exe_config.low_level_tl_skill_config()
+
+    from tl_utils.tl_config import construct_skill_state
+    
+    config['Skills'] = {
+        'construct_skill_state': construct_skill_state,
+        'MotorSkills':{
+            'type': motor_skill_type,
+            'config': motor_skill_config
+        },
+        'LowLevelTLSkills':{
+            'type': low_level_tl_skill_type,
+            'config': low_level_tl_skill_config
+        }
+    }
     
     ##############################
     # Initialize Execution Class #
     ##############################
-    cls = RunRobotCooking(config=skills_config)
+    cls = RunRobotCooking(config=config)
 
     #### Run ####
     # cls.run()

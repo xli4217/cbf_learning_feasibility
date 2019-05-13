@@ -16,6 +16,8 @@ class ExecutionConfig(object):
         self.ExecutionConfig_config.update(default_config)
 
     def simulation_config(self):
+        from cooking_env.env.base.ce import CookingEnv
+
         sim_config = {
             # specific to this env
             "suffix": "",
@@ -24,9 +26,11 @@ class ExecutionConfig(object):
             "control_mode": "velocity"
         }
 
-        return sim_config
+        return CookingEnv, sim_config
         
     def motor_skill_config(self):
+        from skills.motor_skills import MotorSkills
+
         #### Set up trajectory generator #####
         from traj_generators.trajectory_generator import TrajectoryGenerator
         skills_config = {}
@@ -94,4 +98,25 @@ class ExecutionConfig(object):
         }
         skills_config['LearnedSkills'] = {'flipswitchon': learned_skill_config}
 
-        return skills_config
+        return MotorSkills, skills_config
+
+    def low_level_tl_skill_config(self):
+        from skills.low_level_tl_skills import LowLevelTLSkills
+        
+        from tl_utils.tl_config import KEY_POSITIONS, OBJECT_RELATIVE_POSE, STATE_IDX_MAP, PREDICATES
+
+        config = {
+            'pick_hotdog': {
+                'formula':"F((moveto_hotdogplate && opengripper) && X F (closegripper))",
+                'key_positions': KEY_POSITIONS,
+                'object_relative_pose': OBJECT_RELATIVE_POSE,
+                'state_idx_map': STATE_IDX_MAP,
+                'predicate_robustness': PREDICATES,
+                'fsa_save_dir': os.path.join(os.environ['LEARNING_PATH'], 'skills', 'figures'),
+                'dot_file_name': 'pick_hotdog',
+                'svg_file_name': 'pick_hotdog',
+                'mdp_state_space': {'type': 'float', 'shape': (29, ), 'upper_bound':[], 'lower_bound': []}
+            }
+        }
+
+        return LowLevelTLSkills, config
