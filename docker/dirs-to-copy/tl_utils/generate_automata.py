@@ -5,9 +5,11 @@ import time
 
 from lomap.classes import Fsa
 from tl_tools.fsa_reward import FsaReward
+from plot_dynamic_automata import PlotDynamicAutomata
 
 default_config = {
     'formula': None,
+    'visdom': False,
     'key_positions': None,
     'object_relative_pose': None,
     'state_idx_map': None,
@@ -40,6 +42,9 @@ class GenerateAutomata(object):
 
         self.FSA = FsaReward(self.fsa, self.GenerateAutomata_config['predicate_robustness'])
 
+        if self.GenerateAutomata_config['visdom']:
+            self.plot_aut = PlotDynamicAutomata([self.fsa])
+
         self.q = 0
         self.Q = 'T0_init'
         
@@ -62,11 +67,15 @@ class GenerateAutomata(object):
         self.Q, r, edge, done, Dq = self.FSA.get_reward_and_next_state(self.Q, s=s)
         self.q = self.FSA.get_node_value_from_name(self.Q)
 
+        if self.GenerateAutomata_config['visdom']:
+            self.plot_aut.update(current_state = [self.Q], src_and_dest=[edge])
+                    
         out_edges = self.FSA.g.out_edges(self.Q, data=True)
+
+        #### get goal from the closest outgoing edge ####
+        edge_pred_rob_list = []
+        edge_action_list = []
         for edge in out_edges:
-            #### get goal from the closest outgoing edge ####
-            edge_pred_rob_list = []
-            edge_action_list = []
             if edge[1] != self.Q and edge[1] != 'trap': # for each edge (guarding pred in dnf)
                 input_list = edge[2]['input']
                 input_pred_rob_list = []
@@ -97,11 +106,9 @@ class GenerateAutomata(object):
                 max_input_pred_idx = np.argmax(np.array(input_pred_rob_list))
                 best_edge_action = input_pred_action_list[max_input_pred_idx]
 
-        
-                edge_pred_rob_list.append(np.max(input_pred_rob_list))
+                edge_pred_rob_list.append(np.argmax(input_pred_rob_list))
                 edge_action_list.append(best_edge_action)
-
-            
+                
             #### get constraints from the connecting trap state ####
             if edge[1] == 'trap':
                 trap_input_list = edge[2]['input']
@@ -124,8 +131,8 @@ class GenerateAutomata(object):
 
         #### Get constraints ####
         node_constraints = None
-            
-        return best_node_action, node_constraints
+
+        return best_node_action, node_constraints, done
       
 if __name__ == "__main__":
     from tl_config import KEY_POSITIONS, OBJECT_RELATIVE_POSE, STATE_IDX_MAP, PREDICATES

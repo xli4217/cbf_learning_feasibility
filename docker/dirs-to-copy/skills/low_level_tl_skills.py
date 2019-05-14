@@ -22,9 +22,9 @@ class LowLevelTLSkills(object):
     def step(self, s):
         skill_action_n_constraint = {}
         for skill_name, skill_aut in viewitems(self.auts):
-            node_action, node_constraint = skill_aut.step(s)
+            node_action, node_constraint, done = skill_aut.step(s)
             skill_action_n_constraint[skill_name] = {'node_action': node_action, 'node_constraint': node_constraint}
-        return skill_action_n_constraint
+        return skill_action_n_constraint, done
             
     def test(self):
         pass

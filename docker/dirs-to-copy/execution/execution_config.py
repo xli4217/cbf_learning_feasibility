@@ -102,21 +102,36 @@ class ExecutionConfig(object):
 
     def low_level_tl_skill_config(self):
         from skills.low_level_tl_skills import LowLevelTLSkills
-        
         from tl_utils.tl_config import KEY_POSITIONS, OBJECT_RELATIVE_POSE, STATE_IDX_MAP, PREDICATES
 
+        pick_hotdog = "F((moveto_hotdogplate && opengripper) && X F (closegripper))"
+        place_bun = "F((moveto_bunplate && closegripper)  && X F (opengripper))"
+
+        pick_hotdog_place_bun = "F ((moveto_hotdogplate && opengripper) && X F (closegripper && XF ((moveto_bunplate && closegripper)  && X F (opengripper))))"
+
+        entire_task = "(moveto_hotdogplate && opengripper) && X F " + \
+                      "(closegripper && X F " + \
+                      "((moveto_grill && closegripper) && X F " + \
+                      "(opengripper && X F "+ \
+                      "(closegripper && X F "+\
+                      "((moveto_bunplate && closegripper) && X F "+\
+                      "(opengripper))))))"
+        
         config = {
             'pick_hotdog': {
-                'formula':"F((moveto_hotdogplate && opengripper) && X F (closegripper))",
+                'formula':"F (" + entire_task + ")",
+                'visdom': True,
                 'key_positions': KEY_POSITIONS,
                 'object_relative_pose': OBJECT_RELATIVE_POSE,
                 'state_idx_map': STATE_IDX_MAP,
                 'predicate_robustness': PREDICATES,
-                'fsa_save_dir': os.path.join(os.environ['LEARNING_PATH'], 'skills', 'figures'),
+                'fsa_save_dir': os.path.join(os.environ['LEARNING_PATH'], 'execution', 'figures'),
                 'dot_file_name': 'pick_hotdog',
                 'svg_file_name': 'pick_hotdog',
-                'mdp_state_space': {'type': 'float', 'shape': (29, ), 'upper_bound':[], 'lower_bound': []}
+                'mdp_state_space': {'type': 'float', 'shape': (36, ), 'upper_bound':[], 'lower_bound': []}
             }
         }
 
         return LowLevelTLSkills, config
+
+

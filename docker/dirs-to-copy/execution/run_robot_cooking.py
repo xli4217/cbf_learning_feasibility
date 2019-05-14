@@ -78,36 +78,56 @@ class RunRobotCooking(object):
                 print('reached goal')
                 break
                 
-            action = self.skills.get_action(skill_name=skill_name, skill_arg=self.skill_arg)
+            action = self.motor_skills.get_action(skill_name=skill_name, skill_arg=self.skill_arg)
             self.env.move_to(action['value'])
             self.update_skill_arg()
 
     def execute_motor_skill(self, skill_name):
-        from tl_utils.tl_config import KEY_POSITIONS, OBJECT_RELATIVE_POSE, STATE_IDX_MAP, PREDICATES
+        from tl_utils.tl_config import KEY_POSITIONS, OBJECT_RELATIVE_POSE, STATE_IDX_MAP, PREDICATES, get_object_goal_pose
 
+        self.update_skill_arg()
+        
         if skill_name == 'opengripper':
             self.env.set_gripper_state(0.3)
         elif skill_name == 'closegripper':
-            self.env.set_gripper_state(0.5)
+            self.env.set_gripper_state(0.9)
         elif skill_name == "flipswitchon":
             pt = KEY_POSITIONS['switch_on_goal']
             self.move_to_target_with_motor_skill(pt, skill_name='flipswitchon')
+        elif skill_name.split('_')[0] == 'moveto':
+            object_name = skill_name.split('_')[1]
+            pt = get_object_goal_pose(self.skill_arg['obj_poses'][object_name], OBJECT_RELATIVE_POSE[object_name])
+            self.move_to_target_with_motor_skill(pt, skill_name='moveto')
         else:
             raise ValueError('unsupported skill')
 
     def get_low_level_tl_skill_actions(self):
         self.update_skill_arg()
         s = self.RunRobotCooking_config['Skills']['construct_skill_state'](self.skill_arg)
-        ll_skill_action_n_constraint = self.ll_tl_skills.step(s)
-        print(ll_skill_action_n_constraint)
+        ll_skill_action_n_constraint, done = self.ll_tl_skills.step(s)
+        return ll_skill_action_n_constraint, done
         
     def run(self):
         pass
         
     def test(self):
-        self.get_low_level_tl_skill_actions()
-        # self.execute_skill('flipswitchon')
-            
+        done = False
+        while not done:
+            action_n_constraint, done = self.get_low_level_tl_skill_actions()
+            if not done:
+                node_action = action_n_constraint['pick_hotdog']['node_action']
+                ee_goal = node_action['ee_goal']
+                gripper_action = node_action['gripper_action']
+
+                if gripper_action is not None:
+                    self.execute_motor_skill(gripper_action)
+         
+                if ee_goal is not None:
+                    self.execute_motor_skill("moveto_"+ee_goal)
+
+            else:
+                print('done')
+                    
 if __name__ == "__main__":
     config = default_config
     config['mode'] = 'sim'

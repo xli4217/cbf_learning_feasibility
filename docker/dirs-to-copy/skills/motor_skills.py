@@ -92,13 +92,13 @@ class MotorSkills(object):
         if skill_name == 'closegripper':
             action = {
                 'description': 'percentage_gripper_close',
-                'value': self.skill_close_gripper()
+                'value': self.skill_closegripper()
             }
             return action
         elif skill_name == 'opengripper':
             action = {
                 'description': 'percentage_gripper_close',
-                'value': self.skill_open_gripper()
+                'value': self.skill_opengripper()
             }
             return action
         elif skill_name == 'moveto':
@@ -107,7 +107,7 @@ class MotorSkills(object):
             obs_info = skill_arg['obs_info']
             goal = skill_arg['goal']
 
-            ddy, dy, y = self.skill_move_to(goal=goal,
+            ddy, dy, y = self.skill_moveto(goal=goal,
                                             forcing=np.zeros(6),
                                             curr_pose=curr_pose,
                                             curr_vel=curr_vel,

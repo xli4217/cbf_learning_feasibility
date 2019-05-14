@@ -30,8 +30,9 @@ KEY_POSITIONS = {
 }
 
 OBJECT_RELATIVE_POSE = {
-    'plate': np.array([0.0, 0.005, 0.02, 0.656, 0.754, -0.016, -0.016]),
-    'grill': np.array([0.167, -0.585, 0.08, 0.999, -0.011, -0.011, 0.0233]), # this needs confirmation
+    'hotdogplate': np.array([0.0, 0.005, 0.02, 0.656, 0.754, -0.016, -0.016]),
+    'bunplate': np.array([0.0, 0.005, 0.02, 0.656, 0.754, -0.016, -0.016]),
+    'grill': np.array([0.0, 0.005, 0.02, 0.656, 0.754, -0.016, -0.016]), # this needs confirmation
     'condiment': np.array([0.008, -0.105, -0.100, -0.594, -0.407, -0.421, 0.552]),
 }
 
@@ -42,17 +43,20 @@ STATE_IDX_MAP = {
     'condiment': [8, 15],
     'hotdogplate': [15, 22],
     'bunplate': [22, 29],
+    'grill': [29, 36]
 }
 
 def construct_skill_state(skill_arg):
-    state = np.zeros(29)
+    state = np.zeros(36)
 
     state[STATE_IDX_MAP['end_effector_pose'][0]:STATE_IDX_MAP['end_effector_pose'][1]] = skill_arg['curr_pose']
     state[STATE_IDX_MAP['gripper_state'][0]] = skill_arg['gripper_state']
     state[STATE_IDX_MAP['condiment'][0]:STATE_IDX_MAP['condiment'][1]] = skill_arg['obj_poses']['condiment']
     state[STATE_IDX_MAP['hotdogplate'][0]:STATE_IDX_MAP['hotdogplate'][1]] = skill_arg['obj_poses']['hotdogplate']
     state[STATE_IDX_MAP['bunplate'][0]:STATE_IDX_MAP['bunplate'][1]] = skill_arg['obj_poses']['bunplate']
+    state[STATE_IDX_MAP['grill'][0]:STATE_IDX_MAP['grill'][1]] = skill_arg['obj_poses']['grill']
 
+    
     return state
     
 ##############
@@ -63,21 +67,18 @@ state_idx_map = STATE_IDX_MAP
 def moveto_robustness(s=None, a=None, sp=None, object_name=None):
     ee_pose = s[state_idx_map['end_effector_pose'][0]:state_idx_map['end_effector_pose'][1]]
     object_pose = s[state_idx_map[object_name][0]:state_idx_map[object_name][1]]
-    if object_name == 'hotdogplate' or object_name == 'bunplate':
-        goal_pose = get_object_goal_pose(object_pose, OBJECT_RELATIVE_POSE['plate'])
-    elif object_name == 'grill':
-        goal_pose = get_object_goal_pose(object_pose, OBJECT_RELATIVE_POSE['grill'])
-    elif object_name == 'condiment':
-        goal_pose = get_object_goal_pose(object_pose, OBJECT_RELATIVE_POSE['condiment'])
-    else:
-        raise ValueError('object not supported')
+    goal_pose = get_object_goal_pose(object_pose, OBJECT_RELATIVE_POSE[object_name])
 
-    return np.minimum(0.01 - pos_distance(ee_pose, goal_pose), 0.1 - quat_distance(object_pose, goal_pose))
+    rob = np.minimum(0.01 - pos_distance(ee_pose, goal_pose), 0.15 - quat_distance(object_pose, goal_pose))
+
+    return rob 
         
         
 
 PREDICATES = {
     'moveto_hotdogplate': lambda s, a=None, sp=None: moveto_robustness(s,a,sp,'hotdogplate'),
+    'moveto_bunplate': lambda s, a=None, sp=None: moveto_robustness(s,a,sp,'bunplate'),
+    'moveto_grill': lambda s, a=None, sp=None: moveto_robustness(s,a,sp,'grill'),
     'closegripper': lambda s, a=None, sp=None:  s[state_idx_map['gripper_state']] - 0.8,
     'opengripper': lambda s, a=None, sp=None:  0.2 - s[state_idx_map['gripper_state']]
 }
