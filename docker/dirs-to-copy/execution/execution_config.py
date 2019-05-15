@@ -87,7 +87,7 @@ class ExecutionConfig(object):
         experiment_root_dir = os.path.join(os.environ['LEARNING_PATH'], 'learning', 'experiments')
         experiment_name = 'test'
         hyperparam_dir = 'seed0'
-        itr = 0
+        itr = 100
         
         learned_skill_config = {
             "state_space": {'type': 'float', 'shape': (3, ), "upper_bound": [], 'lower_bound': []},
@@ -124,17 +124,17 @@ class ExecutionConfig(object):
                       "(opengripper))))))"
         
         config = {
-            'pick_hotdog': {
-                'formula':"F (" + apply_condiment + ")",
+            'make_hotdog': {
+                'formula':"F (" + "flipswitchon" + ")",
                 'visdom': False,
                 'key_positions': KEY_POSITIONS,
                 'object_relative_pose': OBJECT_RELATIVE_POSE,
                 'state_idx_map': STATE_IDX_MAP,
                 'predicate_robustness': PREDICATES,
                 'fsa_save_dir': os.path.join(os.environ['LEARNING_PATH'], 'execution', 'figures'),
-                'dot_file_name': 'pick_hotdog',
-                'svg_file_name': 'pick_hotdog',
-                'mdp_state_space': {'type': 'float', 'shape': (36, ), 'upper_bound':[], 'lower_bound': []}
+                'dot_file_name': 'make_hotdog',
+                'svg_file_name': 'make_hotdog',
+                'mdp_state_space': {'type': 'float', 'shape': (37, ), 'upper_bound':[], 'lower_bound': []}
             }
         }
 

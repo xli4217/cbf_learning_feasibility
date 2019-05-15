@@ -124,10 +124,10 @@ class MotorSkills(object):
             obs_info = skill_arg['obs_info']
             goal = skill_arg['goal']
 
-            ddy, dy, y = self.skill_flip_switch_on(goal=goal,
-                                                   curr_pose=curr_pose,
-                                                   curr_vel=curr_vel,
-                                                   obs_info=obs_info)
+            ddy, dy, y = self.skill_flipswitchon(goal=goal,
+                                                 curr_pose=curr_pose,
+                                                 curr_vel=curr_vel,
+                                                 obs_info=obs_info)
             action = {
                 'description': 'target position',
                 'value': y

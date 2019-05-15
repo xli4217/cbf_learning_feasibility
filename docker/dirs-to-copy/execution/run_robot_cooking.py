@@ -60,6 +60,7 @@ class RunRobotCooking(object):
         self.skill_arg.update({
             'curr_pose': curr_pose,
             'curr_vel': curr_vel,
+            'switchangle': self.env.get_switch_state(),
             'gripper_state': self.env.get_gripper_state(),
             'obs_info': self.env.get_obstacle_info(),
             'obj_poses': object_poses
@@ -73,9 +74,8 @@ class RunRobotCooking(object):
         self.skill_arg['goal'] = pt
         
         while True:            
-            pos_dist, quat_dist = pose_distance(pt, self.skill_arg['curr_pose']) 
+            pos_dist, quat_dist = pose_distance(self.skill_arg['curr_pose'], pt) 
             if pos_dist < 0.01 and quat_dist < 0.15:
-                print('reached goal')
                 break
                 
             action = self.motor_skills.get_action(skill_name=skill_name, skill_arg=self.skill_arg)
@@ -102,7 +102,10 @@ class RunRobotCooking(object):
                 object_rel_pose_name = object_name
 
             pt = get_object_goal_pose(self.skill_arg['obj_poses'][object_name], OBJECT_RELATIVE_POSE[object_rel_pose_name])
+
             self.move_to_target_with_motor_skill(pt, skill_name='moveto')
+            self.update_skill_arg()
+            
         else:
             raise ValueError('unsupported skill')
 
@@ -120,7 +123,7 @@ class RunRobotCooking(object):
         while not done:
             action_n_constraint, done = self.get_low_level_tl_skill_actions()
             if not done:
-                node_action = action_n_constraint['pick_hotdog']['node_action']
+                node_action = action_n_constraint['make_hotdog']['node_action']
                 ee_goal = node_action['ee_goal']
                 gripper_action = node_action['gripper_action']
 
@@ -128,7 +131,7 @@ class RunRobotCooking(object):
                     self.execute_motor_skill(gripper_action)
          
                 if ee_goal is not None:
-                    self.execute_motor_skill("moveto_"+ee_goal)
+                    self.execute_motor_skill(ee_goal)
 
             else:
                 print('done')

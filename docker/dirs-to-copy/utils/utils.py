@@ -36,12 +36,12 @@ def get_p2(p1, Mp1p2):
 
     return p2
 
-def pos_distance(p1, p2):
-    pos_dist = np.linalg.norm(p1[:3] - p2[:3])
+def pos_distance(pos1, pos2):
+    pos_dist = np.linalg.norm(pos1 - pos2)
     return pos_dist
 
-def quat_distance(p1, p2):
-    quat_dist_arg = 2 * np.inner(p1[3:], p2[3:]) - 1
+def quat_distance(q1, q2):
+    quat_dist_arg = 2 * np.inner(q1, q2) - 1
     quat_dist_arg = np.modf(quat_dist_arg)[0]
 
     if np.abs(quat_dist_arg) > 0.99 or np.abs(quat_dist_arg) < 0.05:

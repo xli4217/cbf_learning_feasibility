@@ -112,3 +112,5 @@ V-REP*
 experiments/
 *.log
 *.lp
+
+figures/

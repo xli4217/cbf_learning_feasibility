@@ -80,8 +80,11 @@ class GenerateAutomata(object):
                 input_list = edge[2]['input']
                 input_pred_rob_list = []
                 input_pred_action_list = []
+
+                #### skills initialization ####
                 gripper_action = None
                 ee_goal = None
+                
                 for input_pred in input_list: # for each conjunction in dnf
                     b = self.FSA.to_binary(input_pred)
                     bin_string = str(b)[::-1]
@@ -92,14 +95,11 @@ class GenerateAutomata(object):
                             gripper_action = 'closegripper'
                      
                         if 'moveto' in self.FSA.sorted_props[i] and int(bin_string[i]) == 1:
-                            moveto_arg = self.FSA.sorted_props[i].split('_')[1:] # this is ['moveto', 'obj_name', 'obj_rel_pose']
-                            ee_goal = None
-                            for i in range(len(moveto_arg)):
-                                if ee_goal is None:
-                                    ee_goal = moveto_arg[i]
-                                else:
-                                    ee_goal += "_"+moveto_arg[i]
-                            
+                            ee_goal = self.FSA.sorted_props[i]
+
+                        if self.FSA.sorted_props[i] == 'flipswitchon' and int(bin_string[i]) == 1:
+                             ee_goal = "flipswitchon"
+                                    
                     #     print(self.FSA.sorted_props[i])
                     #     print(bin_string[i])
                     # print("--")
