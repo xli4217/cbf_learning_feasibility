@@ -43,7 +43,7 @@ class GenerateAutomata(object):
         self.FSA = FsaReward(self.fsa, self.GenerateAutomata_config['predicate_robustness'])
 
         if self.GenerateAutomata_config['visdom']:
-            self.plot_aut = PlotDynamicAutomata([self.fsa])
+            self.plot_aut = PlotDynamicAutomata(self.fsa)
 
         self.q = 0
         self.Q = 'T0_init'
@@ -68,7 +68,7 @@ class GenerateAutomata(object):
         self.q = self.FSA.get_node_value_from_name(self.Q)
 
         if self.GenerateAutomata_config['visdom']:
-            self.plot_aut.update(current_state = [self.Q], src_and_dest=[edge])
+            self.plot_aut.update(current_state = self.Q, src_and_dest=edge)
                     
         out_edges = self.FSA.g.out_edges(self.Q, data=True)
 

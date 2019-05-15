@@ -122,10 +122,9 @@ class ExperimentConfig(object):
             button_vel = all_info['button_vel']
             button_joint_frame_angle = all_info['button_joint_frame_angle']
 
-            r = -10*(button_joint_frame_angle[2] + 1.968)
-            #print(r)
+            r = -10*(button_joint_frame_angle[2] - 1.15)
 
-            if button_joint_frame_angle < -2.32:
+            if button_joint_frame_angle[2] < 0.6:
                 r += 5.
 
             motion_range = all_info['motion_range']
@@ -173,7 +172,7 @@ class ExperimentConfig(object):
             ## done if finished task
             toaster_joint_frame_angle = all_info['button_joint_frame_angle'][2]
             # print(all_info['button_joint_frame_angle'][2])
-            if toaster_joint_frame_angle < -2.32:
+            if toaster_joint_frame_angle < 0.57:
                 print('done: turn on task done')
                 done = True
                 

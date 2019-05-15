@@ -142,12 +142,12 @@ class LearningEnv(object):
         while rc != 0:
             rc, button_rel_pos = vrep.simxGetObjectPosition(self.base_env.clientID,
                                                             self.base_env.object_handles['toaster_button_joint'],
-                                                            self.base_env.object_handles['hotdog_cooker'],
+                                                            self.base_env.object_handles['grill'],
                                                             vrep.simx_opmode_streaming)
 
             rc, button_rel_angle = vrep.simxGetObjectOrientation(self.base_env.clientID,
                                                                  self.base_env.object_handles['toaster_button_joint'],
-                                                                 self.base_env.object_handles['hotdog_cooker'],
+                                                                 self.base_env.object_handles['grill'],
                                                                  vrep.simx_opmode_streaming)
 
             button_rel_pose = np.concatenate([np.array(button_rel_pos), np.array(button_rel_angle)])
@@ -159,7 +159,7 @@ class LearningEnv(object):
 
             rc, button_joint_frame_angle = vrep.simxGetObjectOrientation(self.base_env.clientID,
                                                                          self.base_env.object_handles['toaster_button'],
-                                                                         self.base_env.object_handles['hotdog_cooker'],
+                                                                         self.base_env.object_handles['grill'],
                                                                          vrep.simx_opmode_streaming)
 
                    
@@ -168,6 +168,8 @@ class LearningEnv(object):
                                                                                    vrep.simx_opmode_streaming)
 
         button_vel = np.concatenate([np.array(button_linear_vel), np.array(button_angular_vel)])
+
+        print(button_joint_frame_angle)
         
         self.all_info = {
             'goal': self.goal,
@@ -312,7 +314,7 @@ if __name__ == "__main__":
         #     cls.reset()
         cls.update_all_info()
         cls.base_env.synchronous_trigger()
-        cls.get_reward(state=cls.all_info['target_pos'])
+        # cls.get_reward(state=cls.all_info['target_pos'])
         #print(cls.is_done(state=cls.all_info['target_pos']))
         # time.sleep(0.05)
         # target_pos = np.concatenate([cls.all_info['target_pos'], cls.all_info['target_quat']])
