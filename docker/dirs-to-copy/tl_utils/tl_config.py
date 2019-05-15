@@ -33,7 +33,10 @@ OBJECT_RELATIVE_POSE = {
     'hotdogplate': np.array([0.0, 0.005, 0.02, 0.656, 0.754, -0.016, -0.016]),
     'bunplate': np.array([0.0, 0.005, 0.02, 0.656, 0.754, -0.016, -0.016]),
     'grill': np.array([0.0, 0.005, 0.02, 0.656, 0.754, -0.016, -0.016]), # this needs confirmation
-    'condiment': np.array([0.008, -0.105, -0.100, -0.594, -0.407, -0.421, 0.552]),
+    'condimentpre': np.array([0.008, -0.105, -0.100, -0.594, -0.407, -0.421, 0.552]),
+    'condimentpost': np.array([0.008, -0.02, -0.100,-0.575, -0.474, -0.372, 0.554]),
+    'relativeplateapplycondimentpre': np.array([0.038, 0.002, 0.15, -0.502, -0.540, -0.295, 0.608]),
+    'postplacecondiment': np.array([0.488,-0.0669,0.3,0.6135,0.3485,0.6266,-0.33])
 }
 
 
@@ -64,21 +67,26 @@ def construct_skill_state(skill_arg):
 ##############
 state_idx_map = STATE_IDX_MAP
 
-def moveto_robustness(s=None, a=None, sp=None, object_name=None):
+def moveto_robustness(s=None, a=None, sp=None, object_name=None, rel_pose_name=None):
     ee_pose = s[state_idx_map['end_effector_pose'][0]:state_idx_map['end_effector_pose'][1]]
     object_pose = s[state_idx_map[object_name][0]:state_idx_map[object_name][1]]
-    goal_pose = get_object_goal_pose(object_pose, OBJECT_RELATIVE_POSE[object_name])
+    goal_pose = get_object_goal_pose(object_pose, OBJECT_RELATIVE_POSE[rel_pose_name])
 
-    rob = np.minimum(0.01 - pos_distance(ee_pose, goal_pose), 0.15 - quat_distance(object_pose, goal_pose))
+    rob = np.minimum(0.01 - pos_distance(ee_pose, goal_pose), 0.15 - quat_distance(ee_pose, goal_pose))
 
+    # print('rel:', rel_pose_name)
+    # print('rob:', rob)
     return rob 
         
         
 
 PREDICATES = {
-    'moveto_hotdogplate': lambda s, a=None, sp=None: moveto_robustness(s,a,sp,'hotdogplate'),
-    'moveto_bunplate': lambda s, a=None, sp=None: moveto_robustness(s,a,sp,'bunplate'),
-    'moveto_grill': lambda s, a=None, sp=None: moveto_robustness(s,a,sp,'grill'),
+    'moveto_hotdogplate': lambda s, a=None, sp=None: moveto_robustness(s,a,sp,'hotdogplate', 'hotdogplate'),
+    'moveto_bunplate': lambda s, a=None, sp=None: moveto_robustness(s,a,sp,'bunplate', 'bunplate'),
+    'moveto_grill': lambda s, a=None, sp=None: moveto_robustness(s,a,sp,'grill', 'grill'),
+    'moveto_condiment_condimentpre' : lambda s, a=None, sp=None: moveto_robustness(s,a,sp,'condiment', 'condimentpre'),
+    'moveto_condiment_condimentpost' : lambda s, a=None, sp=None: moveto_robustness(s,a,sp, 'condiment', 'condimentpost'),
+    'moveto_bunplate_relativeplateapplycondimentpre' : lambda s, a=None, sp=None: moveto_robustness(s,a,sp, 'bunplate', 'relativeplateapplycondimentpre'),
     'closegripper': lambda s, a=None, sp=None:  s[state_idx_map['gripper_state']] - 0.8,
     'opengripper': lambda s, a=None, sp=None:  0.2 - s[state_idx_map['gripper_state']]
 }

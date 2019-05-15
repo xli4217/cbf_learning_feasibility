@@ -109,6 +109,12 @@ class ExecutionConfig(object):
 
         pick_hotdog_place_bun = "F ((moveto_hotdogplate && opengripper) && X F (closegripper && XF ((moveto_bunplate && closegripper)  && X F (opengripper))))"
 
+        apply_condiment = "(moveto_condiment_condimentpre && opengripper) && X F " + \
+                          "(moveto_condiment_condimentpost && X F " + \
+                          "(closegripper && X F "+ \
+                          "((moveto_bunplate_relativeplateapplycondimentpre && closegripper) && X F "+\
+                          "(opengripper))))"
+        
         entire_task = "(moveto_hotdogplate && opengripper) && X F " + \
                       "(closegripper && X F " + \
                       "((moveto_grill && closegripper) && X F " + \
@@ -119,8 +125,8 @@ class ExecutionConfig(object):
         
         config = {
             'pick_hotdog': {
-                'formula':"F (" + entire_task + ")",
-                'visdom': True,
+                'formula':"F (" + apply_condiment + ")",
+                'visdom': False,
                 'key_positions': KEY_POSITIONS,
                 'object_relative_pose': OBJECT_RELATIVE_POSE,
                 'state_idx_map': STATE_IDX_MAP,

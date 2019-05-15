@@ -169,8 +169,6 @@ class LearningEnv(object):
 
         button_vel = np.concatenate([np.array(button_linear_vel), np.array(button_angular_vel)])
 
-        print(button_joint_frame_angle)
-        
         self.all_info = {
             'goal': self.goal,
             'target_pos': target_pos,

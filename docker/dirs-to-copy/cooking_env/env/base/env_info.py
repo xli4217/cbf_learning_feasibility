@@ -47,6 +47,6 @@ object_handles = [
     {'name': 'toaster_button_joint', 'handle': 'button_revolute_joint'},
     {'name': 'hotdogplate', 'handle': 'hotdogplate'},
     {'name': 'bunplate', 'handle': 'bunplate'},
-    {'name': 'condiment', 'handle': 'ketchup_bottle_bounding_box'},
+    {'name': 'condiment', 'handle': 'condiment_frame'},
 ]
 

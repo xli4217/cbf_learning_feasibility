@@ -92,7 +92,13 @@ class GenerateAutomata(object):
                             gripper_action = 'closegripper'
                      
                         if 'moveto' in self.FSA.sorted_props[i] and int(bin_string[i]) == 1:
-                            ee_goal = self.FSA.sorted_props[i].split('_')[1]
+                            moveto_arg = self.FSA.sorted_props[i].split('_')[1:] # this is ['moveto', 'obj_name', 'obj_rel_pose']
+                            ee_goal = None
+                            for i in range(len(moveto_arg)):
+                                if ee_goal is None:
+                                    ee_goal = moveto_arg[i]
+                                else:
+                                    ee_goal += "_"+moveto_arg[i]
                             
                     #     print(self.FSA.sorted_props[i])
                     #     print(bin_string[i])

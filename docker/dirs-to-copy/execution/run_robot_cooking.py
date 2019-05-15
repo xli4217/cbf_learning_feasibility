@@ -96,7 +96,12 @@ class RunRobotCooking(object):
             self.move_to_target_with_motor_skill(pt, skill_name='flipswitchon')
         elif skill_name.split('_')[0] == 'moveto':
             object_name = skill_name.split('_')[1]
-            pt = get_object_goal_pose(self.skill_arg['obj_poses'][object_name], OBJECT_RELATIVE_POSE[object_name])
+            if len(skill_name.split('_')) == 3:
+                object_rel_pose_name = skill_name.split('_')[2]
+            else:
+                object_rel_pose_name = object_name
+
+            pt = get_object_goal_pose(self.skill_arg['obj_poses'][object_name], OBJECT_RELATIVE_POSE[object_rel_pose_name])
             self.move_to_target_with_motor_skill(pt, skill_name='moveto')
         else:
             raise ValueError('unsupported skill')
