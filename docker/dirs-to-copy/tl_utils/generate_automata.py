@@ -77,6 +77,7 @@ class GenerateAutomata(object):
         edge_action_list = []
         for edge in out_edges:
             if edge[1] != self.Q and edge[1] != 'trap': # for each edge (guarding pred in dnf)
+                # print((self.Q, edge[1]))
                 input_list = edge[2]['input']
                 input_pred_rob_list = []
                 input_pred_action_list = []
@@ -94,12 +95,12 @@ class GenerateAutomata(object):
                         if 'moveto' in self.FSA.sorted_props[i] and int(bin_string[i]) == 1:
                             moveto_arg = self.FSA.sorted_props[i].split('_')[1:] # this is ['moveto', 'obj_name', 'obj_rel_pose']
                             ee_goal = None
-                            for i in range(len(moveto_arg)):
+                            for j in range(len(moveto_arg)):
                                 if ee_goal is None:
-                                    ee_goal = moveto_arg[i]
+                                    ee_goal = moveto_arg[j]
                                 else:
-                                    ee_goal += "_"+moveto_arg[i]
-                            
+                                    ee_goal += "_"+moveto_arg[j]
+                                    
                     #     print(self.FSA.sorted_props[i])
                     #     print(bin_string[i])
                     # print("--")

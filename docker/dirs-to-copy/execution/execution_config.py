@@ -124,9 +124,9 @@ class ExecutionConfig(object):
                       "(opengripper))))))"
         
         config = {
-            'pick_hotdog': {
+            'make_hotdog': {
                 'formula':"F (" + apply_condiment + ")",
-                'visdom': False,
+                'visdom': True,
                 'key_positions': KEY_POSITIONS,
                 'object_relative_pose': OBJECT_RELATIVE_POSE,
                 'state_idx_map': STATE_IDX_MAP,

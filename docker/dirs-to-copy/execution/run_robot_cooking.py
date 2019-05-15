@@ -120,10 +120,11 @@ class RunRobotCooking(object):
         while not done:
             action_n_constraint, done = self.get_low_level_tl_skill_actions()
             if not done:
-                node_action = action_n_constraint['pick_hotdog']['node_action']
+                node_action = action_n_constraint['make_hotdog']['node_action']
                 ee_goal = node_action['ee_goal']
                 gripper_action = node_action['gripper_action']
-
+                print("actions:", (ee_goal, gripper_action))
+                
                 if gripper_action is not None:
                     self.execute_motor_skill(gripper_action)
          
