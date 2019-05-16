@@ -189,35 +189,6 @@ class RobotCooking(object):
         
         return action
         
-    def get_obstacle_info(self):
-        fitted_obstacles = self.config_json['fitted_elliptical_obstacles']['fitted_obstacles']
-        obs_info = []
-        for k, v in viewitems(fitted_obstacles):
-            obs_pose_tf_stamped = self.tf_buffer.lookup_transform(v['parent_frame_id'][1:], v['child_frame_id'][1:], rospy.Time())
-            obs_pos = [
-                obs_pose_tf_stamped.transform.translation.x,
-                obs_pose_tf_stamped.transform.translation.y,
-                obs_pose_tf_stamped.transform.translation.z
-            ]
-            obs_info.append({ 'name': k, 'position': obs_pos, 'radius':v['scale'][0]/2})
-
-
-        table_pose_tf_stamped  = self.tf_buffer.lookup_transform('world', 'table_mapped', rospy.Time())
-        table_pos = [
-            table_pose_tf_stamped.transform.translation.x,
-            table_pose_tf_stamped.transform.translation.y,
-            table_pose_tf_stamped.transform.translation.z
-        ]
-          
-        table_info = {'name': 'table', 'position': table_pos}
-        obs_info.append(table_info)
-
-        self.obs_info = obs_info
-
-        self.update_all_info()
-        
-        return self.obs_info
-
 
     def update_all_info(self):
         if self.target is None:
@@ -531,45 +502,93 @@ class RobotCooking(object):
     def cleanup(self):
         pass
 
+    ##############################
+    # Common interface functions #
+    ##############################
+    def get_target_pose(self):
+        pos, quat = self.driver_utils.get_ee_pose()
+        return pos, quat
+
+    def get_target_velocity(self):
+        lv, av = self.driver_utils.get_ee_velocity()
+        return lv, av
+
+    def set_gripper_state(self, gs):
+        self.driver_utils.set_finger_positions(gs * np.ones(3))
+
+    def get_switch_state(self):
+        pass
+
+    def move_to(self, pt):
+        pass
+
+    def set_goal_pose(self, pt):
+        self.wp_gen.set_goal(pt)
+        self.update_goal_tf(pt)
 
         
-if __name__ == "__main__":
-    #### DMP ####
-    # from traj_generators.dmp.dmp import DMP
-    # config = default_config
-    # config['rate'] = 30
-    # config['WPGenerator'] = {
-    #     'type': DMP,
-    #     'config': {
-    #         # gain on attractor term y dynamics (linear)
-    #         'ay': 55,
-    #         # gain on attractor term y dynamics (linear)
-    #         'by': None,
-    #         # gain on attractor term y dynamics (angular)
-    #         'az': 55,
-    #         # gain on attractor term y dynamics (angular)
-    #         'bz': None,
-    #         # timestep
-    #         'dt': 0.001,
-    #         # time scaling, increase tau to make the system execute faster
-    #         'tau': 1.,
-    #         'use_canonical': False,
-    #         # for canonical
-    #         'apx': 1.,
-    #         'gamma': 0.3,
-    #         # for faster convergence
-    #         'app': 0.5,
-    #         'apr': 0.5,
-    #         # for integrating goal
-    #         'ag': 3.0,
-    #         'ago': 3.0,
-    #         # if True, then update according to dmp_pose, else update according to current pose
-    #         'use_dmp_pose': True,
-    #         'n_linear_dmp': 3,
-    #         'n_angular_dmp': 3
-    #     }
-    # }
+    def get_obstacle_info(self):
+        fitted_obstacles = self.config_json['fitted_elliptical_obstacles']['fitted_obstacles']
+        obs_info = []
+        for k, v in viewitems(fitted_obstacles):
+            obs_pose_tf_stamped = self.tf_buffer.lookup_transform(v['parent_frame_id'][1:], v['child_frame_id'][1:], rospy.Time())
+            obs_pos = [
+                obs_pose_tf_stamped.transform.translation.x,
+                obs_pose_tf_stamped.transform.translation.y,
+                obs_pose_tf_stamped.transform.translation.z
+            ]
+            obs_info.append({ 'name': k, 'position': obs_pos, 'radius':v['scale'][0]/2})
 
+
+        table_pose_tf_stamped  = self.tf_buffer.lookup_transform('world', 'table_mapped', rospy.Time())
+        table_pos = [
+            table_pose_tf_stamped.transform.translation.x,
+            table_pose_tf_stamped.transform.translation.y,
+            table_pose_tf_stamped.transform.translation.z
+        ]
+          
+        table_info = {'name': 'table', 'position': table_pos}
+        obs_info.append(table_info)
+
+        self.obs_info = obs_info
+
+        self.update_all_info()
+        
+        return self.obs_info
+
+
+    def get_object_pose(self):
+        fitted_obstacles = self.config_json['fitted_elliptical_obstacles']['fitted_obstacles']
+        object_poses = []
+        for k, v in viewitems(self.config_json):
+            obs_pose_tf_stamped = self.tf_buffer.lookup_transform(v['parent_frame_id'][1:], v['child_frame_id'][1:], rospy.Time())
+            obs_pos = [
+                obs_pose_tf_stamped.transform.translation.x,
+                obs_pose_tf_stamped.transform.translation.y,
+                obs_pose_tf_stamped.transform.translation.z
+            ]
+            obs_info.append({ 'name': k, 'position': obs_pos, 'radius':v['scale'][0]/2})
+
+
+        table_pose_tf_stamped  = self.tf_buffer.lookup_transform('world', 'table_mapped', rospy.Time())
+        table_pos = [
+            table_pose_tf_stamped.transform.translation.x,
+            table_pose_tf_stamped.transform.translation.y,
+            table_pose_tf_stamped.transform.translation.z
+        ]
+          
+        table_info = {'name': 'table', 'position': table_pos}
+        obs_info.append(table_info)
+
+        self.object_poses = object_poses
+
+        self.update_all_info()
+        
+        return self.object_poses
+
+        
+        
+if __name__ == "__main__":
     #### hybrid traj generator ####
     from traj_generators.trajectory_generator import TrajectoryGenerator
     config = default_config
@@ -657,7 +676,6 @@ if __name__ == "__main__":
     
     #### waypoint cooking ####
     # cls.waypoint_cooking(mode='plan')
-    cls.waypoint_cooking(mode='test', dry_run=False)
+    # cls.waypoint_cooking(mode='test', dry_run=False)
 
-    ### test finger2ee_pose ####
-    # cls.finger2ee_pose(finger_pose=np.array([1,2,3,0,0,0,1]))
+    

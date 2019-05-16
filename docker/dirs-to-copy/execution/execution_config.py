@@ -125,7 +125,7 @@ class ExecutionConfig(object):
         
         config = {
             'make_hotdog': {
-                'formula':"F (" + "flipswitchon" + ")",
+                'formula':"F (" + apply_condiment + ")",
                 'visdom': False,
                 'key_positions': KEY_POSITIONS,
                 'object_relative_pose': OBJECT_RELATIVE_POSE,

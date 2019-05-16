@@ -29,8 +29,21 @@ default_config = {
     }
 }
 
-class RunRobotCooking(object):
 
+
+
+class RunRobotCooking(object):
+    '''
+    functions required from env:
+    - pos, quat = env.get_target_pose()
+    - linear_vel, angular_vel = env.get_target_velocity()
+    - object_poses = env.get_object_pose()
+    - obs_info = env.get_obs_info()
+    - switch_state = env.get_switch_state()
+    - env.set_goal_pose(pt)
+    - env.move_to(wp)
+    - env.set_gripper_state(gripper_state) # 0 is open, 1 is close
+    '''
     def __init__(self, config={}):
         self.RunRobotCooking_config = default_config
         self.RunRobotCooking_config.update(config)
