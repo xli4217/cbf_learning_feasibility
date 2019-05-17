@@ -65,7 +65,7 @@ class QPcontroller:
         # Loop through sphereical obstacles and set constraints
         for i in range(0,num_of_obstacles):
             if obs_info[i]['name'] == 'table':
-                table_height = obs_info[i]['position'][2] + 0.12
+                table_height = obs_info[i]['position'][2]# + 0.12
 
                 # Table Constraint
                 h_table = (x_current[2] - table_height)

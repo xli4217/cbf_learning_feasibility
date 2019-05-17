@@ -52,12 +52,22 @@ class MotorSkills(object):
         percentage_close = 0.9
         return percentage_close
 
-    def skill_moveto(self, goal, forcing, curr_pose, curr_vel, obs_info):
+    def skill_moveto(self,
+                     goal,
+                     forcing,
+                     curr_pose,
+                     curr_vel,
+                     obs_info,
+                     translation_gen=None,
+                     orientation_gen=None):
+        
         self.traj_generator.set_goal(goal)
         ddy, dy ,y = self.traj_generator.get_next_wp(action=forcing,
                                                      curr_pose=curr_pose,
                                                      curr_vel=curr_vel,
-                                                     obs_info=obs_info)
+                                                     obs_info=obs_info,
+                                                     translation_gen=translation_gen,
+                                                     orientation_gen=orientation_gen)
         return ddy, dy, y
 
     def skill_flipswitchon(self, goal, curr_pose, curr_vel, obs_info):
@@ -124,10 +134,10 @@ class MotorSkills(object):
             obs_info = skill_arg['obs_info']
             goal = skill_arg['goal']
 
-            ddy, dy, y = self.skill_flip_switch_on(goal=goal,
-                                                   curr_pose=curr_pose,
-                                                   curr_vel=curr_vel,
-                                                   obs_info=obs_info)
+            ddy, dy, y = self.skill_flipswitchon(goal=goal,
+                                                 curr_pose=curr_pose,
+                                                 curr_vel=curr_vel,
+                                                 obs_info=obs_info)
             action = {
                 'description': 'target position',
                 'value': y

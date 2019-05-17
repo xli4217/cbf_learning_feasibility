@@ -117,6 +117,19 @@ class CookingEnv(VrepEnvBase):
     #       vrep.simxSetJointForce(self.clientID, joint_handle, 10000, vrep.simx_opmode_oneshot)
     #       vrep.simxSetObjectIntParameter(self.clientID, joint_handle, 2001, 0, vrep.simx_opmode_oneshot)
 
+    def get_switch_state(self):
+        rc = 1
+        button_joint_frame_angle = np.zeros(3)
+        while rc != 0:
+            rc, button_joint_frame_angle = vrep.simxGetObjectOrientation(self.clientID,
+                                                                         self.object_handles['toaster_button'],
+                                                                         self.object_handles['grill'],
+                                                                         vrep.simx_opmode_streaming)
+
+        switch_state = button_joint_frame_angle[2]
+        return switch_state
+        
+        
     def get_region_info(self, region='sample_region'):
         if region == 'sample_region':
             handle = self.ee_sample_region_handle

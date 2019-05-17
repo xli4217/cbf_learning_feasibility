@@ -30,10 +30,10 @@
     "marker_type": "cube",
     "require_motive2robot_transform": "True"
   },
-  "toaster":{
-    "vrpn_topic": "/vrpn_client_node/toaster/pose",
+  "grill":{
+    "vrpn_topic": "/vrpn_client_node/grill/pose",
     "parent_frame_id": "/world",
-    "child_frame_id": "/toaster_mapped",
+    "child_frame_id": "/grill_mapped",
     "init_pose": [0.743, -0.123, 0.05, 0, 0, 0, 1],
     "motive_offset": [0, 0, -0.03, 0, 0, 0, 1],
     "scale": [0.45, 0.22, 0.14],
@@ -46,7 +46,7 @@
     "require_motive2robot_transform": "True",
     "fitted_obstacles":{
       "obs1": {
-        "vrpn_topic": "/vrpn_client_node/toaster/pose",
+        "vrpn_topic": "/vrpn_client_node/grill/pose",
         "parent_frame_id": "/world",
         "child_frame_id": "/toaster_obs1",
         "init_pose": [0.743, -0.123, 0.05, 0, 0, 0, 1],
@@ -55,7 +55,7 @@
         "rgba": [0.8, 0.8, 0.8, 0.8]
       },
       "obs2": {
-        "vrpn_topic": "/vrpn_client_node/toaster/pose",
+        "vrpn_topic": "/vrpn_client_node/grill/pose",
         "parent_frame_id": "/world",
         "child_frame_id": "/toaster_obs2",
         "init_pose": [0.743, -0.123, 0.05, 0, 0, 0, 1],
@@ -64,7 +64,7 @@
         "rgba": [0.8, 0.8, 0.8, 0.8]
       },
       "obs3": {
-        "vrpn_topic": "/vrpn_client_node/toaster/pose",
+        "vrpn_topic": "/vrpn_client_node/grill/pose",
         "parent_frame_id": "/world",
         "child_frame_id": "/toaster_obs3",
         "init_pose": [0.743, -0.123, 0.05, 0, 0, 0, 1],
@@ -105,10 +105,10 @@
     "marker_type": "cube",
     "require_motive2robot_transform": "True"
   },
-  "green_plate":{
-    "vrpn_topic": "/vrpn_client_node/green/pose",
+  "hotdogplate":{
+    "vrpn_topic": "/vrpn_client_node/hotdogplate/pose",
     "parent_frame_id": "/world",
-    "child_frame_id": "/green_mapped",
+    "child_frame_id": "/hotdogplate_mapped",
     "init_pose": [0.743, -0.123, 0.05, 0, 0, 0, 1],
     "motive_offset": [0, 0, 0, 0, 0, 0, 1],
     "scale": [0.25, 0.25, 0.005],
@@ -116,10 +116,10 @@
     "marker_type": "sphere",
     "require_motive2robot_transform": "True"
   },
-  "blue_plate":{
-    "vrpn_topic": "/vrpn_client_node/blue/pose",
+  "bunplate":{
+    "vrpn_topic": "/vrpn_client_node/bunplate/pose",
     "parent_frame_id": "/world",
-    "child_frame_id": "/blue_mapped",
+    "child_frame_id": "/bun_mapped",
     "init_pose": [0.743, -0.123, 0.05, 0, 0, 0, 1],
     "motive_offset": [0, 0, 0, 0, 0, 0, 1],
     "scale": [0.25, 0.25, 0.005],
