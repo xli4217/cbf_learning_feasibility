@@ -81,8 +81,11 @@ class RobotCooking(object):
 
         self.rate = rospy.Rate(self.RobotCooking_config['rate'])
 
-        self.wp_gen = self.RobotCooking_config['WPGenerator']['type'](self.RobotCooking_config['WPGenerator']['config'])
-
+        if self.RobotCooking_config['WPGenerator']['type'] is not None:
+            self.wp_gen = self.RobotCooking_config['WPGenerator']['type'](self.RobotCooking_config['WPGenerator']['config'])
+        else:
+            self.wp_gen = None
+            
         # self.M_finger2ee_offset = np.eye(4)
         # self.M_finger2ee_offset[0,3] = -0.05
         # self.M_finger2ee_offset[2,3] = -0.1
@@ -108,9 +111,9 @@ class RobotCooking(object):
         self.obs_info = None
         
         #### load ####
-        self.policy, self.state_preprocessor = load_policy_and_preprocessor(slef.RobotCooking_config['policy_info'])
-
-
+        if self.RobotCooking_config['policy_info']['state_space'] is not None:
+            self.policy, self.state_preprocessor = load_policy_and_preprocessor(self.RobotCooking_config['policy_info'])
+        
     def finger2ee_pose_hack(self, finger_pose=None):
         assert isinstance(finger_pose, np.ndarray)
         assert len(finger_pose) == 7
@@ -517,13 +520,35 @@ class RobotCooking(object):
         self.driver_utils.set_finger_positions(gs * np.ones(3))
 
     def get_switch_state(self):
-        pass
+        return -0.1
 
-    def move_to(self, pt):
-        pass
+    def move_to(self, pt, dry_run=True):
+        ee_pos, ee_quat = self.driver_utils.get_ee_pose()
+        ee_linear_vel, ee_angular_vel = self.driver_utils.get_ee_velocity()
 
+        curr_pose = np.concatenate([ee_pos, ee_quat])
+        curr_vel = np.concatenate([ee_linear_vel, ee_angular_vel])
+
+        pos_distance, quat_distance = pose_distance(curr_pose, pt)
+            
+        if not self.driver_utils.is_tool_in_safe_workspace():
+            print('tool not in safe workspace')
+            return True
+
+        if (pos_distance > 0.01 or quat_distance > 0.15) and self.driver_utils.is_tool_in_safe_workspace():
+            if not dry_run:
+                self.servo_to_pose_target(pt, pos_th=0.005, quat_th=0.1, dry_run=dry_run)  
+            else:
+                self.update_pose_target_tf(pt)
+                self.rate.sleep()
+            return False
+        else:
+            print("plan reached goal")
+            return True
+
+        
     def set_goal_pose(self, pt):
-        self.wp_gen.set_goal(pt)
+        # self.wp_gen.set_goal(pt)
         self.update_goal_tf(pt)
 
         
@@ -556,34 +581,30 @@ class RobotCooking(object):
         
         return self.obs_info
 
-
+    def get_gripper_state(self):
+        finger_positions =  self.driver_utils.get_finger_positions()
+        return finger_positions[1]
+        
     def get_object_pose(self):
-        fitted_obstacles = self.config_json['fitted_elliptical_obstacles']['fitted_obstacles']
-        object_poses = []
+        object_poses = {}
         for k, v in viewitems(self.config_json):
-            obs_pose_tf_stamped = self.tf_buffer.lookup_transform(v['parent_frame_id'][1:], v['child_frame_id'][1:], rospy.Time())
-            obs_pos = [
-                obs_pose_tf_stamped.transform.translation.x,
-                obs_pose_tf_stamped.transform.translation.y,
-                obs_pose_tf_stamped.transform.translation.z
-            ]
-            obs_info.append({ 'name': k, 'position': obs_pos, 'radius':v['scale'][0]/2})
-
-
-        table_pose_tf_stamped  = self.tf_buffer.lookup_transform('world', 'table_mapped', rospy.Time())
-        table_pos = [
-            table_pose_tf_stamped.transform.translation.x,
-            table_pose_tf_stamped.transform.translation.y,
-            table_pose_tf_stamped.transform.translation.z
-        ]
-          
-        table_info = {'name': 'table', 'position': table_pos}
-        obs_info.append(table_info)
+            if v['require_motive2robot_transform'] == "True" and 'obstacles' not in k:
+                obj_pose_tf_stamped = self.tf_buffer.lookup_transform(v['parent_frame_id'][1:], v['child_frame_id'][1:], rospy.Time())
+                obj_pose = np.array([
+                    obj_pose_tf_stamped.transform.translation.x,
+                    obj_pose_tf_stamped.transform.translation.y,
+                    obj_pose_tf_stamped.transform.translation.z,
+                    obj_pose_tf_stamped.transform.rotation.x,
+                    obj_pose_tf_stamped.transform.rotation.y,
+                    obj_pose_tf_stamped.transform.rotation.z,
+                    obj_pose_tf_stamped.transform.rotation.w,
+                ])
+                object_poses.update({k:obj_pose})
 
         self.object_poses = object_poses
 
         self.update_all_info()
-        
+
         return self.object_poses
 
         
@@ -659,7 +680,7 @@ if __name__ == "__main__":
     cls = RobotCooking(config)
     time.sleep(.5)
     
-    #### test pose target following ####
+    #### test ####
     
     #### test IK ####
     # curr_ee_pos, curr_ee_quat = cls.driver_utils.get_ee_pose()
