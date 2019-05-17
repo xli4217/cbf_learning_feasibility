@@ -256,6 +256,7 @@ class CookingEnv(VrepEnvBase):
         while rct != 0 or np.linalg.norm(target_pos) < 0.001:    
             rct, target_pos = vrep.simxGetObjectPosition(self.clientID, handle, self.world_frame_handle, vrep.simx_opmode_streaming)
             rcq, target_quat = vrep.simxGetObjectQuaternion(self.clientID, handle, self.world_frame_handle, vrep.simx_opmode_streaming)
+            print(target_quat)
             
         return np.array(target_pos), np.array(target_quat)
 

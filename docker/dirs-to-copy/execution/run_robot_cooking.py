@@ -162,7 +162,8 @@ class RunRobotCooking(object):
                 node_action = action_n_constraint['make_hotdog']['node_action']
                 ee_goal = node_action['ee_goal']
                 gripper_action = node_action['gripper_action']
-
+                print("actions:", (ee_goal, gripper_action))
+                
                 if gripper_action is not None:
                     self.execute_motor_skill(gripper_action, dry_run=dry_run)
          

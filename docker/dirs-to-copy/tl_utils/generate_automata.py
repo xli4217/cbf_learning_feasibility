@@ -77,6 +77,7 @@ class GenerateAutomata(object):
         edge_action_list = []
         for edge in out_edges:
             if edge[1] != self.Q and edge[1] != 'trap': # for each edge (guarding pred in dnf)
+                # print((self.Q, edge[1]))
                 input_list = edge[2]['input']
                 input_pred_rob_list = []
                 input_pred_action_list = []
