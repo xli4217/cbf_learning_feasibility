@@ -39,6 +39,10 @@
   * https://github.com/ros-planning/moveit/issues/27
   * http://wiki.ros.org/descartes
 
+* Multimaster-FKIE
+  *http://digital.csic.es/bitstream/10261/133333/1/ROS-systems.pdf
+  *http://wiki.ros.org/multimaster_fkie/Tutorials/Setup%20a%20ROS%20master%20synchronization
+  *http://www.huyaoyu.com/technical/2018/08/27/multimaster-ros-configuration-and-multimaster-fkie.html
 
 * Commands
   * roslaunch baxter_api baxter_api.launch mode:=real optitrack:=True env_config_json:=/home/xli4217/docker/docker_home/rlfps/examples/rss2019/env_config.json

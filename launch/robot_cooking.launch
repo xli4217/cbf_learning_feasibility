@@ -2,10 +2,10 @@
   <arg name="optitrack" default="false"/>
 
   <include file="$(find kinova_api)/launch/kinova_api.launch"/>
-
-  <include file="$(find vrpn_client_ros)/launch/sample.launch">
-    <arg name="server" value="optitrack"/>
-  </include>
+  
+  <!-- <include file="$(find vrpn_client_ros)/launch/sample.launch"> -->
+  <!--   <arg name="server" value="optitrack"/> -->
+  <!-- </include> -->
   
   <!-- <include file="$(find realsense2_camera)/launch/rs_camera.launch"/> -->
 
