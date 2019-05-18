@@ -9,7 +9,7 @@ import tf
 from  geometry_msgs.msg import *
 from future.utils import viewitems
 from visualization_msgs.msg import *
-from robot_cooking.env.calibration.jaco_calibration import T_motive2jaco
+from robot_cooking.env.calibration.robot_calibration import T_motive2jaco, T_motive2baxter
 
 
 class MakeEnv(object):
@@ -17,13 +17,22 @@ class MakeEnv(object):
     makes the environment (send transforms) according to config given by json_config_path (create pubs and subs as necessary), and publish rviz markers if specified    
     '''
     
-    def __init__(self, json_config_path, optitrack=False):
+    def __init__(self, json_config_path, optitrack=False, robot_name='jaco'):
 
         with open(json_config_path) as f:
             self.json_config = json.loads(f.read())
 
         self.marker_pub = MarkerPublisher()
- 
+
+        #### motive to robot ####
+        if optitrack:
+            if robot_name == 'jaco':
+                self.T_motive2robot = T_motive2jaco
+            elif robot_name == 'baxter':
+                self.T_motive2robot = T_motive2baxter
+            else:
+                raise ValueError('robot not supported')
+        
         # add rviz markers
         for key, value in viewitems(self.json_config):
             if 'marker_type' in value.keys():
@@ -123,7 +132,7 @@ class MakeEnv(object):
             M[1,3] = msg.pose.position.y
             M[2,3] = msg.pose.position.z
 
-            transformed_M = np.dot(T_motive2jaco, M)
+            transformed_M = np.dot(self.T_motive2robot, M)
             transformed_q = tf.transformations.quaternion_from_matrix(transformed_M)
             pose = [
                 transformed_M[0,3],
@@ -187,7 +196,9 @@ if __name__ == "__main__":
     else:
         optitrack = True
 
+    robot_name = str(sys.argv[2])
+        
     env_json_path = os.path.join(os.environ['RC_PATH'],
                             'src', 'robot_cooking', 'env',
                             'config', 'env_config.json')
-    env = MakeEnv(env_json_path, optitrack)
+    env = MakeEnv(env_json_path, optitrack, robot_name)

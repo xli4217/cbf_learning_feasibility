@@ -1,11 +1,19 @@
 <launch>
   <arg name="optitrack" default="false"/>
-
-  <include file="$(find kinova_api)/launch/kinova_api.launch"/>
+  <arg name="multimaster" default="false"/>
   
-  <!-- <include file="$(find vrpn_client_ros)/launch/sample.launch"> -->
-  <!--   <arg name="server" value="optitrack"/> -->
-  <!-- </include> -->
+  <!-- <include file="$(find kinova_api)/launch/kinova_api.launch"/> -->
+
+  <group if="$(arg optitrack)">
+    <include file="$(find vrpn_client_ros)/launch/sample.launch">
+      <arg name="server" value="optitrack"/>
+    </include>
+  </group>
+  
+  <group if="$(arg multimaster)">
+    <include file="$(find robot_cooking)/launch/master_discovery.launch"/>
+    <include file="$(find robot_cooking)/launch/master_sync.launch"/>
+  </group>
   
   <!-- <include file="$(find realsense2_camera)/launch/rs_camera.launch"/> -->
 
