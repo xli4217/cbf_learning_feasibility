@@ -20,6 +20,7 @@
     * http://sdk.rethinkrobotics.com/wiki/MoveIt_Tutorial
     * http://sdk.rethinkrobotics.com/wiki/Simulator_Installation
     * https://github.com/baxter-flowers/trac_ik_baxter
+    * https://github.com/baxter-flowers/baxter_commander/tree/master/src/baxter_commander
   * Moveit: https://moveit.ros.org/install/source/
   * Trac_ik:
     * https://www.google.com/search?client=ubuntu&channel=fs&q=trac_ik+ros&ie=utf-8&oe=utf-8

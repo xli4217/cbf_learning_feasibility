@@ -583,7 +583,7 @@ class RobotCooking(object):
 
     def get_gripper_state(self):
         finger_positions =  self.driver_utils.get_finger_positions()
-        return finger_positions[1]
+        return finger_positions[0]
         
     def get_object_pose(self):
         object_poses = {}

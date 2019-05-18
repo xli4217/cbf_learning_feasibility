@@ -1,6 +1,7 @@
 <launch>
   <arg name="optitrack" default="false"/>
   <arg name="multimaster" default="false"/>
+  <arg name="robot" default="jaco"/>
   
   <!-- <include file="$(find kinova_api)/launch/kinova_api.launch"/> -->
 
@@ -18,6 +19,6 @@
   <!-- <include file="$(find realsense2_camera)/launch/rs_camera.launch"/> -->
 
   
-  <!-- <node name="cooking_environment" pkg="robot_cooking" type="make_env.py" respawn="false" output="screen" args="$(arg optitrack)"/> -->
+  <node name="$(arg robot)_cooking_env" pkg="robot_cooking" type="make_env.py" respawn="false" output="screen" args="$(arg optitrack) $(arg robot)"/>
 
 </launch>

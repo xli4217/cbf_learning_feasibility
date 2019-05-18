@@ -188,8 +188,6 @@ if __name__ == "__main__":
     import sys
     import os
     
-    rospy.init_node('make_env', anonymous=True)
-
     optitrack = str(sys.argv[1])
     if optitrack == "false":
         optitrack = False
@@ -197,7 +195,9 @@ if __name__ == "__main__":
         optitrack = True
 
     robot_name = str(sys.argv[2])
-        
+
+    rospy.init_node(robot_name + '_make_env', anonymous=True)
+
     env_json_path = os.path.join(os.environ['RC_PATH'],
                             'src', 'robot_cooking', 'env',
                             'config', 'env_config.json')
