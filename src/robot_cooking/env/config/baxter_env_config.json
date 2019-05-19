@@ -1,0 +1,131 @@
+{
+  "safe_zone":{
+    "parent_frame_id": "/world",
+    "child_frame_id": "/safe_zone",
+    "init_pose": [0.72, -0.56, 0.1, 0, 0, 0, 1],
+    "motive_offset": [0, 0, 0, 0, 0, 0, 1],
+    "scale": [1.3, 1.22, 0.6],
+    "rgba": [0.1, 0.1, 0.5, 0.3],
+    "marker_type": "cube",
+    "require_motive2robot_transform": "False"
+  },
+  "interactive_target":{
+    "parent_frame_id": "/world",
+    "child_frame_id": "/interactive_target",
+    "init_pose": [0, -0.223, 0.3, 0, 0, 0, 1],
+    "motive_offset": [0, 0, 0, 0, 0, 0, 1],
+    "scale": [0.76, 1.22, 0.4],
+    "rgba": [0.1, 0.1, 0.5, 0.1],
+    "marker_type": "interactive",
+    "require_motive2robot_transform": "False"
+  },
+  "table":{
+    "vrpn_topic": "/vrpn_client_node/table/pose",
+    "parent_frame_id": "/world",
+    "child_frame_id": "/table_mapped",
+    "init_pose": [0.743, -0.123, 0.05, 0, 0, 0, 1],
+    "motive_offset": [0, 0, -0.01, 0, 0, 0, 1],
+    "scale": [0.76, 1.22, 0.001],
+    "rgba": [0.1, 0.1, 0.1, 1],
+    "marker_type": "cube",
+    "require_motive2robot_transform": "True"
+  },
+  "grill":{
+    "vrpn_topic": "/vrpn_client_node/grill/pose",
+    "parent_frame_id": "/world",
+    "child_frame_id": "/grill_mapped",
+    "init_pose": [0.743, -0.123, 0.05, 0, 0, 0, 1],
+    "motive_offset": [0, 0, -0.03, 0, 0, 0, 1],
+    "scale": [0.45, 0.22, 0.14],
+    "rgba": [0.5, 0.5, 0.5, 0.8],
+    "marker_type": "cube",
+    "require_motive2robot_transform": "True"
+  },
+  "fitted_elliptical_obstacles": {
+    "marker_type": "sphere",
+    "require_motive2robot_transform": "True",
+    "fitted_obstacles":{
+      "obs1": {
+        "vrpn_topic": "/vrpn_client_node/grill/pose",
+        "parent_frame_id": "/world",
+        "child_frame_id": "/toaster_obs1",
+        "init_pose": [0.743, -0.123, 0.05, 0, 0, 0, 1],
+        "motive_offset": [0.2, 0.15, -0.03, 0, 0, 0, 1],
+        "scale": [0.25, 0.25, 0.25],
+        "rgba": [0.8, 0.8, 0.8, 0.8]
+      },
+      "obs2": {
+        "vrpn_topic": "/vrpn_client_node/grill/pose",
+        "parent_frame_id": "/world",
+        "child_frame_id": "/toaster_obs2",
+        "init_pose": [0.743, -0.123, 0.05, 0, 0, 0, 1],
+        "motive_offset": [0.04, 0.15, -0.03, 0, 0, 0, 1],
+        "scale": [0.25, 0.25, 0.25],
+        "rgba": [0.8, 0.8, 0.8, 0.8]
+      },
+      "obs3": {
+        "vrpn_topic": "/vrpn_client_node/grill/pose",
+        "parent_frame_id": "/world",
+        "child_frame_id": "/toaster_obs3",
+        "init_pose": [0.743, -0.123, 0.05, 0, 0, 0, 1],
+        "motive_offset": [-0.15, 0.15, -0.03, 0, 0, 0, 1],
+        "scale": [0.25, 0.25, 0.25],
+        "rgba": [0.8, 0.8, 0.8, 0.8]
+      },
+      "hand": {
+        "vrpn_topic": "/vrpn_client_node/hand/pose",
+        "parent_frame_id": "/world",
+        "child_frame_id": "/hand_mapped",
+        "init_pose": [0.743, -0.123, 0.05, 0, 0, 0, 1],
+        "motive_offset": [0, 0, 0, 0, 0, 0, 1],
+        "scale": [0.25, 0.25, 0.25],
+        "rgba": [0.8, 0.8, 0.8, 0.8]
+      }
+    }
+  },
+  "switch":{
+    "vrpn_topic": "/vrpn_client_node/switch/pose",
+    "parent_frame_id": "/world",
+    "child_frame_id": "/switch_mapped",
+    "init_pose": [0.743, -0.123, 0.05, 0, 0, 0, 1],
+    "motive_offset": [0, 0, 0, 0, 0, 0, 1],
+    "scale": [0.01, 0.01, 0.01],
+    "rgba": [0.5, 0.5, 0.5, 0.8],
+    "marker_type": "sphere",
+    "require_motive2robot_transform": "True"
+  },
+  "condiment":{
+    "vrpn_topic": "/vrpn_client_node/condiment/pose",
+    "parent_frame_id": "/world",
+    "child_frame_id": "/condiment_mapped",
+    "init_pose": [0.743, -0.123, 0.05, 0, 0, 0, 1],
+    "motive_offset": [0, 0, 0, 0, 0, 0, 1],
+    "scale": [0.09, 0.03, 0.18],
+    "rgba": [0.9, 0.9, 0.1, 1],
+    "marker_type": "cube",
+    "require_motive2robot_transform": "True"
+  },
+  "hotdogplate":{
+    "vrpn_topic": "/vrpn_client_node/hotdogplate/pose",
+    "parent_frame_id": "/world",
+    "child_frame_id": "/hotdogplate_mapped",
+    "init_pose": [0.743, -0.123, 0.05, 0, 0, 0, 1],
+    "motive_offset": [0, 0, 0, 0, 0, 0, 1],
+    "scale": [0.25, 0.25, 0.005],
+    "rgba": [0.1, 1.0, 0.1, 1],
+    "marker_type": "sphere",
+    "require_motive2robot_transform": "True"
+  },
+  "bunplate":{
+    "vrpn_topic": "/vrpn_client_node/bunplate/pose",
+    "parent_frame_id": "/world",
+    "child_frame_id": "/bun_mapped",
+    "init_pose": [0.743, -0.123, 0.05, 0, 0, 0, 1],
+    "motive_offset": [0, 0, 0, 0, 0, 0, 1],
+    "scale": [0.25, 0.25, 0.005],
+    "rgba": [0.1, 0.1, 1.0, 1],
+    "marker_type": "sphere",
+    "require_motive2robot_transform": "True"
+  }
+}
+

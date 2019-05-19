@@ -88,10 +88,10 @@ motive_frame = {
     'z': [0,0,1]
 }
 
-p_in_motive_frame = np.array([-1.11, 2.325, 0.77])
+p_in_motive_frame = np.array([-0.495, 2.123, 0.767])
 R = np.array([motive_frame['x'], motive_frame['y'], motive_frame['z']]).T
 
-p_in_robot_frame = np.array([0.42667, -0.311, -0.0145])
+p_in_robot_frame = np.array([0.77, -0.17, -0.22])
 p_in_aligned_motive_frame = p_in_robot_frame - np.dot(R, p_in_motive_frame)
 
 T_motive2baxter = np.eye(4)

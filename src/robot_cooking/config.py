@@ -40,10 +40,9 @@ class RobotCookingInterfaceConfig(object):
                     },
                     'safe_workspace': {
                         # safe zone defined here takes precedence
-                        'env_json_path': os.path.join(os.path.dirname(os.path.abspath(__file__)), 'env', 'config', 'env_config.json'),
-                        'x': [-0.1, 0.6],
-                        'y': [-0.25, 0.16],
-                        'z': [0.08 ,0.8]
+                        'env_json_path': os.path.join(os.path.dirname(os.path.abspath(__file__)), 'env', 'config', 'baxter_env_config.json'),
+                        'init_pose': [0.72, -0.56, -0.23, 0, 0, 0, 1],
+                        'scale': [1.3, 1.22, 0.6]
                     }
                 }
             }
@@ -82,10 +81,9 @@ class RobotCookingInterfaceConfig(object):
                     'safe_workspace': {
                         # safe zone defined here takes precedence
                         'env_json_path': os.path.join(os.path.dirname(os.path.abspath(__file__))
-                                                      , 'env', 'config', 'env_config.json'),
-                        'x': [-0.1, 0.6],
-                        'y': [-0.25, 0.16],
-                        'z': [0.08 ,0.8]
+                                                      , 'env', 'config', 'jaco_env_config.json'),
+                        'init_pose': [0.72, -0.56, -0.23, 0, 0, 0, 1],
+                        'scale': [1.3, 1.22, 0.6]
                     }
                 }
             }

@@ -200,5 +200,5 @@ if __name__ == "__main__":
 
     env_json_path = os.path.join(os.environ['RC_PATH'],
                             'src', 'robot_cooking', 'env',
-                            'config', 'env_config.json')
+                            'config', robot_name+'_env_config.json')
     env = MakeEnv(env_json_path, optitrack, robot_name)
