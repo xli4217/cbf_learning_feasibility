@@ -51,6 +51,23 @@ def quat_distance(q1, q2):
 
     return quat_distance
 
+
+def get_object_goal_pose(object_pose, goal_rel_pose):
+    assert len(object_pose) == len(goal_rel_pose) == 7
+    
+    Ms = tf.quaternion_matrix(object_pose[3:])
+    Ms[:3,3] = object_pose[:3]
+
+    M_rel = tf.quaternion_matrix(goal_rel_pose[3:])
+    M_rel[:3,3] = goal_rel_pose[:3]
+
+    M = Ms.dot(M_rel)
+
+    quat_M = tf.quaternion_from_matrix(M)
+    pose_M = np.concatenate([M[:3,3], quat_M])
+
+    return pose_M
+
     
 def pose_distance(p1, p2):
     assert len(p1) == len(p2) == 7

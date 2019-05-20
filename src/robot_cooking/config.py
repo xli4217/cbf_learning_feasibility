@@ -106,6 +106,7 @@ class RobotCookingInterfaceConfig(object):
             raise ValueError('robot not supported')
         
         robot_cooking_interface_config = {
+            "robot": self.robot,
             "rate": 10,
             "init_node": False,
             "damping": damping,

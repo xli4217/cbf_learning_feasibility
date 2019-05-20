@@ -4,10 +4,14 @@ import time
 from future.utils import viewitems
 
 from utils.utils import *
+import rospy
 
 default_config = {
     #### this can be 'sim' or 'real' ####
     'mode': 'sim',
+    #### this can be 'jaco' or 'baxter' ####
+    'robot': 'jaco',
+    'init_node': False,
     'SimulationEnv':{
         'type': None,
         'config':{}
@@ -49,6 +53,11 @@ class RunRobotCooking(object):
         self.RunRobotCooking_config = default_config
         self.RunRobotCooking_config.update(config)
 
+        self.robot = self.RunRobotCooking_config['robot']
+        if self.RunRobotCooking_config['init_node']:
+            rospy.init_node(self.robot + "_robot_cooking", anonymous=False)
+                        
+        
         #### Initialize env ####
         if self.RunRobotCooking_config['mode'] == 'sim':
             self.env = self.RunRobotCooking_config['SimulationEnv']['type']( self.RunRobotCooking_config['SimulationEnv']['config'])
@@ -66,7 +75,7 @@ class RunRobotCooking(object):
         #### Initialize field variables ####
         self.skill_arg = {}
         self.dry_run_target_pose = None
-        
+        self.condimentapplied = -10
         
     def update_skill_arg(self, dry_run=True):
         curr_pos, curr_quat = self.env.get_target_pose()
@@ -86,6 +95,7 @@ class RunRobotCooking(object):
             'curr_pose': curr_pose,
             'curr_vel': curr_vel,
             'switchon': self.env.get_switch_state(),
+            'condimentapplied': self.condimentapplied,
             'gripper_state': self.env.get_gripper_state(),
             'obs_info': self.env.get_obstacle_info(),
             'obj_poses': object_poses
@@ -99,17 +109,20 @@ class RunRobotCooking(object):
             self.skill_arg['goal'] = pt
 
             curr_pose = self.skill_arg['curr_pose']
-            if self.RunRobotCooking_config['mode'] == 'real' and skill_name == 'flipswitchon':
+            if skill_name == 'flipswitchon':
                 curr_pose[0] -= 0.19
                 curr_pose[2] -= 0.1
-
+                if self.skill_arg['switchon'] > 0:
+                    print('switch on')
+                    break
+                
             pos_dist, quat_dist = pose_distance(self.skill_arg['curr_pose'], pt) 
-            if pos_dist < 0.01 and quat_dist < 0.15:
+            if pos_dist < 0.01 and quat_dist < 0.1:
                 break
         
             action = self.motor_skills.get_action(skill_name=skill_name, skill_arg=self.skill_arg)
             y = action['value']
-            if self.RunRobotCooking_config['mode'] == 'real' and skill_name == 'flipswitchon':
+            if skill_name == 'flipswitchon':
                 curr_pose[0] += 0.19
                 curr_pose[2] += 0.1
 
@@ -126,9 +139,17 @@ class RunRobotCooking(object):
         elif skill_name == 'closegripper':
             self.env.set_gripper_state(0.9)
         elif skill_name == "flipswitchon":
-            pt = KEY_POSITIONS['switch_on_goal']
+            # pt = KEY_POSITIONS['switch_on_goal']
+            pt = get_object_goal_pose(self.skill_arg['obj_poses']['grill'], OBJECT_RELATIVE_POSE['switchon'])
             self.env.set_gripper_state(0.9)
             self.move_to_target_with_motor_skill(pt, skill_name='flipswitchon', dry_run=dry_run)
+        elif skill_name == 'applycondiment':
+            for i in range(25):
+                vel_scale = 2. * np.sin(0.3*i)
+                self.env.pub_ee_frame_velocity(direction='z',vel_scale=vel_scale, duration_sec=0.1)
+                time.sleep(0.1)
+            self.condimentapplied = 10.
+            self.update_skill_arg()    
         elif skill_name.split('_')[0] == 'moveto':
             object_name = skill_name.split('_')[1]
             if len(skill_name.split('_')) == 3:
@@ -136,10 +157,14 @@ class RunRobotCooking(object):
             else:
                 object_rel_pose_name = object_name
 
-            pt = get_object_goal_pose(self.skill_arg['obj_poses'][object_name], OBJECT_RELATIVE_POSE[object_rel_pose_name])
-            if object_name == 'grill':
+            if object_name == 'world':
+                pt = OBJECT_RELATIVE_POSE[object_rel_pose_name]
+            else:
+                pt = get_object_goal_pose(self.skill_arg['obj_poses'][object_name], OBJECT_RELATIVE_POSE[object_rel_pose_name])
+            if object_rel_pose_name == 'grill' or object_rel_pose_name == 'bunplate':
                 # TODO: rise gripper a bit before going to grill (otherwise it chooses to go underneath)
-                pt_rise = get_object_goal_pose(self.skill_arg['curr_pose'], np.array([0,0,-0.12,0,0,0,1]))
+                # pt_rise = get_object_goal_pose(self.skill_arg['curr_pose'], np.array([0,0,-0.12,0,0,0,1]))
+                pt_rise = self.skill_arg['curr_pose'] + np.array([0,0,0.1,0,0,0,0])
                 self.move_to_target_with_motor_skill(pt_rise, skill_name='moveto', dry_run=dry_run)
 
             self.move_to_target_with_motor_skill(pt, skill_name='moveto', dry_run=dry_run)
@@ -162,13 +187,17 @@ class RunRobotCooking(object):
                 node_action = action_n_constraint['make_hotdog']['node_action']
                 ee_goal = node_action['ee_goal']
                 gripper_action = node_action['gripper_action']
-                print("actions:", (ee_goal, gripper_action))
+                other_action = node_action['other_action']
+                print("actions:", (ee_goal, gripper_action, other_action))
                 
                 if gripper_action is not None:
                     self.execute_motor_skill(gripper_action, dry_run=dry_run)
          
                 if ee_goal is not None:
                     self.execute_motor_skill(ee_goal, dry_run=dry_run)
+
+                if other_action is not None:
+                    self.execute_motor_skill(other_action, dry_run=dry_run)
             else:
                 print('done')
 
@@ -180,15 +209,12 @@ class RunRobotCooking(object):
 ##############
 # Run script #
 ##############                
-def run(mode='sim', dry_run='True'):
-    if dry_run == 'True':
-        dry_run = True
-    else:
-        dry_run = False
-
+def run(mode='sim', dry_run='True', robot='jaco'):
     config = default_config
     config['mode'] = mode
-
+    config['robot'] = robot
+    config['init_node'] = True
+    
     from execution_config import ExecutionConfig
     exe_config = ExecutionConfig()
     

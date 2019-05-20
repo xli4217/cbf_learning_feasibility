@@ -72,6 +72,15 @@
         "scale": [0.25, 0.25, 0.25],
         "rgba": [0.8, 0.8, 0.8, 0.8]
       },
+      "obs4": {
+        "vrpn_topic": "/vrpn_client_node/grill/pose",
+        "parent_frame_id": "/world",
+        "child_frame_id": "/toaster_obs4",
+        "init_pose": [0.743, -0.123, 0.05, 0, 0, 0, 1],
+        "motive_offset": [0, 0, -0.1, 0, 0, 0, 1],
+        "scale": [0.1, 0.1, 0.1],
+        "rgba": [0.8, 0.8, 0.8, 0.8]
+      },
       "hand": {
         "vrpn_topic": "/vrpn_client_node/hand/pose",
         "parent_frame_id": "/world",
@@ -119,7 +128,7 @@
   "bunplate":{
     "vrpn_topic": "/vrpn_client_node/bunplate/pose",
     "parent_frame_id": "/world",
-    "child_frame_id": "/bun_mapped",
+    "child_frame_id": "/bunplate_mapped",
     "init_pose": [0.743, -0.123, 0.05, 0, 0, 0, 1],
     "motive_offset": [0, 0, 0, 0, 0, 0, 1],
     "scale": [0.25, 0.25, 0.005],

@@ -6,7 +6,8 @@ from future.utils import viewitems
 from utils.utils import *
 
 default_config = {
-
+    'robot': 'jaco',
+    'init_node': False
 }
 
 class ExecutionConfig(object):
@@ -15,6 +16,8 @@ class ExecutionConfig(object):
         self.ExecutionConfig_config = default_config
         self.ExecutionConfig_config.update(default_config)
 
+        self.robot = self.ExecutionConfig_config['robot']
+        
     def simulation_config(self):
         from cooking_env.env.base.ce import CookingEnv
         
@@ -29,60 +32,13 @@ class ExecutionConfig(object):
         return CookingEnv, sim_config
 
     def kinova_config(self):
-        from robot_cooking.robot_cooking import RobotCooking
-        from kinova_api.kinova_driver_utils import KinovaDriverUtils
-        from kinova_api.kinova_moveit_utils import KinovaMoveitUtils
+        from robot_cooking.robot_cooking_interface import RobotCookingInterface
+        from robot_cooking.config import RobotCookingInterfaceConfig
 
+        config = RobotCookingInterfaceConfig(config={'robot': self.robot}).get_robot_cooking_interface_config()
+        config['init_node'] = self.ExecutionConfig_config['init_node']
         
-        config = {
-            "rate": 10,
-            "policy_info": {
-                "state_space": None,
-                "action_space": None,
-                "training_config_restore_path": None,
-                "policy_restore_path": None,
-                "state_preprocessor_restore_path": None
-            },
-            "WPGenerator": {
-                'type': None,
-                'config': {}
-            },
-            'DriverUtils': {
-                'type': KinovaDriverUtils,
-                'config':  {
-                    'init_node': False,
-                    'cmd_publish_rate': 100,
-                    "gripper_move_group": 'gripper',
-                    "reference_link": "j2s7s300_link_base",
-                    'joint_vel_bound': {
-                        'upper': 4 * np.array([2.5,2.5,2.5,2.5,5.,5.,5.]),
-                        'lower': -4 * np.array([2.5,2.5,2.5,2.5,5.,5.,5.]),    
-                    },
-                    'safe_workspace': {
-                        # safe zone defined here takes precedence
-                        'env_json_path': os.path.join(os.environ['ROBOT_COOKING_ROS_PATH'], 'robot_cooking', 'env', 'config', 'env_config.json'),
-                        'x': [-0.1, 0.6],
-                        'y': [-0.25, 0.16],
-                        'z': [0.08 ,0.8]
-                    }
-                }
-            },
-            'MoveitUtils': {
-                'type': KinovaMoveitUtils,
-                'config':  {
-                    "init_node": False,
-                    "arm_move_group": 'arm',
-                    "gripper_move_group": 'gripper',
-                    "reference_link": "j2s7s300_link_base",
-                    "end_effector_link": "j2s7s300_end_effector",
-                    "neutral_joint_positions": [4.935252420414662, 2.485132499632967, -0.6278464188357148, 0.763206574666036, 4.204106310531545, 4.064730307514466, 4.778262802580017, 1.1112613559570534, 1.108797399316512, 1.108797399316512],
-                    "joint_names": ["j2s7s300_joint_1", "j2s7s300_joint_2", "j2s7s300_joint_3", "j2s7s300_joint_4", "j2s7s300_joint_5", "j2s7s300_joint_6", "j2s7s300_joint_7"],
-                    "env_json_path": "",
-                }
-            }
-        }
-        
-        return RobotCooking, config
+        return RobotCookingInterface, config
         
     def motor_skill_config(self):
         from skills.motor_skills import MotorSkills
@@ -141,7 +97,7 @@ class ExecutionConfig(object):
         
         ## flip switch open 
         experiment_root_dir = os.path.join(os.environ['LEARNING_PATH'], 'learning', 'experiments')
-        experiment_name = 'test'
+        experiment_name = 'switchon'
         hyperparam_dir = 'seed0'
         itr = 100
         
@@ -165,11 +121,15 @@ class ExecutionConfig(object):
 
         pick_sausage_place_grill = "F ((moveto_hotdogplate && opengripper) && X F (closegripper && XF ((moveto_grill && closegripper)  && X F (opengripper))))"
 
-        apply_condiment = "(moveto_condiment_condimentpre && opengripper) && X F " + \
-                          "(moveto_condiment_condimentpost && X F " + \
-                          "(closegripper && X F "+ \
-                          "((moveto_bunplate_relativeplateapplycondimentpre && closegripper) && X F "+\
-                          "(opengripper))))"
+        apply_condiment_ = "(moveto_condiment_condimentpre && opengripper) && X F " + \
+                           "(moveto_condiment_condimentpost && X F " + \
+                           "(closegripper && X F "+ \
+                           "((moveto_bunplate_relativeplateapplycondimentpost && closegripper) && X F "+\
+                           "(applycondiment && X F" + \
+                           "((moveto_world_placecondimentgoal && closegripper) && X F" + \
+                           "(opengripper && X F" + \
+                           "(moveto_condiment_condimentpre" + \
+                           ")))))))"
         
         entire_task = "(moveto_hotdogplate && opengripper) && X F " + \
                       "(closegripper && X F " + \
@@ -177,13 +137,14 @@ class ExecutionConfig(object):
                       "(opengripper && X F "+ \
                       "(closegripper && X F "+\
                       "((moveto_bunplate && closegripper) && X F "+\
-                      "(opengripper))))))"
+                      "(opengripper" + \
+                      "))))))"
 
         test_spec = 'flipswitchon'
         
         config = {
             'make_hotdog': {
-                'formula':"F (" + test_spec + ")",
+                'formula':"F (" + apply_condiment_ + ")",
                 'visdom': False,
                 'key_positions': KEY_POSITIONS,
                 'object_relative_pose': OBJECT_RELATIVE_POSE,
@@ -192,7 +153,7 @@ class ExecutionConfig(object):
                 'fsa_save_dir': os.path.join(os.environ['LEARNING_PATH'], 'execution', 'figures'),
                 'dot_file_name': 'make_hotdog',
                 'svg_file_name': 'make_hotdog',
-                'mdp_state_space': {'type': 'float', 'shape': (37, ), 'upper_bound':[], 'lower_bound': []}
+                'mdp_state_space': {'type': 'float', 'shape': (38, ), 'upper_bound':[], 'lower_bound': []}
             }
         }
 

@@ -17,6 +17,7 @@ from  geometry_msgs.msg import *
 from utils.utils import *
         
 default_config = {
+    "robot": 'jaco',
     "rate": 10,
     "init_node": False,
     "damping": None,
@@ -44,6 +45,7 @@ class RobotCookingInterface(object):
         self.driver_utils = self.RobotCookingInterface_config['DriverUtils']['type'](self.RobotCookingInterface_config['DriverUtils']['config'])
         self.moveit_utils = self.RobotCookingInterface_config['MoveitUtils']['type'](self.RobotCookingInterface_config['MoveitUtils']['config'])
 
+        self.robot_name = self.RobotCookingInterface_config['robot']
         self.rate = rospy.Rate(self.RobotCookingInterface_config['rate'])
                     
         #### Initialize tf ####
@@ -54,7 +56,7 @@ class RobotCookingInterface(object):
         self.last_quat_distance = None
 
         #### load json config ####
-        with open(os.path.join(os.environ['RC_PATH'], 'src', 'robot_cooking', 'env', 'config', 'env_config.json')) as f:
+        with open(os.path.join(os.environ['RC_PATH'], 'src', 'robot_cooking', 'env', 'config', self.robot_name+'_env_config.json')) as f:
             self.config_json = json.loads(f.read())
 
         #### all info ####
@@ -164,7 +166,28 @@ class RobotCookingInterface(object):
         self.driver_utils.set_finger_positions(gs * np.ones(3))
 
     def get_switch_state(self):
-        return -0.1
+        '''
+        positive is on, negative is off
+        '''
+        
+        ## this is relative to grill
+        switch_pose_tf_stamped = self.tf_buffer.lookup_transform('grill_mapped', 'switch_mapped', rospy.Time())
+        switch_pose = np.array([
+            switch_pose_tf_stamped.transform.translation.x,
+            switch_pose_tf_stamped.transform.translation.y,
+            switch_pose_tf_stamped.transform.translation.z,
+            switch_pose_tf_stamped.transform.rotation.x,
+            switch_pose_tf_stamped.transform.rotation.y,
+            switch_pose_tf_stamped.transform.rotation.z,
+            switch_pose_tf_stamped.transform.rotation.w,
+        ])
+
+        switch_angle_rel_grill = tf.euler_from_quaternion(switch_pose[3:])[1]
+        
+        if switch_angle_rel_grill > 0.16:
+            return 10.
+        else:
+            return -10.
 
     def move_to(self, pt, dry_run=True):
         ee_pos, ee_quat = self.driver_utils.get_ee_pose()
@@ -179,7 +202,7 @@ class RobotCookingInterface(object):
             print('tool not in safe workspace')
             return True
 
-        if (pos_distance > 0.01 or quat_distance > 0.15) and self.driver_utils.is_tool_in_safe_workspace():
+        if (pos_distance > 0.005 or quat_distance > 0.1) and self.driver_utils.is_tool_in_safe_workspace():
             if not dry_run:
                 self.servo_to_pose_target(pt, pos_th=0.005, quat_th=0.1, dry_run=dry_run)  
             else:
@@ -190,7 +213,10 @@ class RobotCookingInterface(object):
             print("plan reached goal")
             return True
 
-        
+
+    def pub_ee_frame_velocity(self, direction, vel_scale, duration_sec):
+        self.driver_utils.pub_ee_frame_velocity(direction, vel_scale, duration_sec)
+            
     def set_goal_pose(self, pt):
         # self.wp_gen.set_goal(pt)
         self.update_tf(pt, tf_target='goal', tf_src='world')
@@ -255,15 +281,31 @@ class RobotCookingInterface(object):
         self.driver_utils.home_robot()
         
     def test(self):
-        curr_pos, curr_quat = self.driver_utils.get_ee_pose()
-        curr_pose = np.concatenate([curr_pos, curr_quat])
+        #### go to pose rel curr pose
+        # curr_pos, curr_quat = self.driver_utils.get_ee_pose()
+        # curr_pose = np.concatenate([curr_pos, curr_quat])
 
-        goal_pose = curr_pose
-        goal_pose[2] += 0.15
-        goal_pose[1] -= 0.15
+        # goal_pose = curr_pose
+        # goal_pose[2] += 0.15
+        # goal_pose[1] -= 0.15
+
+        #### go to an object pose
+        # from backup.waypoints import waypoints_dict
+        # rel_goal_pose = waypoints_dict['relative_toaster']
+
         
-        while not self.move_to(goal_pose, dry_run=False):
-            pass
+        # from utils.utils import get_object_goal_pose
+
+        # grill_mapped_pose = self.get_object_pose()['grill']
+
+        # goal_pose = get_object_goal_pose(grill_mapped_pose, rel_goal_pose)
+        
+        # self.set_gripper_state(0.4)
+        # while not self.move_to(goal_pose, dry_run=False):
+        #     pass
+
+        #### misc
+        print(self.get_switch_state())
         
 if __name__ == "__main__":
     robot_name = str(sys.argv[1])

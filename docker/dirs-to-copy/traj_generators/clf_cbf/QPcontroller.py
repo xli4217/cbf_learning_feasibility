@@ -75,7 +75,7 @@ class QPcontroller:
                 rad = obs_info[i]['radius']
                 h = (x_current[0]-pos[0])**2 + (x_current[1]-pos[1])**2 + (x_current[2]-pos[2])**2 - rad**2
                 self.m.addConstr(2*(x_current[0]-pos[0])*self.u1 + 2*(x_current[1]-pos[1])*self.u2 + 2*(x_current[2]-pos[2])*self.u3 + self.k_cbf*h >= 0, "CBF_Constraint_"+obs_info[i]['name'])
-
+                # self.m.addConstr(2*(x_current[0]-pos[0])*self.u1 + 2*(x_current[1]-pos[1])*self.u2 + 2*(x_current[2]-pos[2])*self.u3 + h**0.3*h >= 0, "CBF_Constraint_"+obs_info[i]['name'])
       
         # Initialize Cost Function
         self.cost_func = self.u1*self.u1+self.u2*self.u2+self.u3*self.u3 + self.delta*self.delta

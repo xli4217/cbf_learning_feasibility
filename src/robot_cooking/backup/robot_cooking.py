@@ -535,7 +535,7 @@ class RobotCooking(object):
             print('tool not in safe workspace')
             return True
 
-        if (pos_distance > 0.01 or quat_distance > 0.15) and self.driver_utils.is_tool_in_safe_workspace():
+        if (pos_distance > 0.015 or quat_distance > 0.1) and self.driver_utils.is_tool_in_safe_workspace():
             if not dry_run:
                 self.servo_to_pose_target(pt, pos_th=0.005, quat_th=0.1, dry_run=dry_run)  
             else:
