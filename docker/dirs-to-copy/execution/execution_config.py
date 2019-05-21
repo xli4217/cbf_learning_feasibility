@@ -7,7 +7,6 @@ from utils.utils import *
 
 default_config = {
     'robot': 'jaco',
-    'init_node': False
 }
 
 class ExecutionConfig(object):
@@ -31,12 +30,12 @@ class ExecutionConfig(object):
 
         return CookingEnv, sim_config
 
-    def kinova_config(self):
+    def robot_config(self, init_node=False):
         from robot_cooking.robot_cooking_interface import RobotCookingInterface
         from robot_cooking.config import RobotCookingInterfaceConfig
 
         config = RobotCookingInterfaceConfig(config={'robot': self.robot}).get_robot_cooking_interface_config()
-        config['init_node'] = self.ExecutionConfig_config['init_node']
+        config['init_node'] = init_node
         
         return RobotCookingInterface, config
         
@@ -160,3 +159,74 @@ class ExecutionConfig(object):
         return LowLevelTLSkills, config
 
 
+    def run_robot_cooking_config(self, mode='sim', robot=None, init_node=False):
+        robot = robot
+        if robot is None:
+            robot = self.robot
+        config = {
+            #### this can be 'sim' or 'real' ####
+            'mode': mode,
+            #### this can be 'jaco' or 'baxter' ####
+            'robot': robot,
+            'init_node': init_node,
+            'SimulationEnv':{
+                'type': None,
+                'config':{}
+            },
+            'ExperimentEnv': {
+                'type': None,
+                'config': {}
+            },
+            'Skills':{
+                'construct_skill_state': None,
+                'MotorSkills': {
+                    'type': None,
+                    'config':{}
+                },
+                'LowLevelTLSkills': {
+                    'type': None,
+                    'config': {}
+                }
+            }
+        }
+
+        ####################
+        # Setup simulation #
+        ####################
+        cls_type, cls_config = self.simulation_config()
+    
+        config['SimulationEnv'] = {
+            'type': cls_type,
+            'config': cls_config 
+        }
+
+        ####################
+        # Setup experiment #
+        ####################
+        cls_type, cls_config = self.robot_config()
+        config['ExperimentEnv'] = {
+            'type': cls_type,
+            'config': cls_config
+        }
+    
+        ################
+        # Setup Skills #
+        ################
+        motor_skill_type, motor_skill_config = self.motor_skill_config()
+        low_level_tl_skill_type, low_level_tl_skill_config = self.low_level_tl_skill_config()
+        
+        from tl_utils.tl_config import construct_skill_state
+        
+        config['Skills'] = {
+            'construct_skill_state': construct_skill_state,
+            'MotorSkills':{
+                'type': motor_skill_type,
+                'config': motor_skill_config
+            },
+            'LowLevelTLSkills':{
+                'type': low_level_tl_skill_type,
+                'config': low_level_tl_skill_config
+            }
+        }
+
+        return config

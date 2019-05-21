@@ -210,52 +210,10 @@ class RunRobotCooking(object):
 # Run script #
 ##############                
 def run(mode='sim', dry_run='True', robot='jaco'):
-    config = default_config
-    config['mode'] = mode
-    config['robot'] = robot
-    config['init_node'] = True
-    
-    from execution_config import ExecutionConfig
-    exe_config = ExecutionConfig()
-    
-    ####################
-    # Setup simulation #
-    ####################
-    cls_type, cls_config = exe_config.simulation_config()
-    
-    config['SimulationEnv'] = {
-        'type': cls_type,
-        'config': cls_config 
-    }
+    from execution.execution_config import ExecutionConfig
 
-    ####################
-    # Setup experiment #
-    ####################
-    cls_type, cls_config = exe_config.kinova_config()
-    config['ExperimentEnv'] = {
-        'type': cls_type,
-        'config': cls_config
-    }
-    
-    ################
-    # Setup Skills #
-    ################
-    motor_skill_type, motor_skill_config = exe_config.motor_skill_config()
-    low_level_tl_skill_type, low_level_tl_skill_config = exe_config.low_level_tl_skill_config()
-
-    from tl_utils.tl_config import construct_skill_state
-    
-    config['Skills'] = {
-        'construct_skill_state': construct_skill_state,
-        'MotorSkills':{
-            'type': motor_skill_type,
-            'config': motor_skill_config
-        },
-        'LowLevelTLSkills':{
-            'type': low_level_tl_skill_type,
-            'config': low_level_tl_skill_config
-        }
-    }
+    exe_config = ExecutionConfig({'robot': robot})
+    config = exe_config.run_robot_cooking_config(mode, robot, init_node=True)
     
     ##############################
     # Initialize Execution Class #
