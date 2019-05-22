@@ -200,7 +200,7 @@ class FsaReward(object):
             
         done = False
         if next_Q == "accept_all" or next_Q == ("accept_all", "accept_all"):
-            print('fsa done!')
+            # print('fsa done!')
             reward += 2.0
             done = True
         if next_Q == "trap" or "trap" in next_Q:
@@ -208,7 +208,11 @@ class FsaReward(object):
             reward += -2.0
             done = True
 
-        best_edge_guard_bin = edge_guard_bin_list[np.argmax(np.array(edge_rob_list))]
+        if len(edge_rob_list) > 0:
+            best_edge_guard_bin = edge_guard_bin_list[np.argmax(np.array(edge_rob_list))]
+        else:
+            # this happens at the acceptance node of an FSA
+            best_edge_guard_bin = None
             
         return next_Q, reward, (Q, next_Q), done, Dq, best_edge_guard_bin
 

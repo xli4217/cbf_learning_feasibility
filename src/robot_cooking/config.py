@@ -35,8 +35,8 @@ class RobotCookingInterfaceConfig(object):
                     "cmd_publish_rate": 100,
                     'init_node': False,
                     'joint_vel_bound': {
-                        'upper': 0.1 * np.ones(7),
-                        'lower': -0.1 * np.ones(7),    
+                        'upper': 0.25 * np.ones(7),
+                        'lower': -0.25 * np.ones(7),    
                     },
                     'safe_workspace': {
                         # safe zone defined here takes precedence

@@ -3,17 +3,23 @@
   <arg name="run_baxter" default="false"/>
   <arg name="run_aut" default="false"/>
   <arg name="dry_run" default="true"/>
+  <arg name="visdom" default="false"/>
+
   
   <group if="$(arg run_jaco)">
     <node name="jaco_cooking_node" pkg="robot_cooking" type="run_robot_node.py" respawn="false" output="screen" args="jaco $(arg dry_run)"/>
   </group>
 
   <group if="$(arg run_baxter)">
-    <node name="jaco_cooking_node" pkg="robot_cooking" type="run_robot_node.py" respawn="false" output="screen" args="baxter $(arg dry_run)"/>
+    <node name="baxter_cooking_node" pkg="robot_cooking" type="run_robot_node.py" respawn="false" output="screen" args="baxter $(arg dry_run)"/>
   </group>
   
   <group if="$(arg run_aut)">
     <node name="aut_node" pkg="robot_cooking" type="run_automata_node.py" respawn="false" output="screen"/>
+  </group>
+
+  <group if="$(arg visdom)">
+    <node name="visdom_node" pkg="robot_cooking" type="automata_visdom_node.py" respawn="false" output="screen" args="jaco"/>
   </group>
  
   

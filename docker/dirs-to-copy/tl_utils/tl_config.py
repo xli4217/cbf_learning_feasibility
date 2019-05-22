@@ -75,7 +75,7 @@ def moveto_robustness(s=None, a=None, sp=None, object_name=None, rel_pose_name=N
     pos_dist, quat_dist = pose_distance(ee_pose, goal_pose)
 
     #print((pos_dist, quat_dist))
-    rob = np.minimum(0.015 - pos_dist, 0.2 - quat_dist)
+    rob = np.minimum(0.02 - pos_dist, 0.25 - quat_dist)
     #print(rob)
     return rob 
         

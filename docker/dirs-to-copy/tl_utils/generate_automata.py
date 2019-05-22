@@ -47,6 +47,7 @@ class GenerateAutomata(object):
 
         self.q = 0
         self.Q = 'T0_init'
+        self.edge = None
         
     def get_state(self):
         return self.q, self.Q
@@ -66,6 +67,8 @@ class GenerateAutomata(object):
         t1 = time.time()
         self.Q, r, edge, done, Dq, best_edge_guard_bin = self.FSA.step(self.Q, s=s)
 
+        self.edge = edge
+        
         self.q = self.FSA.get_node_value_from_name(self.Q)
 
         if self.GenerateAutomata_config['visdom']:
@@ -80,20 +83,21 @@ class GenerateAutomata(object):
         # print(self.Q)
         # print(best_edge_guard_bin)
         # print('-----')
-        for i in range(len(best_edge_guard_bin)):
-            if self.FSA.sorted_props[i] == 'opengripper' and best_edge_guard_bin[i] == 1:
-                gripper_action = 'opengripper'
-            if self.FSA.sorted_props[i] == 'closegripper' and best_edge_guard_bin[i] == 1:
-                gripper_action = 'closegripper'
+        if best_edge_guard_bin is not None:
+            for i in range(len(best_edge_guard_bin)):
+                if self.FSA.sorted_props[i] == 'opengripper' and best_edge_guard_bin[i] == 1:
+                    gripper_action = 'opengripper'
+                if self.FSA.sorted_props[i] == 'closegripper' and best_edge_guard_bin[i] == 1:
+                    gripper_action = 'closegripper'
                      
-            if 'moveto' in self.FSA.sorted_props[i] and best_edge_guard_bin[i] == 1:
-                ee_goal = self.FSA.sorted_props[i]
+                if 'moveto' in self.FSA.sorted_props[i] and best_edge_guard_bin[i] == 1:
+                    ee_goal = self.FSA.sorted_props[i]
 
-            if self.FSA.sorted_props[i] == 'flipswitchon' and best_edge_guard_bin[i] == 1:
-                other_action = "flipswitchon"
+                if self.FSA.sorted_props[i] == 'flipswitchon' and best_edge_guard_bin[i] == 1:
+                    other_action = "flipswitchon"
                              
-            if self.FSA.sorted_props[i] == 'applycondiment' and best_edge_guard_bin[i] == 1:
-                other_action = 'applycondiment'
+                if self.FSA.sorted_props[i] == 'applycondiment' and best_edge_guard_bin[i] == 1:
+                    other_action = 'applycondiment'
                   
         node_action = dict(ee_goal=ee_goal, gripper_action=gripper_action, other_action=other_action)
                 

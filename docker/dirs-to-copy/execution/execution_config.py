@@ -13,7 +13,7 @@ class ExecutionConfig(object):
 
     def __init__(self, config={}):
         self.ExecutionConfig_config = default_config
-        self.ExecutionConfig_config.update(default_config)
+        self.ExecutionConfig_config.update(config)
 
         self.robot = self.ExecutionConfig_config['robot']
         
@@ -33,7 +33,7 @@ class ExecutionConfig(object):
     def robot_config(self, init_node=False):
         from robot_cooking.robot_cooking_interface import RobotCookingInterface
         from robot_cooking.config import RobotCookingInterfaceConfig
-
+        
         config = RobotCookingInterfaceConfig(config={'robot': self.robot}).get_robot_cooking_interface_config()
         config['init_node'] = init_node
         
@@ -139,11 +139,11 @@ class ExecutionConfig(object):
                       "(opengripper" + \
                       "))))))"
 
-        test_spec = 'flipswitchon'
+        test_spec_ = 'moveto_hotdogplate && X F (moveto_grill)'
         
         config = {
             'make_hotdog': {
-                'formula':"F (" + apply_condiment_ + ")",
+                'formula':"F (" + test_spec_ + ")",
                 'visdom': False,
                 'key_positions': KEY_POSITIONS,
                 'object_relative_pose': OBJECT_RELATIVE_POSE,

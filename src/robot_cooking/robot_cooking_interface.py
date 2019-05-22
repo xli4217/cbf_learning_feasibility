@@ -65,7 +65,8 @@ class RobotCookingInterface(object):
         self.goal = None
         self.target = None
         self.obs_info = None
-        
+
+        time.sleep(2.5)
 
     def update_all_info(self):
         if self.target is None:
@@ -226,7 +227,12 @@ class RobotCookingInterface(object):
         fitted_obstacles = self.config_json['fitted_elliptical_obstacles']['fitted_obstacles']
         obs_info = []
         for k, v in viewitems(fitted_obstacles):
-            obs_pose_tf_stamped = self.tf_buffer.lookup_transform(v['parent_frame_id'][1:], v['child_frame_id'][1:], rospy.Time())
+            try:
+                obs_pose_tf_stamped = self.tf_buffer.lookup_transform(v['parent_frame_id'][1:], v['child_frame_id'][1:], rospy.Time(), rospy.Duration(3.0))
+            except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+                self.rate.sleep()
+                continue
+           
             obs_pos = [
                 obs_pose_tf_stamped.transform.translation.x,
                 obs_pose_tf_stamped.transform.translation.y,
@@ -253,13 +259,21 @@ class RobotCookingInterface(object):
 
     def get_gripper_state(self):
         finger_positions =  self.driver_utils.get_finger_positions()
-        return finger_positions[0]
-        
+        if isinstance(finger_positions, np.ndarray) or isinstance(finger_positions, list):
+            return finger_positions[0]
+        else:
+            return finger_positions
+            
     def get_object_pose(self):
         object_poses = {}
         for k, v in viewitems(self.config_json):
             if v['require_motive2robot_transform'] == "True" and 'obstacles' not in k:
-                obj_pose_tf_stamped = self.tf_buffer.lookup_transform(v['parent_frame_id'][1:], v['child_frame_id'][1:], rospy.Time())
+                try:
+                    obj_pose_tf_stamped = self.tf_buffer.lookup_transform(v['parent_frame_id'][1:], v['child_frame_id'][1:], rospy.Time(), rospy.Duration(3.0))
+                except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+                    self.rate.sleep()
+                    continue
+                    
                 obj_pose = np.array([
                     obj_pose_tf_stamped.transform.translation.x,
                     obj_pose_tf_stamped.transform.translation.y,
@@ -320,8 +334,8 @@ if __name__ == "__main__":
     time.sleep(.5)
     
     #### test ####
-    cls.test()
-    # cls.home_robot()
+    #cls.test()
+    cls.home_robot()
 
 
     #### test IK ####

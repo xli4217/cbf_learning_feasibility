@@ -17,10 +17,11 @@ class LowLevelTLSkills(object):
         self.LowLevelTLSkills_config.update(config)
         
         self.auts = {}
+        self.curr_node_edge = {}
         for k, v in viewitems(self.LowLevelTLSkills_config):
             self.auts[k] = GenerateAutomata(config=v)
-
-
+            self.curr_node_edge[k] = {'node': self.auts[k].Q, 'edge': self.auts[k].edge}
+            
     def step(self, skill_arg):
         s = construct_skill_state(skill_arg)
         skill_action_n_constraint = {}
@@ -28,6 +29,7 @@ class LowLevelTLSkills(object):
         for skill_name, skill_aut in viewitems(self.auts):
             node_action, node_constraint, done = skill_aut.step(s)
             skill_action_n_constraint[skill_name] = {'node_action': node_action, 'node_constraint': node_constraint}
+            self.curr_node_edge[skill_name] = {'node': skill_aut.Q, 'edge': skill_aut.edge}
 
         return skill_action_n_constraint, done
             
