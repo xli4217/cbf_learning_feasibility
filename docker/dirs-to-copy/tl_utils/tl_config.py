@@ -73,8 +73,10 @@ def moveto_robustness(s=None, a=None, sp=None, object_name=None, rel_pose_name=N
         goal_pose = get_object_goal_pose(object_pose, OBJECT_RELATIVE_POSE[rel_pose_name])
 
     pos_dist, quat_dist = pose_distance(ee_pose, goal_pose)
+
+    #print((pos_dist, quat_dist))
     rob = np.minimum(0.015 - pos_dist, 0.2 - quat_dist)
-    
+    #print(rob)
     return rob 
         
 
@@ -90,12 +92,22 @@ def switch_robustness(s=None, a=None, sp=None, sim_or_real='sim'):
     #     return -0.1
     # else:
     #     raise ValueError('mode not supported')
-
+    
 def apply_condiment_robustness(s, a=None, sp=None):
     '''
     0.1 if true, -0.1 if false
     '''
-    return s[state_idx_map['condimentapplied']]
+    rob = s[state_idx_map['condimentapplied']]
+    return float(rob)
+
+def gripper_robustness(s, a=None, sp=None, oc='open'):
+    if oc == 'open':
+        rob = 0.4 - s[state_idx_map['gripper_state']]
+    elif oc == 'close':
+        rob = s[state_idx_map['gripper_state']] - 0.7
+    else:
+        raise ValueError()
+    return float(rob)
     
 PREDICATES = {
     'moveto_hotdogplate': lambda s, a=None, sp=None: moveto_robustness(s,a,sp,'hotdogplate', 'hotdogplate'),
@@ -108,7 +120,7 @@ PREDICATES = {
     'moveto_bunplate_relativeplateapplycondimentpost' : lambda s, a=None, sp=None: moveto_robustness(s,a,sp, 'bunplate', 'relativeplateapplycondimentpost'),
     'applycondiment': lambda s, a=None, sp=None: apply_condiment_robustness(s, a, sp),
     'flipswitchon': lambda s, a=None, sp=None: switch_robustness(s,a,sp, sim_or_real='sim'),
-    'closegripper': lambda s, a=None, sp=None:  s[state_idx_map['gripper_state']] - 0.8,
-    'opengripper': lambda s, a=None, sp=None:  0.4 - s[state_idx_map['gripper_state']]
+    'closegripper': lambda s, a=None, sp=None:  gripper_robustness(s,a,sp, 'close'),
+    'opengripper': lambda s, a=None, sp=None:  gripper_robustness(s,a,sp,'open')
 }
 

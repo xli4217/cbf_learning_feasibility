@@ -4,7 +4,7 @@ import numpy as np
 import time
 
 from lomap.classes import Fsa
-from tl_tools.fsa_reward import FsaReward
+from tl_utils.fsa_reward import FsaReward
 from plot_dynamic_automata import PlotDynamicAutomata
 
 default_config = {
@@ -60,93 +60,51 @@ class GenerateAutomata(object):
 
         TODO: if current state has a connection to 'trap', get constraints
         '''
-        
         assert isinstance(s, np.ndarray)
         assert s.shape == (self.GenerateAutomata_config['mdp_state_space']['shape'][0],)
-        
-        self.Q, r, edge, done, Dq = self.FSA.get_reward_and_next_state(self.Q, s=s)
+
+        t1 = time.time()
+        self.Q, r, edge, done, Dq, best_edge_guard_bin = self.FSA.step(self.Q, s=s)
+
         self.q = self.FSA.get_node_value_from_name(self.Q)
 
         if self.GenerateAutomata_config['visdom']:
             self.plot_aut.update(current_state = self.Q, src_and_dest=edge)
-                    
-        out_edges = self.FSA.g.out_edges(self.Q, data=True)
 
-        #### get goal from the closest outgoing edge ####
-        edge_pred_rob_list = []
-        edge_action_list = []
-        for edge in out_edges:
-            if edge[1] != self.Q and edge[1] != 'trap': # for each edge (guarding pred in dnf)
-                # print((self.Q, edge[1]))
-                input_list = edge[2]['input']
-                input_pred_rob_list = []
-                input_pred_action_list = []
-
-                #### skills initialization ####
-                gripper_action = None
-                ee_goal = None
-                other_action = None
-
-                edge_bin_string_list = []
-                for input_pred in input_list: # for each conjunction in dnf
-                    b = self.FSA.to_binary(input_pred) # e.g. 10011, 00111
-                    bin_string = str(b)[::-1]
-                    bin_int = [int(i) for i in bin_string]
-                    edge_bin_string_list.append(bin_int)
-                    
-                    ## this is robustness of each conjunction in the dnf
-                    r, r_list = self.FSA.get_r_from_input(input_pred, s, a=None, sp=None, phi_b_truth=None)
-                    input_pred_rob_list.append(r) # for calculating disjuntive robustness
-                    
-                edge_bin_string_list = np.array(edge_bin_string_list)
-                processed_edge_bin_string = ""
-                for j in range(edge_bin_string_list.shape[1]):
-                    #### calculate disjuntion of edge dnfs
-                    processed_edge_bin_string += str(int(all(edge_bin_string_list[:,j])))
-
-                for i in range(len(processed_edge_bin_string)):
-                    if self.FSA.sorted_props[i] == 'opengripper' and int(processed_edge_bin_string[i]) == 1:
-                        gripper_action = 'opengripper'
-                    if self.FSA.sorted_props[i] == 'closegripper' and int(processed_edge_bin_string[i]) == 1:
-                        gripper_action = 'closegripper'
+      
+        #### assign actions ####
+        ee_goal = None
+        gripper_action = None
+        other_action = None
+        # print(self.FSA.sorted_props)
+        # print(self.Q)
+        # print(best_edge_guard_bin)
+        # print('-----')
+        for i in range(len(best_edge_guard_bin)):
+            if self.FSA.sorted_props[i] == 'opengripper' and best_edge_guard_bin[i] == 1:
+                gripper_action = 'opengripper'
+            if self.FSA.sorted_props[i] == 'closegripper' and best_edge_guard_bin[i] == 1:
+                gripper_action = 'closegripper'
                      
-                    if 'moveto' in self.FSA.sorted_props[i] and int(processed_edge_bin_string[i]) == 1:
-                        ee_goal = self.FSA.sorted_props[i]
+            if 'moveto' in self.FSA.sorted_props[i] and best_edge_guard_bin[i] == 1:
+                ee_goal = self.FSA.sorted_props[i]
 
-                    if self.FSA.sorted_props[i] == 'flipswitchon' and int(processed_edge_bin_string[i]) == 1:
-                        other_action = "flipswitchon"
+            if self.FSA.sorted_props[i] == 'flipswitchon' and best_edge_guard_bin[i] == 1:
+                other_action = "flipswitchon"
                              
-                    if self.FSA.sorted_props[i] == 'applycondiment' and int(processed_edge_bin_string[i]) == 1:
-                        other_action = 'applycondiment'
+            if self.FSA.sorted_props[i] == 'applycondiment' and best_edge_guard_bin[i] == 1:
+                other_action = 'applycondiment'
                   
-                edge_action = dict(ee_goal=ee_goal, gripper_action=gripper_action, other_action=other_action)
-                edge_pred_rob_list.append(np.max(np.array(input_pred_rob_list)))
-                edge_action_list.append(edge_action)
+        node_action = dict(ee_goal=ee_goal, gripper_action=gripper_action, other_action=other_action)
                 
-            #### get constraints from the connecting trap state ####
-            if edge[1] == 'trap':
-                trap_input_list = edge[2]['input']
-                for input_pred in trap_input_list:
-                    b = self.FSA.to_binary(input_pred)
-                    bin_string = str(b)[::-1]
-                    for i in range(len(bin_string)):
-                        pass
-                    #     print(self.FSA.sorted_props[i])
-                    #     print(bin_string[i])
-                    # print("--")
-
-        #### Get best action ####
-        if len(edge_pred_rob_list) == 1:
-            best_node_action = edge_action
-        elif len(edge_pred_rob_list) > 0:
-            best_node_action = edge_action_list[np.argmax(np.array(edge_pred_rob_list))]
-        else:
-            best_node_action = None
-
+           
+  
         #### Get constraints ####
         node_constraints = None
 
-        return best_node_action, node_constraints, done
+        t2 = time.time()
+        # print("dt:{}".format(str(t2-t1)))
+        return node_action, node_constraints, done
       
 if __name__ == "__main__":
     from tl_config import KEY_POSITIONS, OBJECT_RELATIVE_POSE, STATE_IDX_MAP, PREDICATES

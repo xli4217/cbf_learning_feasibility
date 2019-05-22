@@ -70,8 +70,11 @@ class RunRobotCooking(object):
         self.motor_skills = self.RunRobotCooking_config['Skills']['MotorSkills']['type'](config=self.RunRobotCooking_config['Skills']['MotorSkills']['config'])
 
         #### Initialize low level tl skills ####
-        self.ll_tl_skills = self.RunRobotCooking_config['Skills']['LowLevelTLSkills']['type'](config=self.RunRobotCooking_config['Skills']['LowLevelTLSkills']['config'])
-
+        if self.RunRobotCooking_config['Skills']['LowLevelTLSkills']['type'] is not None:
+            self.ll_tl_skills = self.RunRobotCooking_config['Skills']['LowLevelTLSkills']['type'](config=self.RunRobotCooking_config['Skills']['LowLevelTLSkills']['config'])
+        else:
+            self.ll_tl_skills = None
+            
         #### Initialize field variables ####
         self.skill_arg = {}
         self.dry_run_target_pose = None
@@ -117,7 +120,9 @@ class RunRobotCooking(object):
                     break
                 
             pos_dist, quat_dist = pose_distance(self.skill_arg['curr_pose'], pt) 
-            if pos_dist < 0.01 and quat_dist < 0.1:
+            # print(("dist:", pos_dist, quat_dist))
+            if pos_dist < 0.005 and quat_dist < 0.1:
+                print("target reached")
                 break
         
             action = self.motor_skills.get_action(skill_name=skill_name, skill_arg=self.skill_arg)
@@ -174,30 +179,48 @@ class RunRobotCooking(object):
             raise ValueError('unsupported skill')
 
     def get_low_level_tl_skill_actions(self, dry_run=True):
+        if self.ll_tl_skills is None:
+            print("low level tl skill not provided")
+            return 
         self.update_skill_arg(dry_run)
-        s = self.RunRobotCooking_config['Skills']['construct_skill_state'](self.skill_arg)
-        ll_skill_action_n_constraint, done = self.ll_tl_skills.step(s)
+        ll_skill_action_n_constraint, done = self.ll_tl_skills.step(self.skill_arg)
         return ll_skill_action_n_constraint, done
+
+    def execute_automata_output(self,
+                                ee_goal=None,
+                                gripper_action=None,
+                                other_action=None,
+                                dry_run=True):
+        
+        print("actions:", (ee_goal, gripper_action, other_action))
+        
+        if gripper_action is not None:
+            self.execute_motor_skill(gripper_action, dry_run=dry_run)
+            
+        if ee_goal is not None:
+            self.execute_motor_skill(ee_goal, dry_run=dry_run)
+
+        if other_action is not None:
+            self.execute_motor_skill(other_action, dry_run=dry_run)
+        
         
     def run(self, dry_run=True):
         done = False
         while not done:
+            if self.ll_tl_skills is None:
+                print('low level tl skill not provided')
+                return 
             action_n_constraint, done = self.get_low_level_tl_skill_actions(dry_run)
             if not done:
                 node_action = action_n_constraint['make_hotdog']['node_action']
                 ee_goal = node_action['ee_goal']
                 gripper_action = node_action['gripper_action']
                 other_action = node_action['other_action']
-                print("actions:", (ee_goal, gripper_action, other_action))
-                
-                if gripper_action is not None:
-                    self.execute_motor_skill(gripper_action, dry_run=dry_run)
-         
-                if ee_goal is not None:
-                    self.execute_motor_skill(ee_goal, dry_run=dry_run)
 
-                if other_action is not None:
-                    self.execute_motor_skill(other_action, dry_run=dry_run)
+                self.execute_automata_output(ee_goal=ee_goal,
+                                             gripper_action=gripper_action,
+                                             other_action=other_action,
+                                             dry_run=dry_run)
             else:
                 print('done')
 

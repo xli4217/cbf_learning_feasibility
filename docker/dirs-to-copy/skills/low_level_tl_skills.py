@@ -4,6 +4,8 @@ import time
 from future.utils import viewitems
 
 from tl_utils.generate_automata import GenerateAutomata
+from tl_utils.tl_config import construct_skill_state
+import time
 
 default_config = {
 }
@@ -19,8 +21,10 @@ class LowLevelTLSkills(object):
             self.auts[k] = GenerateAutomata(config=v)
 
 
-    def step(self, s):
+    def step(self, skill_arg):
+        s = construct_skill_state(skill_arg)
         skill_action_n_constraint = {}
+
         for skill_name, skill_aut in viewitems(self.auts):
             node_action, node_constraint, done = skill_aut.step(s)
             skill_action_n_constraint[skill_name] = {'node_action': node_action, 'node_constraint': node_constraint}

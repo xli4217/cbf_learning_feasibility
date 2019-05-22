@@ -159,7 +159,7 @@ class ExecutionConfig(object):
         return LowLevelTLSkills, config
 
 
-    def run_robot_cooking_config(self, mode='sim', robot=None, init_node=False):
+    def run_robot_cooking_config(self, mode='sim', robot=None, init_node=False, with_ll_tl_skill=True):
         robot = robot
         if robot is None:
             robot = self.robot
@@ -214,11 +214,12 @@ class ExecutionConfig(object):
         ################
         motor_skill_type, motor_skill_config = self.motor_skill_config()
         low_level_tl_skill_type, low_level_tl_skill_config = self.low_level_tl_skill_config()
-        
-        from tl_utils.tl_config import construct_skill_state
-        
+
+        if not with_ll_tl_skill:
+            low_level_tl_skill_type = None
+            low_level_tl_skill_config = {}
+                
         config['Skills'] = {
-            'construct_skill_state': construct_skill_state,
             'MotorSkills':{
                 'type': motor_skill_type,
                 'config': motor_skill_config

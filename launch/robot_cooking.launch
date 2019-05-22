@@ -16,9 +16,7 @@
     <include file="$(find robot_cooking)/launch/master_sync.launch"/>
   </group>
   
-  <!-- <include file="$(find realsense2_camera)/launch/rs_camera.launch"/> -->
-
   
-  <node name="$(arg robot)_cooking_env" pkg="robot_cooking" type="make_env.py" respawn="false" output="screen" args="$(arg optitrack) $(arg robot)"/>
+  <node name="$(arg robot)_cooking_env" pkg="robot_cooking" type="make_env_node.py" respawn="false" output="screen" args="$(arg optitrack) $(arg robot)"/>
 
 </launch>
