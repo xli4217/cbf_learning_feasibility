@@ -54,6 +54,19 @@ class FsaReward(object):
         self.aut_states_dict = {}
         self.generate_node_dict()
 
+        #### for buchi ####
+        nb_acceptance_states = 0
+        for k in self.aut_states_dict.keys():
+            if 'accept' in k:
+                nb_acceptance_states += 1
+
+        if nb_acceptance_states > 1:
+            self.aut_type = 'Buchi'
+        else:
+            self.aut_type = 'FSA'
+
+        print("Automata type:{}".format(self.aut_type))
+            
     def logsumexp(self, seq, max_or_min='max'):
         beta = self.FsaReward_config['beta']
         if max_or_min == 'max':
@@ -146,7 +159,7 @@ class FsaReward(object):
 
                 # in the form [0,1,1,-1], -1 means doesn't matter
                 processed_edge_bin = np.array(processed_edge_bin)
-                        
+                
                 edge_guard_bin_list.append(processed_edge_bin)
                 
                 rob_list = []
@@ -166,12 +179,22 @@ class FsaReward(object):
                         raise ValueError('invalide processed_edge_bin')
                         
                     rob_list.append(edge_dnf_rob)
-
+                    
                 #### edge robustness ####
                 # print(self.sorted_props)
                 # print(processed_edge_bin)
                 # print(rob_list)
                 edge_rob = min(rob_list)
+                if 'accept' in edge[1]:
+                    #### if next node is an acceptance state, take that edge ####
+                    if edge_rob > 0:
+                        next_Q = edge[1]
+                    edge_rob_list = [edge_rob]
+                    edge_guard_bin_list = [processed_edge_bin]
+                    break
+                  
+
+
                 edge_rob_list.append(edge_rob)
                 
                 if edge[1] != 'trap':
@@ -199,10 +222,11 @@ class FsaReward(object):
             reward = np.minimum(Dq, Dq_trap)
             
         done = False
-        if next_Q == "accept_all" or next_Q == ("accept_all", "accept_all"):
-            # print('fsa done!')
-            reward += 2.0
-            done = True
+        if next_Q == "accept_all" or next_Q == ("accept_all", "accept_all") or 'accept' in next_Q:
+            if self.aut_type == 'FSA':
+                print('fsa done!')
+                reward += 2.0
+                done = True
         if next_Q == "trap" or "trap" in next_Q:
             print('entered trap state')
             reward += -2.0
@@ -239,21 +263,26 @@ class FsaReward(object):
         {('T0_init', 'T0_init'): 0, ('accept_all', 'accept_all'): 1,  ('T0_init', 'T0_S1'): 2}
 
         this currently only support product of 2 FSAs
+
+        note: FSA always starts with 'T0_init', buchi can be something else e.g. 'accept_init'
+
         '''
 
         for node_name in self.g.nodes():
             if 'accept' in node_name:
                 accept_state_name = node_name
-        
+            if 'init' in node_name:
+                self.init_state_name = node_name
+                
         if PYTHON_VERSION == 2:
             if isinstance(self.g.nodes(data=True)[0][0], str) or isinstance(self.g.nodes(data=True)[0][0], unicode):
-                self.aut_states_dict["T0_init"] = 0
+                self.aut_states_dict[self.init_state_name] = 0
         else:
             if isinstance(self.g.nodes(data=True)[0][0], str): 
-                self.aut_states_dict["T0_init"] = 0
+                self.aut_states_dict[self.init_state_name] = 0
 
         if isinstance(self.g.nodes(data=True)[0][0], tuple):
-            self.aut_states_dict[('T0_init', 'T0_init')] = 0
+            self.aut_states_dict[('T0_self.init', 'T0_self.init')] = 0
 
         
         if PYTHON_VERSION == 2:
@@ -270,22 +299,22 @@ class FsaReward(object):
         for node in self.g.nodes(data=True):
             if PYTHON_VERSION == 2:
                 if isinstance(node[0], str) or isinstance(self.g.nodes(data=True)[0][0], unicode):
-                    if node[0] != "T0_init" and node[0] != accept_state_name:
+                    if node[0] != self.init_state_name and node[0] != accept_state_name:
                         self.aut_states_dict[str(node[0])] = int(i)
                         i += 1
             else:
                 if isinstance(node[0], str):
-                    if node[0] != "T0_init" and node[0] != accept_state_name:
+                    if node[0] != self.init_state_name and node[0] != accept_state_name:
                         self.aut_states_dict[str(node[0])] = int(i)
                         i += 1
                 
             if isinstance(node[0], tuple): # in this case, the keys of aut_states_dict are tuples
                 if PYTHON_VERSION == 2:
-                    if node[0] != (unicode('T0_init'), unicode('T0_init')) and node[0] != (unicode(accept_state_name), unicode(accept_state_name)):
+                    if node[0] != (unicode(self.init_state_name), unicode(self.init_state_name)) and node[0] != (unicode(accept_state_name), unicode(accept_state_name)):
                         self.aut_states_dict[(str(node[0][0]),str(node[0][1]))] = int(i)
                         i += 1
                 else:
-                    if node[0] != ('T0_init', 'T0_init') and node[0] != (accept_state_name, accept_state_name):
+                    if node[0] != (self.init_state_name, self.init_state_name) and node[0] != (accept_state_name, accept_state_name):
                         self.aut_states_dict[(str(node[0][0]),str(node[0][1]))] = int(i)
                         i += 1
                     

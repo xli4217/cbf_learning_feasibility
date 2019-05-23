@@ -46,7 +46,7 @@ class GenerateAutomata(object):
             self.plot_aut = PlotDynamicAutomata(self.fsa)
 
         self.q = 0
-        self.Q = 'T0_init'
+        self.Q = self.FSA.init_state_name
         self.edge = None
         
     def get_state(self):
@@ -65,9 +65,7 @@ class GenerateAutomata(object):
         assert s.shape == (self.GenerateAutomata_config['mdp_state_space']['shape'][0],)
 
         t1 = time.time()
-        self.Q, r, edge, done, Dq, best_edge_guard_bin = self.FSA.step(self.Q, s=s)
-
-        self.edge = edge
+        self.Q, r, self.edge, done, Dq, best_edge_guard_bin = self.FSA.step(self.Q, s=s)
         
         self.q = self.FSA.get_node_value_from_name(self.Q)
 

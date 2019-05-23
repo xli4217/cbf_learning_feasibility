@@ -29,8 +29,8 @@ class AutomataVisdomNode(object):
         self.fsa.add_trap_state()
 
         self.plot_aut = PlotDynamicAutomata(self.fsa)
-        self.Q = 'T0_init'
-        self.edge = ('T0_init', 'T0_init')
+        self.Q = None
+        self.edge = None
         
         self.create_publishers_and_subscribers()
         
@@ -49,7 +49,8 @@ class AutomataVisdomNode(object):
         
     def run(self):
         while not rospy.is_shutdown():
-            self.plot_aut.update(current_state=self.Q, src_and_dest=self.edge)
+            if self.Q is not None and self.edge is not None:
+                self.plot_aut.update(current_state=self.Q, src_and_dest=self.edge)
             
             
 if __name__ == "__main__":

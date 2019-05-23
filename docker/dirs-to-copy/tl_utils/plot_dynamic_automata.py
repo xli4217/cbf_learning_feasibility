@@ -35,7 +35,6 @@ class PlotDynamicAutomata(object):
             self.last_state.obj_dict['attributes']['style'] = 'unfilled'
             self.last_edge.obj_dict['attributes']['color'] = 'black'
 
-            
         current_node = self.dot_g.get_node(current_state)
         #current_node[0].add_style(style='filled')
         current_node[0].obj_dict['attributes']['style'] = 'filled'

@@ -2,8 +2,21 @@ import numpy as np
 from lomap.classes import Fsa
 from utils.utils import pos_distance, quat_distance, pose_distance, get_object_goal_pose
 from utils import transformations
+import json
+import os
+import sys
+import time
 
-    
+baxter_env_config_json_path = os.path.join(os.environ['RC_PATH'],
+                                           'src',
+                                           'robot_cooking',
+                                           'env',
+                                           'config',
+                                           'baxter_env_config.json')
+
+with open(baxter_env_config_json_path) as f:
+    baxter_env_config = json.loads(f.read())
+
 ############# 
 # Key Poses #
 #############
@@ -108,7 +121,25 @@ def gripper_robustness(s, a=None, sp=None, oc='open'):
     else:
         raise ValueError()
     return float(rob)
+
+def in_serve_zone_robustness(s, a=None, sp=None, object_name='hotdogplate'):
+    serve_zone_center = baxter_env_config['serve_zone']['init_pose'][:3]
+    serve_zone_size = baxter_env_config['serve_zone']['scale']
+    object_pose = s[state_idx_map[object_name][0]:state_idx_map[object_name][1]]
+
+    x_max = serve_zone_center[0] + serve_zone_size[0]/2
+    y_max = serve_zone_center[1] + serve_zone_size[1]/2
+    z_max = serve_zone_center[2] + serve_zone_size[2]/2
+
+    x_min = serve_zone_center[0] - serve_zone_size[0]/2
+    y_min = serve_zone_center[1] - serve_zone_size[1]/2
+    z_min = serve_zone_center[2] - serve_zone_size[2]/2
+
+    rob = np.min([object_pose[0] - x_min, x_max - object_pose[0],
+                  object_pose[1] - y_min, y_max - object_pose[1],
+                  object_pose[2] - z_min, z_max - object_pose[2]])
     
+    return rob
 PREDICATES = {
     'moveto_hotdogplate': lambda s, a=None, sp=None: moveto_robustness(s,a,sp,'hotdogplate', 'hotdogplate'),
     'moveto_bunplate': lambda s, a=None, sp=None: moveto_robustness(s,a,sp,'bunplate', 'bunplate'),
@@ -121,6 +152,7 @@ PREDICATES = {
     'applycondiment': lambda s, a=None, sp=None: apply_condiment_robustness(s, a, sp),
     'flipswitchon': lambda s, a=None, sp=None: switch_robustness(s,a,sp, sim_or_real='sim'),
     'closegripper': lambda s, a=None, sp=None:  gripper_robustness(s,a,sp, 'close'),
-    'opengripper': lambda s, a=None, sp=None:  gripper_robustness(s,a,sp,'open')
+    'opengripper': lambda s, a=None, sp=None:  gripper_robustness(s,a,sp,'open'),
+    'inservezone_hotdogplate': lambda s, a=None, sp=None:  in_serve_zone_robustness(s,a,sp,'hotdogplate')
 }
 

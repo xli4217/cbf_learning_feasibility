@@ -139,11 +139,13 @@ class ExecutionConfig(object):
                       "(opengripper" + \
                       "))))))"
 
-        test_spec_ = 'moveto_hotdogplate && X F (moveto_grill)'
+        # test_spec_ = '(moveto_hotdogplate && X F (moveto_grill))'
+        test_spec_ = "G (inservezone_hotdogplate -> X F moveto_hotdogplate)"
         
         config = {
             'make_hotdog': {
-                'formula':"F (" + test_spec_ + ")",
+                #'formula':"F (" + test_spec_ + ")",
+                'formula': test_spec_,
                 'visdom': False,
                 'key_positions': KEY_POSITIONS,
                 'object_relative_pose': OBJECT_RELATIVE_POSE,
