@@ -30,7 +30,7 @@ class RunAutomataNode(object):
         self.RunAutomataNode_config.update(config)
 
         if self.RunAutomataNode_config['init_node']:
-            rospy.init_node("automata", anonymous=True)
+            rospy.init_node("aut_node", anonymous=False)
 
         #### create pub and sub ####
         self.create_publishers_and_subscribers()
@@ -91,7 +91,8 @@ class RunAutomataNode(object):
             
     def run(self):
         while not rospy.is_shutdown():
-            rospy.spin()
+            self.skill_pub.publish("None-None-None-True")
+            #rospy.spin()
 
 if __name__ == "__main__":
     from execution.execution_config import ExecutionConfig

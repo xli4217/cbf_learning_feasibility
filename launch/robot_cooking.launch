@@ -1,10 +1,20 @@
 <launch>
   <arg name="optitrack" default="false"/>
   <arg name="multimaster" default="false"/>
-  <arg name="robot" default="jaco"/>
+  <arg name="jaco" default="false"/>
+  <arg name="baxter" default="false"/>
   
-  <!-- <include file="$(find kinova_api)/launch/kinova_api.launch"/> -->
+  <group if="$(arg jaco)">
+    <!-- <include file="$(find kinova_api)/launch/kinova_api.launch"/> -->
+    <node name="jaco_cooking_env" pkg="robot_cooking" type="make_env_node.py" respawn="false" output="screen" args="$(arg optitrack) jaco"/>
+  </group>
 
+  <group if="$(arg baxter)">
+    <include file="$(find baxter_api)/launch/baxter_api.launch"/>
+    <node name="baxter_cooking_env" pkg="robot_cooking" type="make_env_node.py" respawn="false" output="screen" args="$(arg optitrack) baxter"/>
+  </group>
+
+  
   <group if="$(arg optitrack)">
     <include file="$(find vrpn_client_ros)/launch/sample.launch">
       <arg name="server" value="optitrack"/>
@@ -17,6 +27,5 @@
   </group>
   
   
-  <node name="$(arg robot)_cooking_env" pkg="robot_cooking" type="make_env_node.py" respawn="false" output="screen" args="$(arg optitrack) $(arg robot)"/>
 
 </launch>

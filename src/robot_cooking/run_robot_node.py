@@ -32,7 +32,7 @@ class RunRobotNode(object):
         self.robot = self.RunRobotNode_config['robot']
         
         if self.RunRobotNode_config['init_node']:
-            rospy.init_node(self.RunRobotNode_config['robot']+"_run_robot", anonymous=True)
+            rospy.init_node(self.RunRobotNode_config['robot']+"_run_robot", anonymous=False)
 
         self.robot_cooking = self.RunRobotNode_config['RobotCooking']['type'](self.RunRobotNode_config['RobotCooking']['config'])
 
