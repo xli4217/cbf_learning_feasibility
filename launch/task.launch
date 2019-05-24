@@ -1,21 +1,26 @@
 <launch>
-  <arg name="run_jaco" default="false"/>
-  <arg name="run_baxter" default="false"/>
+  <arg name="jaco" default="false"/>
+  <arg name="baxter" default="false"/>
   <arg name="run_aut" default="false"/>
   <arg name="dry_run" default="true"/>
+  <arg name="nb_robots" default="1"/>
   <arg name="visdom" default="false"/>
+  <arg name="zmq_baxter_port" default="7788"/>
+  <arg name="zmq_jaco_port" default="5566"/>
+  <arg name="zmq_aut_port" default="8899"/>
+  <arg name="msg_system" default="ros"/> <!--this can be "ros" or "zmq"-->
 
   
-  <group if="$(arg run_jaco)">
-    <node name="jaco_cooking_node" pkg="robot_cooking" type="run_robot_node.py" respawn="false" output="screen" args="jaco $(arg dry_run)"/>
+  <group if="$(arg jaco)">
+    <node name="jaco_cooking_node" pkg="robot_cooking" type="run_robot_node.py" respawn="false" output="screen" args="jaco $(arg dry_run) $(arg zmq_jaco_port) $(arg zmq_aut_port) $(arg msg_system)"/>
   </group>
 
-  <group if="$(arg run_baxter)">
-    <node name="baxter_cooking_node" pkg="robot_cooking" type="run_robot_node.py" respawn="false" output="screen" args="baxter $(arg dry_run)"/>
+  <group if="$(arg baxter)">
+    <node name="baxter_cooking_node" pkg="robot_cooking" type="run_robot_node.py" respawn="false" output="screen" args="baxter $(arg dry_run) $(arg zmq_baxter_port) $(arg zmq_aut_port) $(arg msg_system)"/>
   </group>
   
   <group if="$(arg run_aut)">
-    <node name="aut_node" pkg="robot_cooking" type="run_automata_node.py" respawn="false" output="screen"/>
+    <node name="aut_node" pkg="robot_cooking" type="run_automata_node.py" respawn="false" output="screen" args="$(arg zmq_aut_port) $(arg zmq_jaco_port) $(arg zmq_baxter_port) $(arg msg_system) $(arg nb_robots)"/>
   </group>
 
   <group if="$(arg visdom)">

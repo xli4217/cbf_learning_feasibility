@@ -5,7 +5,7 @@
   <arg name="baxter" default="false"/>
   
   <group if="$(arg jaco)">
-    <!-- <include file="$(find kinova_api)/launch/kinova_api.launch"/> -->
+    <include file="$(find kinova_api)/launch/kinova_api.launch"/>
     <node name="jaco_cooking_env" pkg="robot_cooking" type="make_env_node.py" respawn="false" output="screen" args="$(arg optitrack) jaco"/>
   </group>
 
