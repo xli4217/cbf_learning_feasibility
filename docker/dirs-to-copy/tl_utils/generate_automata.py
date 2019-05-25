@@ -66,7 +66,6 @@ class GenerateAutomata(object):
 
         t1 = time.time()
         self.Q, r, self.edge, done, Dq, best_edge_guard_bin = self.FSA.step(self.Q, s=s)
-        
         self.q = self.FSA.get_node_value_from_name(self.Q)
 
         if self.GenerateAutomata_config['visdom']:

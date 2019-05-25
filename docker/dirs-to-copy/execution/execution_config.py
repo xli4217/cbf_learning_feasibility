@@ -139,14 +139,21 @@ class ExecutionConfig(object):
                       "(opengripper" + \
                       "))))))"
 
-        serve_task = "G ((inservezone_hotdogplate -> X moveto_hotdogplate) && ((! inservezone_hotdogplate -> X ! moveto_hotdogplate))"
-        # test_spec_ = '(moveto_hotdogplate && X F (moveto_grill))'
+        serve = "(moveto_bunplate && opengripper) && X F " + \
+                "(closegripper && X F " + \
+                "(moveto_serveplate && X F " + \
+                "(opengripper && X F "+ \
+                "(moveto_world_baxterneutral " + \
+                "))))"
+        
+        serve_task_ = "G (( inservezone_serveplate ->" + serve + ") && (!inservezone_serveplate -> X !moveto_serveplate))"
+
         test_spec_ = "G ((inservezone_hotdogplate -> X moveto_hotdogplate) && ((!inservezone_hotdogplate -> X !moveto_hotdogplate))"
         
         config = {
             'make_hotdog': {
-                #'formula':"F (" + test_spec_ + ")",
-                'formula': " F moveto_hotdogplate",
+                'formula':"F (" + serve + ")",
+                #'formula': serve,
                 'visdom': False,
                 'key_positions': KEY_POSITIONS,
                 'object_relative_pose': OBJECT_RELATIVE_POSE,
@@ -155,7 +162,7 @@ class ExecutionConfig(object):
                 'fsa_save_dir': os.path.join(os.environ['LEARNING_PATH'], 'execution', 'figures'),
                 'dot_file_name': 'make_hotdog',
                 'svg_file_name': 'make_hotdog',
-                'mdp_state_space': {'type': 'float', 'shape': (38, ), 'upper_bound':[], 'lower_bound': []}
+                'mdp_state_space': {'type': 'float', 'shape': (45, ), 'upper_bound':[], 'lower_bound': []}
             }
         }
 
@@ -181,7 +188,6 @@ class ExecutionConfig(object):
                 'config': {}
             },
             'Skills':{
-                'construct_skill_state': None,
                 'MotorSkills': {
                     'type': None,
                     'config':{}

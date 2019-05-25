@@ -14,9 +14,9 @@ class PlotDynamicAutomata(object):
     the automata graph visualization
     '''
     
-    def __init__(self, automata):
+    def __init__(self, automata, port=8097):
         self.automata = automata
-        self.viz = visdom.Visdom()
+        self.viz = visdom.Visdom(port=port)
         
         self.dot_g = nx.drawing.nx_pydot.to_pydot(self.automata.g)
 
@@ -24,7 +24,7 @@ class PlotDynamicAutomata(object):
         self.win = None
         self.last_state = None
         self.last_edge = None
-        self.text_win = self.viz.text("starting")
+        # self.text_win = self.viz.text("starting")
         
     def update(self, current_state, src_and_dest=None):
         '''
@@ -55,3 +55,12 @@ class PlotDynamicAutomata(object):
         else:
             self.viz.svg(dot_g_svg.decode('utf-8'), win=self.win)
 
+
+if __name__ == "__main__":
+    from lomap.classes import Fsa
+
+    fsa = Fsa()
+    fsa.from_formula("F a && F b")
+    cls = PlotDynamicAutomata(fsa)
+    while True:
+        pass

@@ -1,0 +1,2 @@
+* launch env: 
+* launch task: roslaunch robot_cooking task.launch baxter:=true dry_run:=true msg_system:=ros run_aut:=true visdom:=true

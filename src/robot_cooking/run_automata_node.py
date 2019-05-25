@@ -16,7 +16,8 @@ from robot_cooking_msgs.msg import DictArray
 default_config = {
     'init_node': True,
     'msg_system': "ros",
-    'nb_robot': 1,
+    'baxter': False,
+    'jaco': False,
     'Automata':{
         'type': None,
         'config': None
@@ -53,7 +54,14 @@ class RunAutomataNode(object):
         
         #### initialize automata ####
         self.aut = self.RunAutomataNode_config['Automata']['type'](self.RunAutomataNode_config['Automata']['config'])
-        
+
+        self.robots = []
+        if self.RunAutomataNode_config['baxter'] == 'true':
+            self.robots.append('baxter')
+        if self.RunAutomataNode_config['jaco'] == 'true':
+            self.robots.append('jaco')
+       
+            
     def create_publishers_and_subscribers(self):
         #### publishers ####
 
@@ -69,7 +77,7 @@ class RunAutomataNode(object):
         #### ZMQ ####
         self.zmq_pub = None
         self.zmq_sub = None
-        if self.RunAutomataNode_config['ZMQ'] is not None:
+        if self.RunAutomataNode_config['ZMQ'] is not None and self.RunAutomataNode_config['msg_system'] == 'zmq':
             self.context = zmq.Context()
             #### zmq pubs ####
             self.zmq_pub = self.context.socket(zmq.PUB)
@@ -81,7 +89,6 @@ class RunAutomataNode(object):
             addr = "tcp://burobotics:{}".format(self.RunAutomataNode_config['ZMQ']['sub']['jaco_skill_arg'])
             self.zmq_sub.connect(addr)
             self.zmq_sub.setsockopt(zmq.SUBSCRIBE, "")
-
 
     def construct_combined_skill_args(self):
         combined_skill_args = {}
@@ -98,7 +105,7 @@ class RunAutomataNode(object):
 
         
         #### ZMQ ####
-        if self.zmq_sub is not None:
+        if self.zmq_sub is not None and self.RunAutomataNode_config['msg_system'] == 'zmq':
             robot_name, robot_skill_args = self.zmq_sub.recv_json()
             self.zmq_robot_skill_args[robot_name] = robot_skill_args
             
@@ -112,7 +119,7 @@ class RunAutomataNode(object):
                 raise ValueError("unsupported msg_system")
                 
             if len(self.robot_skill_args.keys()) > 0:
-                skill_args = copy.copy(self.robot_skill_args['jaco'])
+                skill_args = copy.copy(self.robot_skill_args[self.robots[0]])
                 action_n_constraint, done = self.aut.step(skill_args)
 
                 if not done:
@@ -139,7 +146,7 @@ class RunAutomataNode(object):
             self.aut_node_and_edge_pub.publish(node_edge_msg)
 
             #### ZMQ ####
-            if self.zmq_pub is not None:
+            if self.zmq_pub is not None and self.RunAutomataNode_config['msg_system'] == 'zmq':
                 self.zmq_pub.send_string("%s %s" %("automata_output", automata_output))
 
             
@@ -151,14 +158,16 @@ if __name__ == "__main__":
     jaco_sub_port = str(sys.argv[2])
     baxter_sub_port = str(sys.argv[3])
     msg_system = str(sys.argv[4])
-    nb_robot = int(sys.argv[5])
+    baxter = str(sys.argv[5])
+    jaco = str(sys.argv[6])
     
     exe_config = ExecutionConfig({'robot': None, 'init_node': False})
     automata_cls_type, automata_cls_config = exe_config.low_level_tl_skill_config()
 
     #### init class ####
     cls_config = default_config
-    cls_config['nb_robots'] = nb_robot
+    cls_config['baxter'] = baxter
+    cls_config['jaco'] = jaco
     cls_config['msg_system'] = msg_system
     cls_config['Automata']['type'] = automata_cls_type
     cls_config['Automata']['config'] = automata_cls_config

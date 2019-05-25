@@ -37,13 +37,15 @@ cpost = np.concatenate([cpre[:3], transformations.quaternion_from_matrix(Mcpost)
 OBJECT_RELATIVE_POSE = {
     'hotdogplate': np.array([0.0, 0.005, 0.02, 0.656, 0.754, -0.016, -0.016]),
     'bunplate': np.array([0.0, 0.005, 0.02, 0.656, 0.754, -0.016, -0.016]),
+    'serveplate': np.array([0.0, 0.005, 0.02, 0.656, 0.754, -0.016, -0.016]),
     'grill': np.array([0.007, -0.012, 0.008, 0.710, 0.704, 0.017, 0.027]), # this needs confirmation
     'switchon': np.array([-0.001, -0.247, 0.076, 0.993, 0.072, 0.064, 0.073]),
     'condimentpre': np.array([0.008, -0.105, -0.100, -0.594, -0.407, -0.421, 0.552]),
     'condimentpost': np.array([0.008, -0.105+0.1, -0.100,-0.575, -0.474, -0.372, 0.554]),
     'relativeplateapplycondimentpre': cpre,
     'relativeplateapplycondimentpost': cpost,
-    'placecondimentgoal': np.array([0.488,-0.0669,0.038,0.6135,0.3485,0.6266,-0.33])
+    'placecondimentgoal': np.array([0.488,-0.0669,0.038,0.6135,0.3485,0.6266,-0.33]),
+    'baxterneutral': np.array([0.729, -0.29, 0.21, -0.05, 0.99, 0.03, 0.03])
 }
 
 
@@ -53,19 +55,21 @@ STATE_IDX_MAP = {
     'condiment': [8, 15],
     'hotdogplate': [15, 22],
     'bunplate': [22, 29],
-    'grill': [29, 36],
-    'switchon': [36],
-    'condimentapplied': [37]
+    'serveplate': [29, 36],
+    'grill': [36, 43],
+    'switchon': [43],
+    'condimentapplied': [44]
 }
 
 def construct_skill_state(skill_arg):
-    state = np.zeros(38)
+    state = np.zeros(45)
 
     state[STATE_IDX_MAP['end_effector_pose'][0]:STATE_IDX_MAP['end_effector_pose'][1]] = skill_arg['curr_pose']
     state[STATE_IDX_MAP['gripper_state'][0]] = skill_arg['gripper_state']
     state[STATE_IDX_MAP['condiment'][0]:STATE_IDX_MAP['condiment'][1]] = skill_arg['obj_poses']['condiment']
     state[STATE_IDX_MAP['hotdogplate'][0]:STATE_IDX_MAP['hotdogplate'][1]] = skill_arg['obj_poses']['hotdogplate']
     state[STATE_IDX_MAP['bunplate'][0]:STATE_IDX_MAP['bunplate'][1]] = skill_arg['obj_poses']['bunplate']
+    state[STATE_IDX_MAP['serveplate'][0]:STATE_IDX_MAP['serveplate'][1]] = skill_arg['obj_poses']['serveplate']
     state[STATE_IDX_MAP['grill'][0]:STATE_IDX_MAP['grill'][1]] = skill_arg['obj_poses']['grill']
     state[STATE_IDX_MAP['switchon']] = skill_arg['switchon']
     state[STATE_IDX_MAP['condimentapplied']] = skill_arg['condimentapplied']
@@ -120,9 +124,10 @@ def gripper_robustness(s, a=None, sp=None, oc='open'):
         rob = s[state_idx_map['gripper_state']] - 0.7
     else:
         raise ValueError()
+
     return float(rob)
 
-def in_serve_zone_robustness(s, a=None, sp=None, object_name='hotdogplate'):
+def in_serve_zone_robustness(s, a=None, sp=None, object_name='serveplate'):
     serve_zone_center = baxter_env_config['serve_zone']['init_pose'][:3]
     serve_zone_size = baxter_env_config['serve_zone']['scale']
     object_pose = s[state_idx_map[object_name][0]:state_idx_map[object_name][1]]
@@ -142,7 +147,10 @@ def in_serve_zone_robustness(s, a=None, sp=None, object_name='hotdogplate'):
     return rob
 PREDICATES = {
     'moveto_hotdogplate': lambda s, a=None, sp=None: moveto_robustness(s,a,sp,'hotdogplate', 'hotdogplate'),
+    'moveto_serveplate': lambda s, a=None, sp=None: moveto_robustness(s,a,sp,'serveplate', 'serveplate'),
+
     'moveto_bunplate': lambda s, a=None, sp=None: moveto_robustness(s,a,sp,'bunplate', 'bunplate'),
+    'moveto_world_baxterneutral':lambda s, a=None, sp=None: moveto_robustness(s,a,sp,'bunplate', 'baxterneutral'),
     'moveto_grill': lambda s, a=None, sp=None: moveto_robustness(s,a,sp,'grill', 'grill'),
     'moveto_condiment_condimentpre' : lambda s, a=None, sp=None: moveto_robustness(s,a,sp,'condiment', 'condimentpre'),
     'moveto_condiment_condimentpost' : lambda s, a=None, sp=None: moveto_robustness(s,a,sp, 'condiment', 'condimentpost'),
@@ -153,6 +161,6 @@ PREDICATES = {
     'flipswitchon': lambda s, a=None, sp=None: switch_robustness(s,a,sp, sim_or_real='sim'),
     'closegripper': lambda s, a=None, sp=None:  gripper_robustness(s,a,sp, 'close'),
     'opengripper': lambda s, a=None, sp=None:  gripper_robustness(s,a,sp,'open'),
-    'inservezone_hotdogplate': lambda s, a=None, sp=None:  in_serve_zone_robustness(s,a,sp,'hotdogplate')
+    'inservezone_serveplate': lambda s, a=None, sp=None:  in_serve_zone_robustness(s,a,sp,'serveplate')
 }
 

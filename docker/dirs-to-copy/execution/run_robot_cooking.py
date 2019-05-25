@@ -21,7 +21,6 @@ default_config = {
         'config': {}
     },
     'Skills':{
-        'construct_skill_state': None,
         'MotorSkills': {
             'type': None,
             'config':{}

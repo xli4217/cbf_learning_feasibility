@@ -26,7 +26,9 @@ if get_fsa:
 
     spec = spec_without_serve
 
-    # spec = 'G ((a -> X b) && (!a -> X !b))'
+    spec = 'G ((inservezone -> X F moveto) && (!inservezone -> X !moveto))'
+    
+    
     #### add task specific conditions and constraints ####
     conditions = ['(! serve U apply_condiment)']
     # for condition in conditions:

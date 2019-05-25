@@ -56,7 +56,13 @@ class AutomataVisdomNode(object):
 if __name__ == "__main__":
     from execution.execution_config import ExecutionConfig
 
-    robot_name = str(sys.argv[1])
+    baxter = str(sys.argv[1])
+    jaco = str(sys.argv[2])
+
+    if baxter == 'true':
+        robot_name = 'baxter'
+    elif jaco == 'true':
+        robot_name = 'jaco'
     
     exe_config = ExecutionConfig({'robot': robot_name})
 

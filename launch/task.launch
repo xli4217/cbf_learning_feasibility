@@ -3,7 +3,7 @@
   <arg name="baxter" default="false"/>
   <arg name="run_aut" default="false"/>
   <arg name="dry_run" default="true"/>
-  <arg name="nb_robots" default="1"/>
+  <arg name="multirobot" default="false"/>
   <arg name="visdom" default="false"/>
   <arg name="zmq_baxter_port" default="7788"/>
   <arg name="zmq_jaco_port" default="5566"/>
@@ -20,11 +20,11 @@
   </group>
   
   <group if="$(arg run_aut)">
-    <node name="aut_node" pkg="robot_cooking" type="run_automata_node.py" respawn="false" output="screen" args="$(arg zmq_aut_port) $(arg zmq_jaco_port) $(arg zmq_baxter_port) $(arg msg_system) $(arg nb_robots)"/>
+    <node name="aut_node" pkg="robot_cooking" type="run_automata_node.py" respawn="false" output="screen" args="$(arg zmq_aut_port) $(arg zmq_jaco_port) $(arg zmq_baxter_port) $(arg msg_system) $(arg baxter)  $(arg jaco)"/>
   </group>
 
   <group if="$(arg visdom)">
-    <node name="visdom_node" pkg="robot_cooking" type="automata_visdom_node.py" respawn="false" output="screen" args="jaco"/>
+    <node name="visdom_node" pkg="robot_cooking" type="automata_visdom_node.py" respawn="false" output="screen" args="$(arg baxter) $(arg jaco)"/>
   </group>
  
   

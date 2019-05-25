@@ -67,7 +67,7 @@ class RunRobotNode(object):
 
         self.zmq_pub = None
         self.zmq_pub = None
-        if self.RunRobotNode_config['ZMQ'] is not None:
+        if self.RunRobotNode_config['ZMQ'] is not None and self.RunRobotNode_config['msg_system'] == 'zmq':
             self.context = zmq.Context()
             #### zmq pubs ####
             self.zmq_pub = self.context.socket(zmq.PUB)
@@ -80,11 +80,6 @@ class RunRobotNode(object):
             
     def cb_skill_to_execute_sub(self, msg):
         self.ros_ee_goal, self.ros_gripper_action, self.ros_other_action, self.ros_done = msg.data.split("-")
-        # print("ee_goal:{}".format(ee_goal))
-        # print("gripper_action:{}".format(gripper_action))
-        # print("other_action:{}".format(other_action))
-        # print("----------")
-
         if self.ros_ee_goal == "None":
             self.ros_ee_goal = None
         if self.ros_gripper_action == "None":
@@ -92,6 +87,11 @@ class RunRobotNode(object):
         if self.ros_other_action == "None":
             self.ros_other_action = None
 
+        # print("ee_goal:{}".format(self.ros_ee_goal))
+        # print("gripper_action:{}".format(self.ros_gripper_action))
+        # print("other_action:{}".format(self.ros_other_action))
+        # print("----------")
+            
     def update_and_publish_skill_arg(self):
         self.robot_cooking.update_skill_arg()
         skill_arg_dict_array = DictArray()
@@ -116,7 +116,7 @@ class RunRobotNode(object):
 
             skill_arg_dict_processed[k] = v_processed
             
-        if self.zmq_pub is not None:
+        if self.zmq_pub is not None and self.RunRobotNode_config['msg_system'] == 'zmq':
             self.zmq_pub.send_json((self.robot, skill_arg_dict_processed))
             
         self.skill_arg_pub.publish(skill_arg_dict_array)
@@ -125,18 +125,19 @@ class RunRobotNode(object):
         while not rospy.is_shutdown():
             for _ in range(200):
                 self.update_and_publish_skill_arg()
-                ## aut skill output through zmq
-                if self.zmq_sub is not None:
-                    topic, data = self.zmq_sub.recv_string().split()
-                    if topic == 'automata_output':
-                        aut_output = data
-                        self.zmq_ee_goal, self.zmq_gripper_action, self.zmq_other_action, self.zmq_done = aut_output.split('-')
-                        if self.zmq_ee_goal == "None":
-                            self.zmq_ee_goal = None
-                        if self.zmq_gripper_action == "None":
-                            self.zmq_gripper_action = None
-                        if self.zmq_other_action == "None":
-                            self.zmq_other_action = None
+                if self.RunRobotNode_config['msg_system'] == 'zmq':
+                    ## aut skill output through zmq
+                    if self.zmq_sub is not None:
+                        topic, data = self.zmq_sub.recv_string().split()
+                        if topic == 'automata_output':
+                            aut_output = data
+                            self.zmq_ee_goal, self.zmq_gripper_action, self.zmq_other_action, self.zmq_done = aut_output.split('-')
+                            if self.zmq_ee_goal == "None":
+                                self.zmq_ee_goal = None
+                            if self.zmq_gripper_action == "None":
+                                self.zmq_gripper_action = None
+                            if self.zmq_other_action == "None":
+                                self.zmq_other_action = None
 
 
                 if self.RunRobotNode_config['msg_system'] == 'ros':
@@ -152,12 +153,11 @@ class RunRobotNode(object):
                 else:
                     raise ValueError('msg system unsupported')
                     
-                    
-            # if done != 'True':    
-            #     self.robot_cooking.execute_automata_output(ee_goal=ee_goal,
-            #                                                gripper_action=gripper_action,
-            #                                                other_action=other_action,
-            #                                                dry_run=self.RunRobotNode_config['dry_run'])
+            if done != 'True':    
+                self.robot_cooking.execute_automata_output(ee_goal=ee_goal,
+                                                           gripper_action=gripper_action,
+                                                           other_action=other_action,
+                                                           dry_run=self.RunRobotNode_config['dry_run'])
        
 if __name__ == "__main__":
     from execution.execution_config import ExecutionConfig
