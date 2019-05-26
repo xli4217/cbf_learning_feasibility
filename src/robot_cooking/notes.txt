@@ -1,2 +1,3 @@
-* launch env: 
+* launch env: roslaunch robot_cooking robot_cooki.launch optitrack:=true jaco:=true
+
 * launch task: roslaunch robot_cooking task.launch baxter:=true dry_run:=true msg_system:=ros run_aut:=true visdom:=true

@@ -165,7 +165,7 @@ class RunRobotCooking(object):
                 pt = OBJECT_RELATIVE_POSE[object_rel_pose_name]
             else:
                 pt = get_object_goal_pose(self.skill_arg['obj_poses'][object_name], OBJECT_RELATIVE_POSE[object_rel_pose_name])
-            if object_rel_pose_name == 'grill' or object_rel_pose_name == 'bunplate':
+            if self.RunRobotCooking_config['robot'] == 'jaco' and (object_rel_pose_name == 'grill' or object_rel_pose_name == 'bunplate'):
                 # TODO: rise gripper a bit before going to grill (otherwise it chooses to go underneath)
                 # pt_rise = get_object_goal_pose(self.skill_arg['curr_pose'], np.array([0,0,-0.12,0,0,0,1]))
                 pt_rise = self.skill_arg['curr_pose'] + np.array([0,0,0.1,0,0,0,0])

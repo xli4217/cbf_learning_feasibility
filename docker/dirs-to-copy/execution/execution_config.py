@@ -139,21 +139,37 @@ class ExecutionConfig(object):
                       "(opengripper" + \
                       "))))))"
 
+        # serve = "(moveto_bunplate && opengripper) && X F " + \
+        #         "(closegripper && X F " + \
+        #         "(moveto_serveplate && X F " + \
+        #         "(opengripper && X F "+ \
+        #         "(moveto_world_baxterneutral " + \
+        #         "))))"
+        
         serve = "(moveto_bunplate && opengripper) && X F " + \
                 "(closegripper && X F " + \
-                "(moveto_serveplate && X F " + \
-                "(opengripper && X F "+ \
-                "(moveto_world_baxterneutral " + \
-                "))))"
-        
-        serve_task_ = "G (( inservezone_serveplate ->" + serve + ") && (!inservezone_serveplate -> X !moveto_serveplate))"
+                "((moveto_serveplate && closegripper) && X F " + \
+                "(opengripper)))" #&& X F "+ \
+                # "(moveto_world_baxterneutral " + \
+                # "))))"
 
+        
+        #serve_task_ = "G (( inservezone_serveplate -> X F (moveto_serveplate && X F moveto_world_baxterneutral) ) && (!inservezone_serveplate -> X !moveto_serveplate))"
+
+        #### serve task KG ####
+        serve_task_KB = "G (!(moveto_serveplate && moveto_bunplate)) && " + \
+                        "G (!(opengripper && closegripper))"
+     
+        
+        serve_task_ = "G (( inservezone_serveplate -> X F (" + serve + ")) && (!inservezone_serveplate -> X !moveto_serveplate))" + " && " + serve_task_KB
+
+        
         test_spec_ = "G ((inservezone_hotdogplate -> X moveto_hotdogplate) && ((!inservezone_hotdogplate -> X !moveto_hotdogplate))"
         
         config = {
             'make_hotdog': {
-                'formula':"F (" + serve + ")",
-                #'formula': serve,
+                #'formula':"F (" + serve + ")",
+                'formula': serve_task_,
                 'visdom': False,
                 'key_positions': KEY_POSITIONS,
                 'object_relative_pose': OBJECT_RELATIVE_POSE,

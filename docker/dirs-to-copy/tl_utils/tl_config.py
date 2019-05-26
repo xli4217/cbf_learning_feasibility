@@ -45,7 +45,7 @@ OBJECT_RELATIVE_POSE = {
     'relativeplateapplycondimentpre': cpre,
     'relativeplateapplycondimentpost': cpost,
     'placecondimentgoal': np.array([0.488,-0.0669,0.038,0.6135,0.3485,0.6266,-0.33]),
-    'baxterneutral': np.array([0.729, -0.29, 0.21, -0.05, 0.99, 0.03, 0.03])
+    'baxterneutral': np.array([0.729, -0.29, 0.21, -0.052, 0.998, 0.031, 0.020])
 }
 
 
@@ -125,7 +125,11 @@ def gripper_robustness(s, a=None, sp=None, oc='open'):
     else:
         raise ValueError()
 
-    return float(rob)
+    if rob > 0:
+        return 0.00001
+    else:
+        return -0.00001
+    # return float(rob)
 
 def in_serve_zone_robustness(s, a=None, sp=None, object_name='serveplate'):
     serve_zone_center = baxter_env_config['serve_zone']['init_pose'][:3]
@@ -143,8 +147,15 @@ def in_serve_zone_robustness(s, a=None, sp=None, object_name='serveplate'):
     rob = np.min([object_pose[0] - x_min, x_max - object_pose[0],
                   object_pose[1] - y_min, y_max - object_pose[1],
                   object_pose[2] - z_min, z_max - object_pose[2]])
-    
-    return rob
+
+    if rob > 0:
+        return 0.00001
+    else:
+        return -0.00001
+   
+    #return rob
+
+
 PREDICATES = {
     'moveto_hotdogplate': lambda s, a=None, sp=None: moveto_robustness(s,a,sp,'hotdogplate', 'hotdogplate'),
     'moveto_serveplate': lambda s, a=None, sp=None: moveto_robustness(s,a,sp,'serveplate', 'serveplate'),
