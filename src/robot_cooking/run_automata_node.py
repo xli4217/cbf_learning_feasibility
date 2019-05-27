@@ -16,8 +16,8 @@ from robot_cooking_msgs.msg import DictArray
 default_config = {
     'init_node': True,
     'msg_system': "ros",
-    'baxter': False,
-    'jaco': False,
+    'baxter': 'false',
+    'jaco': 'false',
     'Automata':{
         'type': None,
         'config': None
@@ -160,8 +160,17 @@ if __name__ == "__main__":
     msg_system = str(sys.argv[4])
     baxter = str(sys.argv[5])
     jaco = str(sys.argv[6])
-    
-    exe_config = ExecutionConfig({'robot': None, 'init_node': False})
+
+    if baxter == 'true' and jaco == 'false':
+        robot = "baxter"
+    elif baxter == 'false' and jaco == 'true':
+        robot = "jaco"
+    elif  baxter == 'true' and jaco == 'true':
+        robot = ['baxter', 'jaco']
+    else:
+        raise ValueError('need at least one robot')
+        
+    exe_config = ExecutionConfig({'robot': robot, 'init_node': False})
     automata_cls_type, automata_cls_config = exe_config.low_level_tl_skill_config()
 
     #### init class ####

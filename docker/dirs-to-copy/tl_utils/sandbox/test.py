@@ -26,8 +26,24 @@ if get_fsa:
 
     spec = spec_without_serve
 
-    spec = 'G ((inservezone -> X F moveto) && (!inservezone -> X !moveto))'
+    # spec = 'G ((inservezone -> X F moveto) && (!inservezone -> X !moveto))'
     
+    serve = "(moveto_bunplate && opengripper) && X F " + \
+                "(closegripper && X F " + \
+                "((moveto_serveplate && closegripper) && X F " + \
+                "(opengripper)))" #&& X F "+ \
+                # "(moveto_world_baxterneutral " + \
+                # "))))"
+
+
+    serve_task_KB = "G (!(moveto_serveplate && moveto_bunplate)) && " + \
+                        "G (!(moveto_serveplate && moveto_world_baxterneutral)) && " + \
+                        "G (!(moveto_bunplate && moveto_world_baxterneutral)) && " + \
+                        "G (!(moveto_serveplate && moveto_bunplate && moveto_word_baxterneutral)) && " + \
+                        "G (!(opengripper && closegripper))"
+
+    spec = "G (( inservezone_serveplate -> X F (" + serve + ")) && (!inservezone_serveplate -> X F moveto_world_baxterneutral))" + " && " + serve_task_KB
+
     
     #### add task specific conditions and constraints ####
     conditions = ['(! serve U apply_condiment)']

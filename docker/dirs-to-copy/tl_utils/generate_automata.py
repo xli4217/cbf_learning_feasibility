@@ -10,6 +10,7 @@ from plot_dynamic_automata import PlotDynamicAutomata
 default_config = {
     'formula': None,
     'visdom': False,
+    'repeat': False,
     'key_positions': None,
     'object_relative_pose': None,
     'state_idx_map': None,
@@ -34,6 +35,7 @@ class GenerateAutomata(object):
         self.fsa = Fsa()
         self.fsa.from_formula(self.formula)
         self.fsa.add_trap_state()
+
         self.fsa.visualize(draw='pydot',
                            save_path=self.GenerateAutomata_config['fsa_save_dir'],
                            dot_file_name=self.GenerateAutomata_config['dot_file_name'],
@@ -65,7 +67,7 @@ class GenerateAutomata(object):
         assert s.shape == (self.GenerateAutomata_config['mdp_state_space']['shape'][0],)
 
         t1 = time.time()
-        self.Q, r, self.edge, done, Dq, best_edge_guard_bin = self.FSA.step(self.Q, s=s)
+        self.Q, r, self.edge, done, Dq, best_edge_guard_bin = self.FSA.step(self.Q, s=s, repeat=self.GenerateAutomata_config['repeat'])
         self.q = self.FSA.get_node_value_from_name(self.Q)
 
         if self.GenerateAutomata_config['visdom']:

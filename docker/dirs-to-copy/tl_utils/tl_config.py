@@ -45,7 +45,7 @@ OBJECT_RELATIVE_POSE = {
     'relativeplateapplycondimentpre': cpre,
     'relativeplateapplycondimentpost': cpost,
     'placecondimentgoal': np.array([0.488,-0.0669,0.038,0.6135,0.3485,0.6266,-0.33]),
-    'baxterneutral': np.array([0.729, -0.29, 0.21, -0.052, 0.998, 0.031, 0.020])
+    'baxterneutral': np.array([0.729, -0.29, 0.19, -0.052, 0.998, 0.031, 0.020])
 }
 
 
@@ -82,6 +82,12 @@ def construct_skill_state(skill_arg):
 state_idx_map = STATE_IDX_MAP
 
 def moveto_robustness(s=None, a=None, sp=None, object_name=None, rel_pose_name=None):
+    '''
+    pos_dist < 0.02, quat_dist < 0.25 --> satisfy
+
+    robustness mapped to [-1, 1] where 1 is satisfy
+    '''
+
     ee_pose = s[state_idx_map['end_effector_pose'][0]:state_idx_map['end_effector_pose'][1]]
     if object_name == 'world':
         goal_pose = OBJECT_RELATIVE_POSE[rel_pose_name]
@@ -91,15 +97,28 @@ def moveto_robustness(s=None, a=None, sp=None, object_name=None, rel_pose_name=N
 
     pos_dist, quat_dist = pose_distance(ee_pose, goal_pose)
 
-    #print((pos_dist, quat_dist))
-    rob = np.minimum(0.02 - pos_dist, 0.25 - quat_dist)
-    #print(rob)
-    return rob 
+    if pos_dist > 0.04:
+        pos_dist = 0.04
+        
+    mapped_pos_rob = (0.02 - pos_dist) / 0.02
+
+    if quat_dist > 0.5:
+        quat_dist = 0.5
+
+    mapped_quat_rob = (0.25 - quat_dist) / 0.25
+    
+    rob = np.minimum(mapped_pos_rob, mapped_quat_rob)
+
+    return (rob, 'action')
         
 
 def switch_robustness(s=None, a=None, sp=None, sim_or_real='sim'):
     switch_on = s[state_idx_map['switchon']]
-    return switch_on
+    if switch_on > 0:
+        return (100, 'nonaction')
+    else:
+        return (-100, 'nonaction')
+
     # if sim_or_real == 'sim':
     #     if switch_angle < 1.:
     #         return 0.1
@@ -115,21 +134,22 @@ def apply_condiment_robustness(s, a=None, sp=None):
     0.1 if true, -0.1 if false
     '''
     rob = s[state_idx_map['condimentapplied']]
-    return float(rob)
+    return (float(rob), 'action')
 
 def gripper_robustness(s, a=None, sp=None, oc='open'):
+    '''
+    returns measure of completion in the range [-1,1]
+    '''
+    v_open = 0.
+    v_close = 1.
     if oc == 'open':
-        rob = 0.4 - s[state_idx_map['gripper_state']]
+        rob = v_open - float(s[state_idx_map['gripper_state']]) * 2 + 1
     elif oc == 'close':
-        rob = s[state_idx_map['gripper_state']] - 0.7
+        rob = float(s[state_idx_map['gripper_state']]) * 2 - 1  
     else:
         raise ValueError()
 
-    if rob > 0:
-        return 0.00001
-    else:
-        return -0.00001
-    # return float(rob)
+    return (float(rob), 'action')
 
 def in_serve_zone_robustness(s, a=None, sp=None, object_name='serveplate'):
     serve_zone_center = baxter_env_config['serve_zone']['init_pose'][:3]
@@ -149,11 +169,10 @@ def in_serve_zone_robustness(s, a=None, sp=None, object_name='serveplate'):
                   object_pose[2] - z_min, z_max - object_pose[2]])
 
     if rob > 0:
-        return 0.00001
+        return (100, 'nonaction')
     else:
-        return -0.00001
+        return (-100, 'nonaction')
    
-    #return rob
 
 
 PREDICATES = {
@@ -161,7 +180,7 @@ PREDICATES = {
     'moveto_serveplate': lambda s, a=None, sp=None: moveto_robustness(s,a,sp,'serveplate', 'serveplate'),
 
     'moveto_bunplate': lambda s, a=None, sp=None: moveto_robustness(s,a,sp,'bunplate', 'bunplate'),
-    'moveto_world_baxterneutral':lambda s, a=None, sp=None: moveto_robustness(s,a,sp,'bunplate', 'baxterneutral'),
+    'moveto_world_baxterneutral':lambda s, a=None, sp=None: moveto_robustness(s,a,sp,'world', 'baxterneutral'),
     'moveto_grill': lambda s, a=None, sp=None: moveto_robustness(s,a,sp,'grill', 'grill'),
     'moveto_condiment_condimentpre' : lambda s, a=None, sp=None: moveto_robustness(s,a,sp,'condiment', 'condimentpre'),
     'moveto_condiment_condimentpost' : lambda s, a=None, sp=None: moveto_robustness(s,a,sp, 'condiment', 'condimentpost'),
