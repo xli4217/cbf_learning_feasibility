@@ -139,7 +139,7 @@ class RunRobotCooking(object):
         self.update_skill_arg(dry_run)
 
         if skill_name == 'opengripper':
-            self.env.set_gripper_state(0.3)
+            self.env.set_gripper_state(0.2)
         elif skill_name == 'closegripper':
             self.env.set_gripper_state(0.9)
         elif skill_name == "flipswitchon":
@@ -147,6 +147,10 @@ class RunRobotCooking(object):
             pt = get_object_goal_pose(self.skill_arg['obj_poses']['grill'], OBJECT_RELATIVE_POSE['switchon'])
             self.env.set_gripper_state(0.9)
             self.move_to_target_with_motor_skill(pt, skill_name='flipswitchon', dry_run=dry_run)
+
+            # pt_back = self.skill_arg['curr_pose'] + np.array([0,0,0.02,0,0,0,0])
+            # self.move_to_target_with_motor_skill(pt_back, skill_name='moveto', dry_run=dry_run)
+            
         elif skill_name == 'applycondiment':
             for i in range(25):
                 vel_scale = 2. * np.sin(0.3*i)
@@ -165,13 +169,15 @@ class RunRobotCooking(object):
                 pt = OBJECT_RELATIVE_POSE[object_rel_pose_name]
             else:
                 pt = get_object_goal_pose(self.skill_arg['obj_poses'][object_name], OBJECT_RELATIVE_POSE[object_rel_pose_name])
-            if self.RunRobotCooking_config['robot'] == 'jaco' and (object_rel_pose_name == 'grill' or object_rel_pose_name == 'bunplate'):
-                # TODO: rise gripper a bit before going to grill (otherwise it chooses to go underneath)
-                # pt_rise = get_object_goal_pose(self.skill_arg['curr_pose'], np.array([0,0,-0.12,0,0,0,1]))
-                pt_rise = self.skill_arg['curr_pose'] + np.array([0,0,0.1,0,0,0,0])
-                self.move_to_target_with_motor_skill(pt_rise, skill_name='moveto', dry_run=dry_run)
+            if self.RunRobotCooking_config['robot'] == 'jaco':
+                if object_rel_pose_name == 'grill' or object_rel_pose_name == 'bunplate' or object_rel_pose_name == 'placecondimentgoal':
+                    # TODO: rise gripper a bit before going to grill (otherwise it chooses to go underneath)
+                    # pt_rise = get_object_goal_pose(self.skill_arg['curr_pose'], np.array([0,0,-0.12,0,0,0,1]))
+                    pt_rise = self.skill_arg['curr_pose'] + np.array([0,0,0.2,0,0,0,0])
+                    self.move_to_target_with_motor_skill(pt_rise, skill_name='moveto', dry_run=dry_run)
 
-            self.move_to_target_with_motor_skill(pt, skill_name='moveto', dry_run=dry_run)
+            
+            self.move_to_target_with_motor_skill(pt, skill_name='moveto', dry_run=dry_run)            
             self.update_skill_arg(dry_run)
             
         else:
@@ -193,12 +199,13 @@ class RunRobotCooking(object):
         
         print("actions:", (ee_goal, gripper_action, other_action))
         
-        if gripper_action is not None:
-            self.execute_motor_skill(gripper_action, dry_run=dry_run)
             
         if ee_goal is not None:
             self.execute_motor_skill(ee_goal, dry_run=dry_run)
 
+        if gripper_action is not None:
+            self.execute_motor_skill(gripper_action, dry_run=dry_run)
+            
         if other_action is not None:
             self.execute_motor_skill(other_action, dry_run=dry_run)
         

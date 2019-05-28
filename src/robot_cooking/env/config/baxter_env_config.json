@@ -109,7 +109,7 @@
     "parent_frame_id": "/world",
     "child_frame_id": "/condiment_mapped",
     "init_pose": [0.743, -0.123, 0.05, 0, 0, 0, 1],
-    "motive_offset": [0, 0, 0, 0, 0, 0, 1],
+    "motive_offset": [0, 0, -0.05, 0, 0, 0, 1],
     "scale": [0.09, 0.03, 0.18],
     "rgba": [0.9, 0.9, 0.1, 1],
     "marker_type": "cube",

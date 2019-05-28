@@ -22,9 +22,6 @@ with open(baxter_env_config_json_path) as f:
 #############
 
 KEY_POSITIONS = {
-    'neutral': np.array([0.178, -0.28, 0.228, 0.991, 0.13, 0.011, -0.016]),
-    'condiment_placement_goal': np.array([0.488,-0.0669,0.038,0.6135,0.3485,0.6266,-0.33]),
-    'switch_on_goal': np.array([-0.0617,-0.575,0.1565,0.7515,-0.6523,-0.0085,0.098]),
 }
 
 
@@ -38,10 +35,11 @@ OBJECT_RELATIVE_POSE = {
     'hotdogplate': np.array([0.0, 0.005, 0.02, 0.656, 0.754, -0.016, -0.016]),
     'bunplate': np.array([0.0, 0.005, 0.02, 0.656, 0.754, -0.016, -0.016]),
     'serveplate': np.array([0.0, 0.005, 0.02, 0.656, 0.754, -0.016, -0.016]),
-    'grill': np.array([0.007, -0.012, 0.008, 0.710, 0.704, 0.017, 0.027]), # this needs confirmation
-    'switchon': np.array([-0.001, -0.247, 0.076, 0.993, 0.072, 0.064, 0.073]),
-    'condimentpre': np.array([0.008, -0.105, -0.100, -0.594, -0.407, -0.421, 0.552]),
-    'condimentpost': np.array([0.008, -0.105+0.1, -0.100,-0.575, -0.474, -0.372, 0.554]),
+    'grill': np.array([0.007, -0.012, 0.006, 0.710, 0.704, 0.017, 0.027]), # this needs confirmation
+    'switchon': np.array([-0.001, -0.247-0.01, 0.076, 0.993, 0.072, 0.064, 0.073]),
+    #'switchon': np.array([-0.001, -0.247-0.01, 0.076, 0.989, -0.136, -0.037, -0.038]),
+    'condimentpre': np.array([0.022, -0.129, -0.09, -0.594, -0.433, -0.426, 0.528]),
+    'condimentpost': np.array([0.022, -0.129+0.11, -0.09, -0.594, -0.433, -0.426, 0.528]),
     'relativeplateapplycondimentpre': cpre,
     'relativeplateapplycondimentpost': cpost,
     'placecondimentgoal': np.array([0.488,-0.0669,0.038,0.6135,0.3485,0.6266,-0.33]),

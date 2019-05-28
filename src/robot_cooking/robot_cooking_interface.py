@@ -184,8 +184,9 @@ class RobotCookingInterface(object):
         ])
 
         switch_angle_rel_grill = tf.euler_from_quaternion(switch_pose[3:])[1]
-        
-        if switch_angle_rel_grill > 0.16:
+
+        print(switch_angle_rel_grill)
+        if switch_angle_rel_grill > 0.1:
             return 10.
         else:
             return -10.
@@ -335,8 +336,8 @@ if __name__ == "__main__":
     
     #### test ####
     #cls.test()
-    cls.home_robot()
-
+    # cls.home_robot()
+    cls.get_switch_state()
 
     #### test IK ####
     # curr_ee_pos, curr_ee_quat = cls.driver_utils.get_ee_pose()

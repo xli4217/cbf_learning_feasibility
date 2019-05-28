@@ -60,7 +60,7 @@ class ExecutionConfig(object):
                         # gain on attractor term y dynamics (angular)
                         'bz': None,
                         # timestep
-                        'dt': 0.001,
+                        'dt': 0.0015,
                         # time scaling, increase tau to make the system execute faster
                         'tau': 1.,
                         'use_canonical': False,
@@ -188,17 +188,19 @@ class ExecutionConfig(object):
                                "(moveto_condiment_condimentpre" + \
                                ")))))))"
         
-            entire_task = "(moveto_hotdogplate && opengripper) && X F " + \
+            entire_task = "(flipswitchon && closegripper) && X F (" + \
+                          "(moveto_hotdogplate && opengripper) && X F " + \
                           "(closegripper && X F " + \
                           "((moveto_grill && closegripper) && X F " + \
                           "(opengripper && X F "+ \
                           "(closegripper && X F "+\
                           "((moveto_bunplate && closegripper) && X F "+\
                           "(opengripper" + \
-                          "))))))"
+                          ")))))))"
 
-            task_spec =  "F (" +  apply_condiment_ + ")"
-
+            task_spec =  "F (" +  entire_task + ")"
+            repeat = False
+            
         elif self.robot == 'baxter':
             
             serve = "(moveto_bunplate && opengripper) && X F " + \
@@ -226,6 +228,7 @@ class ExecutionConfig(object):
             # serve_task_ = "G (( inservezone_serveplate -> X F (" + serve + ")))" + " && " + serve_task_KB
 
             task_spec = serve_task_
+            repeat = True
         elif isinstance(self.robot, list):
             raise ValueError('task distribution currently not supported')
         else:
@@ -238,7 +241,7 @@ class ExecutionConfig(object):
             'make_hotdog': {
                 'formula': task_spec,
                 'visdom': False,
-                'repeat': True,
+                'repeat': repeat,
                 'key_positions': KEY_POSITIONS,
                 'object_relative_pose': OBJECT_RELATIVE_POSE,
                 'state_idx_map': STATE_IDX_MAP,
