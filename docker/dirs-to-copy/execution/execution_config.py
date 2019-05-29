@@ -188,15 +188,17 @@ class ExecutionConfig(object):
                                "(moveto_condiment_condimentpre" + \
                                ")))))))"
         
-            entire_task = "(flipswitchon && closegripper) && X F (" + \
+            entire_task = "moveto_world_jaconeutral && X F" + \
+                          "((flipswitchon && closegripper) && X F (" + \
                           "(moveto_hotdogplate && opengripper) && X F " + \
                           "(closegripper && X F " + \
                           "((moveto_grill && closegripper) && X F " + \
                           "(opengripper && X F "+ \
                           "(closegripper && X F "+\
                           "((moveto_bunplate && closegripper) && X F "+\
-                          "(opengripper" + \
-                          ")))))))"
+                          "(opengripper && X F " + \
+                          "(moveto_world_jaconeutral" + \
+                          ")))))))))"
 
             task_spec =  "F (" +  entire_task + ")"
             repeat = False

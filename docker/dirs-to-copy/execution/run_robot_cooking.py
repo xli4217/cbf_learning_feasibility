@@ -147,9 +147,6 @@ class RunRobotCooking(object):
             pt = get_object_goal_pose(self.skill_arg['obj_poses']['grill'], OBJECT_RELATIVE_POSE['switchon'])
             self.env.set_gripper_state(0.9)
             self.move_to_target_with_motor_skill(pt, skill_name='flipswitchon', dry_run=dry_run)
-
-            # pt_back = self.skill_arg['curr_pose'] + np.array([0,0,0.02,0,0,0,0])
-            # self.move_to_target_with_motor_skill(pt_back, skill_name='moveto', dry_run=dry_run)
             
         elif skill_name == 'applycondiment':
             for i in range(25):
@@ -199,12 +196,12 @@ class RunRobotCooking(object):
         
         print("actions:", (ee_goal, gripper_action, other_action))
         
-            
-        if ee_goal is not None:
-            self.execute_motor_skill(ee_goal, dry_run=dry_run)
 
         if gripper_action is not None:
             self.execute_motor_skill(gripper_action, dry_run=dry_run)
+        
+        if ee_goal is not None:
+            self.execute_motor_skill(ee_goal, dry_run=dry_run)
             
         if other_action is not None:
             self.execute_motor_skill(other_action, dry_run=dry_run)

@@ -36,14 +36,14 @@ OBJECT_RELATIVE_POSE = {
     'bunplate': np.array([0.0, 0.005, 0.02, 0.656, 0.754, -0.016, -0.016]),
     'serveplate': np.array([0.0, 0.005, 0.02, 0.656, 0.754, -0.016, -0.016]),
     'grill': np.array([0.007, -0.012, 0.006, 0.710, 0.704, 0.017, 0.027]), # this needs confirmation
-    'switchon': np.array([-0.001, -0.247-0.01, 0.076, 0.993, 0.072, 0.064, 0.073]),
-    #'switchon': np.array([-0.001, -0.247-0.01, 0.076, 0.989, -0.136, -0.037, -0.038]),
+    'switchon': np.array([-0.001, -0.247-0.01, 0.076-0.012, 0.993, 0.072, 0.064, 0.073]),
     'condimentpre': np.array([0.022, -0.129, -0.09, -0.594, -0.433, -0.426, 0.528]),
     'condimentpost': np.array([0.022, -0.129+0.11, -0.09, -0.594, -0.433, -0.426, 0.528]),
     'relativeplateapplycondimentpre': cpre,
     'relativeplateapplycondimentpost': cpost,
     'placecondimentgoal': np.array([0.488,-0.0669,0.038,0.6135,0.3485,0.6266,-0.33]),
-    'baxterneutral': np.array([0.729, -0.29, 0.19, -0.052, 0.998, 0.031, 0.020])
+    'baxterneutral': np.array([0.729, -0.29, 0.19, -0.052, 0.998, 0.031, 0.020]),
+    'jaconeutral': np.array([-0.075, -0.316, 0.3, 0.779, -0.621, -0.052, -0.076])
 }
 
 
@@ -179,6 +179,7 @@ PREDICATES = {
 
     'moveto_bunplate': lambda s, a=None, sp=None: moveto_robustness(s,a,sp,'bunplate', 'bunplate'),
     'moveto_world_baxterneutral':lambda s, a=None, sp=None: moveto_robustness(s,a,sp,'world', 'baxterneutral'),
+    'moveto_world_jaconeutral':lambda s, a=None, sp=None: moveto_robustness(s,a,sp,'world', 'jaconeutral'),
     'moveto_grill': lambda s, a=None, sp=None: moveto_robustness(s,a,sp,'grill', 'grill'),
     'moveto_condiment_condimentpre' : lambda s, a=None, sp=None: moveto_robustness(s,a,sp,'condiment', 'condimentpre'),
     'moveto_condiment_condimentpost' : lambda s, a=None, sp=None: moveto_robustness(s,a,sp, 'condiment', 'condimentpost'),
