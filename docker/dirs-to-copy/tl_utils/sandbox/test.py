@@ -28,10 +28,10 @@ if get_fsa:
 
     # spec = 'G ((inservezone -> X F moveto) && (!inservezone -> X !moveto))'
     
-    serve = "(moveto_bunplate && opengripper) && X F " + \
+    serve = "F((moveto_bunplate && opengripper) && X F " + \
                 "(closegripper && X F " + \
                 "((moveto_serveplate && closegripper) && X F " + \
-                "(opengripper)))" #&& X F "+ \
+                "(opengripper)))) && G(!hand)" #&& X F "+ \
                 # "(moveto_world_baxterneutral " + \
                 # "))))"
 
@@ -42,8 +42,10 @@ if get_fsa:
                         "G (!(moveto_serveplate && moveto_bunplate && moveto_word_baxterneutral)) && " + \
                         "G (!(opengripper && closegripper))"
 
-    spec = "G (( inservezone_serveplate -> X F (" + serve + ")) && (!inservezone_serveplate -> X F moveto_world_baxterneutral))" + " && " + serve_task_KB
+    # spec = "G (( inservezone_serveplate -> X F (" + serve + ")) && (!inservezone_serveplate -> X F moveto_world_baxterneutral))" + " && " + serve_task_KB
+    # spec = "F(((ready && customer) -> X F pp) && ((! ready || ! customer) -> X stay))"
 
+    spec = serve
     
     #### add task specific conditions and constraints ####
     conditions = ['(! serve U apply_condiment)']
@@ -88,6 +90,19 @@ if get_fsa:
     # print(aut.g.nodes())
     aut.visualize(draw='pydot', save_path=os.path.join(os.environ['LEARNING_PATH'], 'tl_utils', 'sandbox', 'figures'), dot_file_name='g', svg_file_name='file')
 
+    # for n in aut.g.nodes():
+    #     if n == 'T0_init':
+    #         out_edges = aut.g.out_edges(n, data=True)
+    #         for edge in out_edges:
+    #             input_list = edge[2]["input"]
+    #             edge_bin_list = []
+    #             for input_pred in input_list:
+    #                 b = self.to_binary(input_pred) # e.g. 10011, 00111
+    #                 bin_string = str(b)[::-1]
+    #                 bin_int = [int(i) for i in bin_string]
+    #                 edge_bin_list.append(bin_int)
+
+    
     # fsa_reward = FsaReward(fsa=aut)
     # Q = "T0_init"
     # # print(aut.g.out_edges(Q, data=True))
