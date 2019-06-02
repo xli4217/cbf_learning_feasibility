@@ -336,8 +336,8 @@ if __name__ == "__main__":
     
     #### test ####
     #cls.test()
-    # cls.home_robot()
-    cls.get_switch_state()
+    cls.home_robot()
+    #cls.get_switch_state()
 
     #### test IK ####
     # curr_ee_pos, curr_ee_quat = cls.driver_utils.get_ee_pose()

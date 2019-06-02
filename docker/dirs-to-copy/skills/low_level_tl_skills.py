@@ -4,8 +4,12 @@ import time
 from future.utils import viewitems
 
 from tl_utils.generate_automata import GenerateAutomata
-from tl_utils.tl_config import construct_skill_state
+from tl_utils.tl_config import TLConfig
 import time
+
+tl_conf = TLConfig(config={'robot':'jaco'})
+
+construct_skill_state = tl_conf.construct_skill_state
 
 default_config = {
 }

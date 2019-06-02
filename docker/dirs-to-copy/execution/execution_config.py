@@ -126,7 +126,7 @@ class ExecutionConfig(object):
                         # gain on attractor term y dynamics (angular)
                         'bz': None,
                         # timestep
-                        'dt': 0.002,
+                        'dt': 0.003,
                         # time scaling, increase tau to make the system execute faster
                         'tau': 1.,
                         'use_canonical': False,
@@ -170,8 +170,15 @@ class ExecutionConfig(object):
 
     def low_level_tl_skill_config(self):
         from skills.low_level_tl_skills import LowLevelTLSkills
-        from tl_utils.tl_config import KEY_POSITIONS, OBJECT_RELATIVE_POSE, STATE_IDX_MAP, PREDICATES
+        from tl_utils.tl_config import TLConfig
+        from utils.utils import get_object_goal_pose
 
+        tl_conf = TLConfig(config={'robot':self.robot})
+
+        OBJECT_RELATIVE_POSE = tl_conf.OBJECT_RELATIVE_POSE
+        STATE_IDX_MAP = tl_conf.STATE_IDX_MAP,
+        PREDICATES = tl_conf.PREDICATES
+        
         pick_hotdog = "F((moveto_hotdogplate && opengripper) && X F (closegripper))"
         place_bun = "F((moveto_bunplate && closegripper)  && X F (opengripper))"
 
@@ -188,19 +195,43 @@ class ExecutionConfig(object):
                                "(moveto_condiment_condimentpre" + \
                                ")))))))"
         
-            entire_task = "moveto_world_jaconeutral && X F" + \
-                          "((flipswitchon && closegripper) && X F (" + \
-                          "(moveto_hotdogplate && opengripper) && X F " + \
-                          "(closegripper && X F " + \
-                          "((moveto_grill && closegripper) && X F " + \
-                          "(opengripper && X F "+ \
-                          "(closegripper && X F "+\
-                          "((moveto_bunplate && closegripper) && X F "+\
-                          "(opengripper && X F " + \
-                          "(moveto_world_jaconeutral" + \
-                          ")))))))))"
+            entire_task_wo_condiment = "moveto_world_jaconeutral && X F" + \
+                                       "((flipswitchon && closegripper) && X F (" + \
+                                       "(moveto_hotdogplate && opengripper) && X F " + \
+                                       "(closegripper && X F " + \
+                                       "((moveto_grill && closegripper) && X F " + \
+                                       "(opengripper && X F "+ \
+                                       "(moveto_world_jaconeutral && X F " + \
+                                       "((moveto_grill && opengripper) && X F " + \
+                                       "(closegripper && X F "+\
+                                       "((moveto_bunplate && closegripper) && X F "+\
+                                       "(opengripper && X F " + \
+                                       "(moveto_world_jaconeutral" + \
+                                       ")))))))))))"
 
-            task_spec =  "F (" +  entire_task + ")"
+            entire_task_w_condiment = "moveto_world_jaconeutral && X F" + \
+                                      "((flipswitchon && closegripper) && X F " + \
+                                      "((moveto_hotdogplate && opengripper) && X F " + \
+                                      "(closegripper && X F " + \
+                                      "((moveto_grill && closegripper) && X F " + \
+                                      "(opengripper && X F "+ \
+                                      "(moveto_world_jaconeutral && X F " + \
+                                      "((moveto_grill && opengripper) && X F " + \
+                                      "(closegripper && X F "+\
+                                      "((moveto_bunplate && closegripper) && X F "+\
+                                      "(opengripper && X F " + \
+                                      "((moveto_condiment_condimentpre && opengripper) && X F " + \
+                                      "(moveto_condiment_condimentpost && X F " + \
+                                      "(closegripper && X F "+ \
+                                      "((moveto_bunplate_relativeplateapplycondimentpost && closegripper) && X F "+\
+                                      "(applycondiment && X F" + \
+                                      "((moveto_world_placecondimentgoal && closegripper) && X F" + \
+                                      "(opengripper && X F" + \
+                                      "(moveto_world_jaconeutral" + \
+                                      "))))))))))))))))))"
+
+
+            task_spec =  "F (" +  entire_task_w_condiment + ")"
             repeat = False
             
         elif self.robot == 'baxter':
@@ -244,7 +275,7 @@ class ExecutionConfig(object):
                 'formula': task_spec,
                 'visdom': False,
                 'repeat': repeat,
-                'key_positions': KEY_POSITIONS,
+                'key_positions': None,
                 'object_relative_pose': OBJECT_RELATIVE_POSE,
                 'state_idx_map': STATE_IDX_MAP,
                 'predicate_robustness': PREDICATES,

@@ -53,6 +53,7 @@ class RunRobotCooking(object):
         self.RunRobotCooking_config.update(config)
 
         self.robot = self.RunRobotCooking_config['robot']
+
         if self.RunRobotCooking_config['init_node']:
             rospy.init_node(self.robot + "_robot_cooking", anonymous=False)
                         
@@ -134,7 +135,14 @@ class RunRobotCooking(object):
             self.env.move_to(y, dry_run=dry_run)
 
     def execute_motor_skill(self, skill_name, dry_run=True):
-        from tl_utils.tl_config import KEY_POSITIONS, OBJECT_RELATIVE_POSE, STATE_IDX_MAP, PREDICATES, get_object_goal_pose
+        from tl_utils.tl_config import TLConfig
+        from utils.utils import get_object_goal_pose
+        
+        tl_conf = TLConfig(config={'robot':self.robot})
+
+        OBJECT_RELATIVE_POSE = tl_conf.OBJECT_RELATIVE_POSE
+        STATE_IDX_MAP = tl_conf.STATE_IDX_MAP,
+        PREDICATES = tl_conf.PREDICATES
 
         self.update_skill_arg(dry_run)
 
@@ -147,6 +155,12 @@ class RunRobotCooking(object):
             pt = get_object_goal_pose(self.skill_arg['obj_poses']['grill'], OBJECT_RELATIVE_POSE['switchon'])
             self.env.set_gripper_state(0.9)
             self.move_to_target_with_motor_skill(pt, skill_name='flipswitchon', dry_run=dry_run)
+
+            if self.skill_arg['switchon'] > 0:
+                self.update_skill_arg()
+                pt_rise = self.skill_arg['curr_pose'] + np.array([0.0,0.0,0.07,0,0,0,0])
+                self.move_to_target_with_motor_skill(pt_rise, skill_name='moveto', dry_run=dry_run)
+
             
         elif skill_name == 'applycondiment':
             for i in range(25):
@@ -167,16 +181,21 @@ class RunRobotCooking(object):
             else:
                 pt = get_object_goal_pose(self.skill_arg['obj_poses'][object_name], OBJECT_RELATIVE_POSE[object_rel_pose_name])
             if self.RunRobotCooking_config['robot'] == 'jaco':
-                if object_rel_pose_name == 'grill' or object_rel_pose_name == 'bunplate' or object_rel_pose_name == 'placecondimentgoal':
+                if object_rel_pose_name == 'grill' or object_rel_pose_name == 'bunplate' or object_rel_pose_name == 'placecondimentgoal' or  object_rel_pose_name == 'condimentpre':
                     # TODO: rise gripper a bit before going to grill (otherwise it chooses to go underneath)
                     # pt_rise = get_object_goal_pose(self.skill_arg['curr_pose'], np.array([0,0,-0.12,0,0,0,1]))
                     pt_rise = self.skill_arg['curr_pose'] + np.array([0,0,0.2,0,0,0,0])
                     self.move_to_target_with_motor_skill(pt_rise, skill_name='moveto', dry_run=dry_run)
-
+            elif self.RunRobotCooking_config['robot'] == 'baxter':
+                # if 'plate' in object_rel_pose_name:
+                #     pt += np.array([0,0,-0.03,0,0,0,0])
+                pass
+            else:
+                raise ValueError('robot not supported')
             
             self.move_to_target_with_motor_skill(pt, skill_name='moveto', dry_run=dry_run)            
             self.update_skill_arg(dry_run)
-            
+
         else:
             raise ValueError('unsupported skill')
 

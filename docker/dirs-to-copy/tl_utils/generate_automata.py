@@ -71,7 +71,7 @@ class GenerateAutomata(object):
         self.q = self.FSA.get_node_value_from_name(self.Q)
 
         if self.GenerateAutomata_config['visdom']:
-            self.plot_aut.update(current_state = self.Q, src_and_dest=edge)
+            self.plot_aut.update(current_state = self.Q, src_and_dest=self.edge)
 
       
         #### assign actions ####
@@ -110,10 +110,17 @@ class GenerateAutomata(object):
         return node_action, node_constraints, done
       
 if __name__ == "__main__":
-    from tl_config import KEY_POSITIONS, OBJECT_RELATIVE_POSE, STATE_IDX_MAP, PREDICATES
+    from tl_utils.tl_config import TLConfig
+    
+    tl_conf = TLConfig(config={'robot':'jaco'})
 
+    OBJECT_RELATIVE_POSE = tl_conf.OBJECT_RELATIVE_POSE
+    STATE_IDX_MAP = tl_conf.STATE_IDX_MAP,
+    PREDICATES = tl_conf.PREDICATES
+
+    
     config = {
-        'key_positions': KEY_POSITIONS,
+        'key_positions': None,
         'object_relative_pose': OBJECT_RELATIVE_POSE,
         'state_idx_map': STATE_IDX_MAP,
         'predicate_robustness': PREDICATES,
