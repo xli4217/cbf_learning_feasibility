@@ -1,4 +1,4 @@
-from tl_tools.fsa_reward import FsaReward
+from tl_utils.fsa_reward import FsaReward
 #from tl_tools.visualization.plot_dynamic_graph import PlotDynamicAutomata
 from lomap.classes import Fsa
 import numpy as np
@@ -31,11 +31,13 @@ if get_fsa:
     serve = "F((moveto_bunplate && opengripper) && X F " + \
                 "(closegripper && X F " + \
                 "((moveto_serveplate && closegripper) && X F " + \
-                "(opengripper)))) && G(!hand)" #&& X F "+ \
-                # "(moveto_world_baxterneutral " + \
-                # "))))"
+                "(opengripper && X F "+ \
+                "(moveto_world_baxterneutral " + \
+                "))))) && (!collide U moveto_world_baxterneutral)"
 
 
+    test = "F(a && X F b) && G(!c)"
+    
     serve_task_KB = "G (!(moveto_serveplate && moveto_bunplate)) && " + \
                         "G (!(moveto_serveplate && moveto_world_baxterneutral)) && " + \
                         "G (!(moveto_bunplate && moveto_world_baxterneutral)) && " + \
@@ -43,9 +45,8 @@ if get_fsa:
                         "G (!(opengripper && closegripper))"
 
     # spec = "G (( inservezone_serveplate -> X F (" + serve + ")) && (!inservezone_serveplate -> X F moveto_world_baxterneutral))" + " && " + serve_task_KB
-    # spec = "F(((ready && customer) -> X F pp) && ((! ready || ! customer) -> X stay))"
-
-    spec = serve
+    #spec = "(((r && c) -> X F pp) && ((! r || ! c) -> X (F pp && (!pp U (r && c))))) && G(!col)"
+    spec = "(F pp && (!pp U (r && c)) && b)"
     
     #### add task specific conditions and constraints ####
     conditions = ['(! serve U apply_condiment)']
@@ -87,21 +88,28 @@ if get_fsa:
     print("number of nodes: ", len(aut.g.nodes()))
     print("number of edges: ", len(aut.g.edges()))
     # print(aut)
-    # print(aut.g.nodes())
+    print(aut.g.nodes())
     aut.visualize(draw='pydot', save_path=os.path.join(os.environ['LEARNING_PATH'], 'tl_utils', 'sandbox', 'figures'), dot_file_name='g', svg_file_name='file')
 
-    # for n in aut.g.nodes():
-    #     if n == 'T0_init':
-    #         out_edges = aut.g.out_edges(n, data=True)
-    #         for edge in out_edges:
-    #             input_list = edge[2]["input"]
-    #             edge_bin_list = []
-    #             for input_pred in input_list:
-    #                 b = self.to_binary(input_pred) # e.g. 10011, 00111
-    #                 bin_string = str(b)[::-1]
-    #                 bin_int = [int(i) for i in bin_string]
-    #                 edge_bin_list.append(bin_int)
 
+    def to_binary(aut,num):
+        '''
+        returns the binary representation of the decimal input
+        '''
+        return ("{0:0" + str(len(aut.props)) + "b}").format(num)
+
+    for n in aut.g.nodes():
+        out_edges = aut.g.out_edges(n, data=True)
+        for edge in out_edges:
+            input_list = edge[2]["input"]
+            edge_bin_list = []
+            for input_pred in input_list:
+                b = to_binary(aut, input_pred) # e.g. 10011, 00111
+                bin_string = str(b)[::-1]
+                bin_int = [int(i) for i in bin_string]
+                edge_bin_list.append(bin_int)
+            if edge[1] == 'trap':
+                print(edge_bin_list)
     
     # fsa_reward = FsaReward(fsa=aut)
     # Q = "T0_init"
