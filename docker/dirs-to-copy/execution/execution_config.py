@@ -243,8 +243,7 @@ class ExecutionConfig(object):
                     "(moveto_world_baxterneutral " + \
                     "))))"
 
-        
-            #serve_task_ = "G (( inservezone_serveplate -> X F (moveto_serveplate && X F moveto_world_baxterneutral) ) && (!inservezone_serveplate -> X !moveto_serveplate))"
+            
 
             #### serve task KG ####
             serve_task_KB = "G (!(moveto_serveplate && moveto_bunplate)) && " + \
@@ -255,8 +254,10 @@ class ExecutionConfig(object):
      
 
             #### FSA version
-            serve_task_ = "(( inservezone_serveplate -> X F (" + serve + ")) && (!inservezone_serveplate -> X F moveto_world_baxterneutral))" + " && " + serve_task_KB
+            # serve_task_ = "(( inservezone_serveplate -> X F (" + serve + ")) && (!inservezone_serveplate -> X F moveto_world_baxterneutral))" + " && " + serve_task_KB
 
+            serve_task_ = "F(" +  serve + " )&& (! (" + serve + ") U inservezone_serveplate)" + " && " + serve_task_KB
+            
             #### Buchi version 
             # serve_task_ = "G (( inservezone_serveplate -> X F (" + serve + ")))" + " && " + serve_task_KB
 

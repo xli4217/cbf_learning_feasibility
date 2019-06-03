@@ -150,51 +150,30 @@ class FsaReward(object):
         done = self.check_done(Q)
 
         if not done:
-            next_Q, DQ, best_node_guard_bin = self.get_node_guard_bin_and_node_rob(Q, s, a, sp, debug=False)
+            next_Q, DQ_nontrap, DQ_trap, best_node_guard_bin, trap_node_guard_bin = self.get_node_guard_bin_and_node_rob(Q, s, a, sp, debug=False)
 
             done = self.check_done(next_Q)
             
             while next_Q != Q and not done:
                 Q = next_Q
-                next_Q, DQ, best_node_guard_bin = self.get_node_guard_bin_and_node_rob(Q,
-                                                                                       s,
-                                                                                       a,
-                                                                                       sp,
-                                                                                       debug=False)
+                next_Q, DQ_nontrap, DQ_trap, best_node_guard_bin, trap_node_guard_bin = self.get_node_guard_bin_and_node_rob(Q, s, a, sp, debug=False)
+                
                 done = self.check_done(next_Q)
                 if done:
                     break
         else:
             next_Q = Q
-            DQ = 0
+            DQ_nontrap = 0
+            DQ_trap = 0
             best_node_guard_bin = None
-
+            trap_node_guard_bin = None
+            
         if repeat and done and self.aut_type == 'FSA':
             next_Q = self.init_state_name
    
-            
-        # reward = 0
-        # # this assumes at starting position, goal is not reached and spec is not violated
-        # Dq = -1
-        # Dq_trap = 1
-        # if np.array(reward_list).size != 0:
-        #     if self.FsaReward_config['softmax']:
-        #         Dq = self.logsumexp(np.array(reward_list), max_or_min='max')
-        #     else:
-        #         Dq = np.max(np.array(reward_list))
-        #     reward = Dq
-        #     if Dq > 0:
-        #         reward += 1.0
-        # if len(trap_reward_list) != 0:
-        #     Dq_trap = np.min(np.array(trap_reward_list))
-        #     reward = np.minimum(Dq, Dq_trap)
-
-
-
-        #### HACK ####
         reward = 0
 
-        return next_Q, reward, (Q, next_Q), done, DQ, best_node_guard_bin
+        return next_Q, reward, (Q, next_Q), done, DQ_nontrap, DQ_trap, best_node_guard_bin, trap_node_guard_bin
 
         
     def get_node_guard_bin_and_node_rob(self, Q, s, a, sp, debug=False):
@@ -209,20 +188,27 @@ class FsaReward(object):
         accept_node_rob_list = []
         accept_node_guard_list = []
         accept_node_list = []
+
+        trap_node_guard_bin_list = []
+        trap_node_rob_list = []
+        trap_node_guard_list = []
+        trap_node_list = []
+
         
         if self.debug or debug:
             print("NODE:", Q)
             print("------")
             
         for edge in out_edges:
+            processed_edge_bin, edge_total_rob, edge_action_rob = self.get_edge_guard_bin_and_edge_rob(edge, s, a, sp)              
             if edge[1] != 'trap':
                 process = False
-                processed_edge_bin, edge_total_rob, edge_action_rob = self.get_edge_guard_bin_and_edge_rob(edge, s, a, sp)
                 if 'accept' not in Q:
-                    if edge[1] != Q:
+                    if edge[1] != Q and edge_total_rob > -100:
                         process = True
                 else:
-                    process = True
+                    if edge_total_rob > -100:
+                        process = True
 
                 if process:
                     #### edge robustness ####
@@ -236,21 +222,32 @@ class FsaReward(object):
                         non_accept_node_guard_bin_list.append(processed_edge_bin)
                         non_accept_node_guard_list.append(edge[2]['guard'])
                         non_accept_node_list.append(edge[1])
-            # else:
-            #     print(edge)
+            else:
+                trap_node_rob_list.append(edge_total_rob)
+                trap_node_guard_bin_list.append(processed_edge_bin)
+                trap_node_guard_list.append(edge[2]['guard'])
+                trap_node_list.append(edge[1])
+             
                         
-                if self.debug or debug:
-                    print("next_node:", edge[1])
-                    print('edge guard:', edge[2]['guard'])
-                    print("edge total rob:",edge_total_rob)
-                    # print("edge action rob:",edge_action_rob)
-                    print('----------')
-                    
+            if self.debug or debug:
+                print("next_node:", edge[1])
+                print('edge guard:', edge[2]['guard'])
+                if edge[1] == 'trap':
+                    print(processed_edge_bin)
+                    print(edge[2]['input'])
+                print("edge total rob:",edge_total_rob)
+                print('----------')
+
             # sometimes self edge and outgoing edge can activate at the same time, why?
             # sometimes directly goes into trap    
-            if edge_total_rob > 0 and edge[1] != Q and edge[1] != 'trap': 
+            #if edge_total_rob > 0 and edge[1] != Q and edge[1] != 'trap':
+            if edge_total_rob > 0 and edge[1] != Q and edge[1] != 'trap':     
                 next_Q = edge[1]
-                    
+
+        DQ_nontrap = 0
+        DQ_trap = 0        
+
+        #### For non-trap outgoing edges ####
         if len(accept_node_rob_list) > 0:
             node_rob_list = accept_node_rob_list
             node_guard_bin_list = accept_node_guard_bin_list
@@ -261,16 +258,10 @@ class FsaReward(object):
             node_guard_bin_list = non_accept_node_guard_bin_list
             node_guard_list = non_accept_node_guard_list
             node_list = non_accept_node_list
-        
-        #     if edge[1] != 'trap':
-        #         reward_list.append(edge_rob)
-        #     else:
-        #         trap_reward_list.append(-edge_rob)
-                
 
         if len(node_rob_list) > 0:
             best_node_guard_bin = node_guard_bin_list[np.argmax(np.array(node_rob_list))]
-            DQ = np.max(np.array(node_rob_list))
+            DQ_nontrap = np.max(np.array(node_rob_list))
             if self.debug or debug:
                 print("*********")
                 print("Final Lists")
@@ -281,7 +272,7 @@ class FsaReward(object):
                 
                 print("********")
                 print("chosen next Q:{}".format(next_Q))
-                print("chosen action edge: ", (Q, node_list[np.argmax(np.array(node_rob_list))]))
+                print("chosen edge: ", (Q, node_list[np.argmax(np.array(node_rob_list))]))
                 print("chosen guard: {}".format(str(node_guard_list[np.argmax(np.array(node_rob_list))])))
                 print("sorted props:", self.sorted_props)
                 print("chosen node guard bin: ", best_node_guard_bin)
@@ -290,10 +281,20 @@ class FsaReward(object):
         else:
             # this happens at the acceptance node of an FSA
             best_node_guard_bin = None
-            DQ = 0
-
-                
-        return next_Q, DQ, best_node_guard_bin
+            DQ_nontrap = 0
+            
+        #### For trap outgoing edge ####
+        if len(trap_node_rob_list) > 0: # there is a connection to trap state
+            trap_node_guard_bin = trap_node_guard_bin_list[0]
+            DQ_trap = trap_node_rob_list[0]
+            if self.debug or debug:
+                print("*********")
+                print("trap_node_guard_bin_list:", trap_node_guard_bin_list)
+        else:
+            trap_node_guard_bin = None
+            DQ_trap = 0
+            
+        return next_Q, DQ_nontrap, DQ_trap, best_node_guard_bin, trap_node_guard_bin
                 
     
     def get_edge_guard_bin_and_edge_rob(self, edge, s, a=None, sp=None):

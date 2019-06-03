@@ -26,27 +26,25 @@ if get_fsa:
 
     spec = spec_without_serve
 
-    # spec = 'G ((inservezone -> X F moveto) && (!inservezone -> X !moveto))'
     
-    serve = "F((moveto_bunplate && opengripper) && X F " + \
-                "(closegripper && X F " + \
-                "((moveto_serveplate && closegripper) && X F " + \
-                "(opengripper && X F "+ \
-                "(moveto_world_baxterneutral " + \
-                "))))) && (!collide U moveto_world_baxterneutral)"
-
-
-    test = "F(a && X F b) && G(!c)"
     
     serve_task_KB = "G (!(moveto_serveplate && moveto_bunplate)) && " + \
-                        "G (!(moveto_serveplate && moveto_world_baxterneutral)) && " + \
-                        "G (!(moveto_bunplate && moveto_world_baxterneutral)) && " + \
-                        "G (!(moveto_serveplate && moveto_bunplate && moveto_word_baxterneutral)) && " + \
-                        "G (!(opengripper && closegripper))"
+                    "G (!(opengripper && closegripper)) && " + \
+                    "G (!(moveto_serveplate && moveto_world_baxterneutral)) && " + \
+                    "G (!(moveto_bunplate && moveto_world_baxterneutral)) && " + \
+                    "G (!(moveto_serveplate && moveto_bunplate && moveto_world_baxterneutral))"
 
-    # spec = "G (( inservezone_serveplate -> X F (" + serve + ")) && (!inservezone_serveplate -> X F moveto_world_baxterneutral))" + " && " + serve_task_KB
-    #spec = "(((r && c) -> X F pp) && ((! r || ! c) -> X (F pp && (!pp U (r && c))))) && G(!col)"
-    spec = "(F pp && (!pp U (r && c)) && b)"
+
+    serve = "(moveto_bunplate && opengripper) && X F " + \
+            "(closegripper && X F " + \
+            "((moveto_serveplate && closegripper) && X F " + \
+            "(opengripper  && X F "+ \
+            "(moveto_world_baxterneutral " + \
+            "))))"
+
+    
+    spec = "F" +  serve + "&& (! " + serve + " U inservezone_serveplate)" + " && " + serve_task_KB
+    
     
     #### add task specific conditions and constraints ####
     conditions = ['(! serve U apply_condiment)']
@@ -98,18 +96,18 @@ if get_fsa:
         '''
         return ("{0:0" + str(len(aut.props)) + "b}").format(num)
 
-    for n in aut.g.nodes():
-        out_edges = aut.g.out_edges(n, data=True)
-        for edge in out_edges:
-            input_list = edge[2]["input"]
-            edge_bin_list = []
-            for input_pred in input_list:
-                b = to_binary(aut, input_pred) # e.g. 10011, 00111
-                bin_string = str(b)[::-1]
-                bin_int = [int(i) for i in bin_string]
-                edge_bin_list.append(bin_int)
-            if edge[1] == 'trap':
-                print(edge_bin_list)
+    # for n in aut.g.nodes():
+    #     out_edges = aut.g.out_edges(n, data=True)
+    #     for edge in out_edges:
+    #         input_list = edge[2]["input"]
+    #         edge_bin_list = []
+    #         for input_pred in input_list:
+    #             b = to_binary(aut, input_pred) # e.g. 10011, 00111
+    #             bin_string = str(b)[::-1]
+    #             bin_int = [int(i) for i in bin_string]
+    #             edge_bin_list.append(bin_int)
+    #         if edge[1] == 'trap':
+    #             print(edge_bin_list)
     
     # fsa_reward = FsaReward(fsa=aut)
     # Q = "T0_init"
