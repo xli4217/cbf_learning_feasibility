@@ -3,6 +3,8 @@ from lomap.classes import Fsa
 from future.utils import viewitems
 import networkx
 import sys
+from sympy import *
+import sympy
 
 if sys.version_info > (3, 0):
     PYTHON_VERSION = 3
@@ -50,6 +52,11 @@ class FsaReward(object):
             
         self.sorted_props = sorted(self.fsa_props, key=lambda key: self.fsa_props[key])
         print("sorted fsa propositions: %s" %self.sorted_props)
+
+        ## for sympy
+        sorted_props_str = " ".join(self.sorted_props)
+        self.sorted_props_sympy = list(sympy.symbols(sorted_props_str))
+
         if self.logger is not None:
             self.logger.log_text("sorted props: {}".format(self.sorted_props))
        
@@ -179,6 +186,7 @@ class FsaReward(object):
     def get_node_guard_bin_and_node_rob(self, Q, s, a, sp, debug=False):
         out_edges = self.g.out_edges(Q, data=True)
         next_Q = Q
+
         non_accept_node_guard_bin_list = []
         non_accept_node_rob_list = []
         non_accept_node_guard_list = []
@@ -200,7 +208,7 @@ class FsaReward(object):
             print("------")
             
         for edge in out_edges:
-            processed_edge_bin, edge_total_rob, edge_action_rob = self.get_edge_guard_bin_and_edge_rob(edge, s, a, sp)              
+            processed_edge_bin, edge_total_rob, edge_action_rob, edge_guard = self.get_edge_guard_bin_and_edge_rob_numerical(edge, s, a, sp)              
             if edge[1] != 'trap':
                 process = False
                 if 'accept' not in Q:
@@ -246,7 +254,6 @@ class FsaReward(object):
 
         DQ_nontrap = 0
         DQ_trap = 0        
-
         #### For non-trap outgoing edges ####
         if len(accept_node_rob_list) > 0:
             node_rob_list = accept_node_rob_list
@@ -296,9 +303,36 @@ class FsaReward(object):
             
         return next_Q, DQ_nontrap, DQ_trap, best_node_guard_bin, trap_node_guard_bin
                 
+
+    def get_edge_guard_bin_and_edge_rob_symbolic(self, edge, s, a=None, sp=None):
+
+        #### get robustness of all predicates at current state ####
+        prop_robustness = {}
+        for prop in self.sorted_props:
+            rob, action = self.predicate_reward_dict[prop](s, a=None, sp=None)
+            prop_robustness.update(prop=rob)
+            
+        #### 
+        input_list = list(edge[2]['input'])
+        simplified_pos_dnf_form = str(SOPform(self.sorted_props_sympy, input_list))
+        simp_pos_dnf_split = simplified_pos_dnf_form.split('|')
+
+        if len(simp_pos_dnf_split) == 1:
+            edge_guard = simp_pos_dnf_split[0]
+            
+        print(simp_pos_dnf_split)
+
+        edge_action_rob = 0        
+
+        return processed_edge_bin, edge_total_rob, edge_action_rob, edge_guard
+        
+    def get_edge_guard_bin_and_edge_rob_numerical(self, edge, s, a=None, sp=None):
+        ### this has problems
+        '''input_list gives a set of predicates in the form {2, 4, 5} which are to be translated to binary, the resulting predicate is the disjunction of the list'''
     
-    def get_edge_guard_bin_and_edge_rob(self, edge, s, a=None, sp=None):
-        # input_list gives a set of predicates in the form {2, 4, 5} which are to be translated to binary, the resulting predicate is the disjunction of the list
+
+        self.get_edge_guard_bin_and_edge_rob_symbolic(edge, s, a, sp)
+        
         input_list = edge[2]["input"]
         edge_bin_list = []
         for input_pred in input_list:
@@ -321,7 +355,8 @@ class FsaReward(object):
 
         # in the form [0,1,1,-1], -1 means doesn't matter
         processed_edge_bin = np.array(processed_edge_bin)
-                
+
+        
         total_rob_list = []
         action_rob_list = [] # used for action selection
         for i in range(len(processed_edge_bin)):
@@ -345,8 +380,10 @@ class FsaReward(object):
             
         edge_total_rob = min(total_rob_list)
         edge_action_rob = min(action_rob_list)
+
+        edge_guard = ""
         
-        return processed_edge_bin, edge_total_rob, edge_action_rob
+        return processed_edge_bin, edge_total_rob, edge_action_rob, edge_guard
         
     def to_binary(self, num):
         '''
