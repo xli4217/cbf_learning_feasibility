@@ -26,7 +26,7 @@ def construct_rl_base_runner_config(restore_runner_dir=None,
                                     cbf_action=False,
                                     rl_action=False,
                                     # environment config
-                                    env_name='vrep_baxter',
+                                    env_name='vrep',
                                     task='1.1',
                                     dist_th=0.03,
                                     fsa_save_dir="",
@@ -228,7 +228,7 @@ def construct_rl_experiment_config(experiment_root_dir="",
                                    restore_policy_dir=None,
                                    restore_policy_name=None,
                                    # runner_config -> rl_base_runner_config -> env_config
-                                   env_name='grid_world',
+                                   env_name='vrep',
                                    task='gotogoal',
                                    headless=False,
                                    dist_th=1.,
@@ -470,7 +470,7 @@ default_args = {
     'rl_action': False,
     #### environment config ####
     # this can be 'vrep_baxter', 'baxter'
-    'env_name': 'vrep_baxter',
+    'env_name': 'vrep',
     # this can be 'gotogoal', 'robustness', 'flat', 'hierarchical'
     'task': 'flat',
     'dist_th': 0.05,

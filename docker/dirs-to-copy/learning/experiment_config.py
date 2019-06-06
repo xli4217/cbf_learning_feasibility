@@ -8,8 +8,11 @@ import json
 
 env_cal = {}
 default_config = {
-    'env_name': "vrep_baxter",
-    'headless': False
+    'env_name': "vrep",
+    'robot': 'jaco',
+    'headless': False,
+    # this list can contain 'mdp', 'fsa', 'ecbf', 'dmp' 
+    'task': ['mdp']
 }
 
 class ExperimentConfig(object):
@@ -32,7 +35,7 @@ class ExperimentConfig(object):
             'type': None,
             'config': {}
         }
-        if self.env_name == 'vrep_baxter':            
+        if self.env_name == 'vrep':            
             from learning.env.learning_env import LearningEnv
             from traj_generators.dmp.dmp import DMP
             from cooking_env.env.base.ce import CookingEnv
@@ -106,7 +109,7 @@ class ExperimentConfig(object):
         }
             
             
-    def baxter_env_config(self):
+    def vrep_env_config(self):
 
         #### State ####
         def get_state(all_info):
