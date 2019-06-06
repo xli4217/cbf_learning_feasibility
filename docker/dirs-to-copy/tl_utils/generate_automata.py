@@ -67,35 +67,34 @@ class GenerateAutomata(object):
         assert s.shape == (self.GenerateAutomata_config['mdp_state_space']['shape'][0],)
 
         t1 = time.time()
-        self.Q, r, self.edge, done, DQ_nontrap, DQ_trap, best_edge_guard_bin, trap_node_guard_bin = self.FSA.step(self.Q, s=s, repeat=self.GenerateAutomata_config['repeat'])
+        self.Q, r, self.edge, done, DQ_nontrap, DQ_trap, best_node_guard, trap_node_guard = self.FSA.step(self.Q, s=s, repeat=self.GenerateAutomata_config['repeat'])
         self.q = self.FSA.get_node_value_from_name(self.Q)
 
         if self.GenerateAutomata_config['visdom']:
             self.plot_aut.update(current_state = self.Q, src_and_dest=self.edge)
 
-      
         #### assign actions ####
         ee_goal = None
         gripper_action = None
         other_action = None
-        # print(self.FSA.sorted_props)
-        # print(self.Q)
-        # print(best_edge_guard_bin)
-        # print('-----')
-        if best_edge_guard_bin is not None:
-            for i in range(len(best_edge_guard_bin)):
-                if self.FSA.sorted_props[i] == 'opengripper' and best_edge_guard_bin[i] == 1:
+
+        if best_node_guard is not None:
+            best_node_guard_pred_list = best_node_guard.strip().split("&")
+            for node_guard_pred in best_node_guard_pred_list:
+                node_guard_pred = node_guard_pred.strip()
+        
+                if node_guard_pred == 'opengripper':
                     gripper_action = 'opengripper'
-                if self.FSA.sorted_props[i] == 'closegripper' and best_edge_guard_bin[i] == 1:
+                if node_guard_pred == 'closegripper':
                     gripper_action = 'closegripper'
                      
-                if 'moveto' in self.FSA.sorted_props[i] and best_edge_guard_bin[i] == 1:
-                    ee_goal = self.FSA.sorted_props[i]
+                if 'moveto' in node_guard_pred and node_guard_pred[0] != "~":
+                    ee_goal = node_guard_pred
 
-                if self.FSA.sorted_props[i] == 'flipswitchon' and best_edge_guard_bin[i] == 1:
+                if node_guard_pred == 'flipswitchon':
                     other_action = "flipswitchon"
                              
-                if self.FSA.sorted_props[i] == 'applycondiment' and best_edge_guard_bin[i] == 1:
+                if node_guard_pred == 'applycondiment':
                     other_action = 'applycondiment'
                   
         node_action = dict(ee_goal=ee_goal, gripper_action=gripper_action, other_action=other_action)

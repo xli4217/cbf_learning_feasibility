@@ -187,17 +187,14 @@ class FsaReward(object):
         out_edges = self.g.out_edges(Q, data=True)
         next_Q = Q
 
-        non_accept_node_guard_bin_list = []
         non_accept_node_rob_list = []
         non_accept_node_guard_list = []
         non_accept_node_list = []
 
-        accept_node_guard_bin_list = []
         accept_node_rob_list = []
         accept_node_guard_list = []
         accept_node_list = []
 
-        trap_node_guard_bin_list = []
         trap_node_rob_list = []
         trap_node_guard_list = []
         trap_node_list = []
@@ -208,7 +205,7 @@ class FsaReward(object):
             print("------")
             
         for edge in out_edges:
-            processed_edge_bin, edge_total_rob, edge_action_rob, edge_guard = self.get_edge_guard_bin_and_edge_rob_numerical(edge, s, a, sp)              
+            edge_total_rob, edge_guard = self.get_edge_guard_bin_and_edge_rob_symbolic(edge, s, a, sp)
             if edge[1] != 'trap':
                 process = False
                 if 'accept' not in Q:
@@ -222,168 +219,130 @@ class FsaReward(object):
                     #### edge robustness ####
                     if 'accept' in edge[1]:
                         accept_node_rob_list.append(edge_total_rob)
-                        accept_node_guard_bin_list.append(processed_edge_bin)
-                        accept_node_guard_list.append(edge[2]['guard'])
+                        accept_node_guard_list.append(edge_guard)
                         accept_node_list.append(edge[1])
                     else:
                         non_accept_node_rob_list.append(edge_total_rob)
-                        non_accept_node_guard_bin_list.append(processed_edge_bin)
-                        non_accept_node_guard_list.append(edge[2]['guard'])
+                        non_accept_node_guard_list.append(edge_guard)
                         non_accept_node_list.append(edge[1])
             else:
                 trap_node_rob_list.append(edge_total_rob)
-                trap_node_guard_bin_list.append(processed_edge_bin)
-                trap_node_guard_list.append(edge[2]['guard'])
+                trap_node_guard_list.append(edge_guard)
                 trap_node_list.append(edge[1])
              
                         
             if self.debug or debug:
                 print("next_node:", edge[1])
-                print('edge guard:', edge[2]['guard'])
-                if edge[1] == 'trap':
-                    print(processed_edge_bin)
-                    print(edge[2]['input'])
+                print('edge guard:', edge_guard)
                 print("edge total rob:",edge_total_rob)
                 print('----------')
 
             # sometimes self edge and outgoing edge can activate at the same time, why?
             # sometimes directly goes into trap    
             #if edge_total_rob > 0 and edge[1] != Q and edge[1] != 'trap':
-            if edge_total_rob > 0 and edge[1] != Q and edge[1] != 'trap':     
+            if edge_total_rob > 0 and edge[1] != Q:     
                 next_Q = edge[1]
-
+    
         DQ_nontrap = 0
         DQ_trap = 0        
         #### For non-trap outgoing edges ####
         if len(accept_node_rob_list) > 0:
             node_rob_list = accept_node_rob_list
-            node_guard_bin_list = accept_node_guard_bin_list
             node_guard_list = accept_node_guard_list
             node_list = accept_node_list
         else:
             node_rob_list = non_accept_node_rob_list
-            node_guard_bin_list = non_accept_node_guard_bin_list
             node_guard_list = non_accept_node_guard_list
             node_list = non_accept_node_list
 
         if len(node_rob_list) > 0:
-            best_node_guard_bin = node_guard_bin_list[np.argmax(np.array(node_rob_list))]
+            best_node_guard = node_guard_list[np.argmax(np.array(node_rob_list))]
             DQ_nontrap = np.max(np.array(node_rob_list))
             if self.debug or debug:
                 print("*********")
                 print("Final Lists")
                 print("node_ list:", node_list)
                 print("node_rob_list:", node_rob_list)
-                print("node_bin_list:", node_guard_bin_list)
-                # print("node_guard_list:",node_guard_list)
                 
                 print("********")
                 print("chosen next Q:{}".format(next_Q))
                 print("chosen edge: ", (Q, node_list[np.argmax(np.array(node_rob_list))]))
                 print("chosen guard: {}".format(str(node_guard_list[np.argmax(np.array(node_rob_list))])))
                 print("sorted props:", self.sorted_props)
-                print("chosen node guard bin: ", best_node_guard_bin)
                 print("========================")
          
         else:
             # this happens at the acceptance node of an FSA
-            best_node_guard_bin = None
+            best_node_guard = None
             DQ_nontrap = 0
             
         #### For trap outgoing edge ####
         if len(trap_node_rob_list) > 0: # there is a connection to trap state
-            trap_node_guard_bin = trap_node_guard_bin_list[0]
+            trap_node_guard = trap_node_guard_list[0]
             DQ_trap = trap_node_rob_list[0]
             if self.debug or debug:
-                print("*********")
-                print("trap_node_guard_bin_list:", trap_node_guard_bin_list)
+                print("trap_node_guard_list:", trap_node_guard_list)
         else:
-            trap_node_guard_bin = None
+            trap_node_guard = None
             DQ_trap = 0
             
-        return next_Q, DQ_nontrap, DQ_trap, best_node_guard_bin, trap_node_guard_bin
+        return next_Q, DQ_nontrap, DQ_trap, best_node_guard, trap_node_guard
                 
 
+    def get_guard_robustness(self, guard, prop_robustness_dict):
+        '''
+        guard is a string of form "a & b & ~c" or "(a & b & ~c)" with only conjunction
+        '''
+
+        guard = guard.strip()
+        if guard[0] == "(":
+            guard = guard[1:-1]
+            
+            
+        guard_pred_list = guard.split("&")
+        
+        guard_pred_rob_list = []
+        for pred in guard_pred_list:
+            pred = pred.strip()
+            if pred[0] == "~":
+                guard_pred_rob_list.append(-prop_robustness_dict[pred[1:]])
+            else:
+                guard_pred_rob_list.append(prop_robustness_dict[pred])
+
+        return guard, min(guard_pred_rob_list)
+                
     def get_edge_guard_bin_and_edge_rob_symbolic(self, edge, s, a=None, sp=None):
 
         #### get robustness of all predicates at current state ####
         prop_robustness = {}
         for prop in self.sorted_props:
             rob, action = self.predicate_reward_dict[prop](s, a=None, sp=None)
-            prop_robustness.update(prop=rob)
+            prop_robustness[prop] = rob            
+        ####
             
-        #### 
         input_list = list(edge[2]['input'])
-        simplified_pos_dnf_form = str(SOPform(self.sorted_props_sympy, input_list))
+        simplified_pos_dnf_form = str(SOPform(self.sorted_props_sympy[::-1], input_list))
+
+        # if edge[0] == 'T0_S4' and edge[1] == 'T0_S5':
+        #     print(simplified_pos_dnf_form)
+        #     print(edge[2]['guard'])
+        #     print("----")
+            
         simp_pos_dnf_split = simplified_pos_dnf_form.split('|')
 
-        if len(simp_pos_dnf_split) == 1:
-            edge_guard = simp_pos_dnf_split[0]
+        edge_dnf_rob_list = []
+        processed_edge_guard_list = []
+        for edge_guard  in simp_pos_dnf_split:
+            edge_guard, edge_dnf_rob = self.get_guard_robustness(edge_guard, prop_robustness)
+            edge_dnf_rob_list.append(edge_dnf_rob)
+            processed_edge_guard_list.append(edge_guard)
             
-        print(simp_pos_dnf_split)
-
-        edge_action_rob = 0        
-
-        return processed_edge_bin, edge_total_rob, edge_action_rob, edge_guard
-        
-    def get_edge_guard_bin_and_edge_rob_numerical(self, edge, s, a=None, sp=None):
-        ### this has problems
-        '''input_list gives a set of predicates in the form {2, 4, 5} which are to be translated to binary, the resulting predicate is the disjunction of the list'''
-    
-
-        self.get_edge_guard_bin_and_edge_rob_symbolic(edge, s, a, sp)
-        
-        input_list = edge[2]["input"]
-        edge_bin_list = []
-        for input_pred in input_list:
-            b = self.to_binary(input_pred) # e.g. 10011, 00111
-            bin_string = str(b)[::-1]
-            bin_int = [int(i) for i in bin_string]
-            edge_bin_list.append(bin_int)
-
-        edge_bin_list = np.array(edge_bin_list)
-
-        #### calculate disjunction of edge dnfs
-        processed_edge_bin = []
-        for j in range(edge_bin_list.shape[1]):
-            if np.all(edge_bin_list[:,j] == 0):
-                processed_edge_bin.append(0)
-            elif np.all(edge_bin_list[:,j] == 1):
-                processed_edge_bin.append(1)
-            else:
-                processed_edge_bin.append(-1)
-
-        # in the form [0,1,1,-1], -1 means doesn't matter
-        processed_edge_bin = np.array(processed_edge_bin)
-
-        
-        total_rob_list = []
-        action_rob_list = [] # used for action selection
-        for i in range(len(processed_edge_bin)):
-            #### calculate robustness ####
-            processed_edge_dnf_rob, action = self.predicate_reward_dict[self.sorted_props[i]](s, a=None, sp=None)
-            if processed_edge_bin[i] == 0:
-                if processed_edge_dnf_rob != 0: # TODO: Fix this 0 situation, here assume 0 means violation
-                    processed_edge_dnf_rob = -processed_edge_dnf_rob
-                else:
-                    processed_edge_dnf_rob = -1.0
-            elif processed_edge_bin[i] == 1:
-                processed_edge_dnf_rob = processed_edge_dnf_rob
-            elif processed_edge_bin[i] == -1:
-                processed_edge_dnf_rob = 100000
-            else:
-                raise ValueError('invalide processed_edge_bin')
+        edge_total_rob = max(edge_dnf_rob_list)
+        edge_guard = processed_edge_guard_list[np.argmax(np.array(edge_dnf_rob_list))]
             
-            total_rob_list.append(processed_edge_dnf_rob)
-            if action == 'action':
-                action_rob_list.append(processed_edge_dnf_rob)
-            
-        edge_total_rob = min(total_rob_list)
-        edge_action_rob = min(action_rob_list)
-
-        edge_guard = ""
         
-        return processed_edge_bin, edge_total_rob, edge_action_rob, edge_guard
+        return edge_total_rob, edge_guard
+        
         
     def to_binary(self, num):
         '''
@@ -466,3 +425,5 @@ class FsaReward(object):
         if self.logger is not None:
             self.logger.log_text("aut_states_dict: {}".format(self.aut_states_dict))
        
+
+
