@@ -104,7 +104,6 @@ class LearningEnv(object):
             self.update_all_info()
             self.base_env.synchronous_trigger()
         
-        
     def get_info(self):
         return self.all_info
         
@@ -267,24 +266,6 @@ if __name__ == "__main__":
             'n_angular_dmp': 3
         }
     }
-
-    # qp_gen = {
-    #     'type': QPcontroller,
-    #     'config': {}
-    # }
-    
-    # config = default_config
-    # config['action_space'] = {'type': 'float', 'shape':(6, ), 'upper_bound': np.ones(6), 'lower_bound': -np.ones(6)}
-    # config['WPGenerator'] = dmp_gen
-    # config['BaseEnv']['config']['particle_test'] = True
-    
-    # cls = LearningEnv(config=config)
-    
-    # curr_pos, curr_quat = cls.base_env.get_target_pose()
-    # goal_pos, goal_quat = cls.base_env.get_goal_pose()
-    # goal = np.concatenate([goal_pos, goal_quat])
-    # cls.set_goal_pose(goal)
-
 
     #### test nn forcing function ####
     from rl_pipeline.algo_devel.ppo.pytorch.policy.mlp_policy import PytorchMlp

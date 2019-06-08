@@ -19,6 +19,7 @@ from utils.utils import *
 default_config = {
     "robot": 'jaco',
     "rate": 10,
+    "env": "ros",
     "init_node": False,
     "damping": None,
     "natural_freq": None,
@@ -41,17 +42,22 @@ class RobotCookingInterface(object):
         if self.RobotCookingInterface_config['init_node']:
             rospy.init_node("robot_cooking", anonymous=False)
             rospy.on_shutdown(self.cleanup)
-        
+
         self.driver_utils = self.RobotCookingInterface_config['DriverUtils']['type'](self.RobotCookingInterface_config['DriverUtils']['config'])
-        self.moveit_utils = self.RobotCookingInterface_config['MoveitUtils']['type'](self.RobotCookingInterface_config['MoveitUtils']['config'])
+
+        self.moveit_utils = None
+        if self.RobotCookingInterface_config['MoveitUtils']['type'] is not None:
+            self.moveit_utils = self.RobotCookingInterface_config['MoveitUtils']['type'](self.RobotCookingInterface_config['MoveitUtils']['config'])
 
         self.robot_name = self.RobotCookingInterface_config['robot']
         self.rate = rospy.Rate(self.RobotCookingInterface_config['rate'])
-                    
-        #### Initialize tf ####
-        self.tf_broadcaster = tf2_ros.TransformBroadcaster()
-        self.tf_buffer = tf2_ros.Buffer()
-        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
+
+
+        if self.RobotCookingInterface_config['env'] == 'ros':
+            #### Initialize tf ####
+            self.tf_broadcaster = tf2_ros.TransformBroadcaster()
+            self.tf_buffer = tf2_ros.Buffer()
+            self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
 
         self.last_quat_distance = None
 
@@ -170,21 +176,24 @@ class RobotCookingInterface(object):
         '''
         positive is on, negative is off
         '''
-        
-        ## this is relative to grill
-        switch_pose_tf_stamped = self.tf_buffer.lookup_transform('grill_mapped', 'switch_mapped', rospy.Time())
-        switch_pose = np.array([
-            switch_pose_tf_stamped.transform.translation.x,
-            switch_pose_tf_stamped.transform.translation.y,
-            switch_pose_tf_stamped.transform.translation.z,
-            switch_pose_tf_stamped.transform.rotation.x,
-            switch_pose_tf_stamped.transform.rotation.y,
-            switch_pose_tf_stamped.transform.rotation.z,
-            switch_pose_tf_stamped.transform.rotation.w,
-        ])
 
-        switch_angle_rel_grill = tf.euler_from_quaternion(switch_pose[3:])[1]
+        if self.RobotCookingInterface_config['env'] == 'ros':
+            ## this is relative to grill
+            switch_pose_tf_stamped = self.tf_buffer.lookup_transform('grill_mapped', 'switch_mapped', rospy.Time())
+            switch_pose = np.array([
+                switch_pose_tf_stamped.transform.translation.x,
+                switch_pose_tf_stamped.transform.translation.y,
+                switch_pose_tf_stamped.transform.translation.z,
+                switch_pose_tf_stamped.transform.rotation.x,
+                switch_pose_tf_stamped.transform.rotation.y,
+                switch_pose_tf_stamped.transform.rotation.z,
+                switch_pose_tf_stamped.transform.rotation.w,
+            ])
 
+            switch_angle_rel_grill = tf.euler_from_quaternion(switch_pose[3:])[1]
+        else:
+            switch_angle_rel_grill = self.driver_utils.get_switch_angle()
+            
         # print(switch_angle_rel_grill)
         if switch_angle_rel_grill > 0.15:
             return 10.

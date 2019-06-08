@@ -26,25 +26,28 @@ if get_fsa:
 
     spec = spec_without_serve
 
+    # spec = 'G ((inservezone -> X F moveto) && (!inservezone -> X !moveto))'
     
+    serve = "F((moveto_bunplate && opengripper) && X F " + \
+                "(closegripper && X F " + \
+                "((moveto_serveplate && closegripper) && X F " + \
+                "(opengripper && X F "+ \
+                "(moveto_world_baxterneutral " + \
+                ")))))" #&& (!collide U moveto_world_baxterneutral)"
+
+
+    test = "F(a && X F b) && G(!c)"
     
     serve_task_KB = "G (!(moveto_serveplate && moveto_bunplate)) && " + \
-                    "G (!(opengripper && closegripper)) && " + \
-                    "G (!(moveto_serveplate && moveto_world_baxterneutral)) && " + \
-                    "G (!(moveto_bunplate && moveto_world_baxterneutral)) && " + \
-                    "G (!(moveto_serveplate && moveto_bunplate && moveto_world_baxterneutral))"
+                        "G (!(moveto_serveplate && moveto_world_baxterneutral)) && " + \
+                        "G (!(moveto_bunplate && moveto_world_baxterneutral)) && " + \
+                        "G (!(moveto_serveplate && moveto_bunplate && moveto_word_baxterneutral)) && " + \
+                        "G (!(opengripper && closegripper))"
 
-
-    serve = "(moveto_bunplate && opengripper) && X F " + \
-            "(closegripper && X F " + \
-            "((moveto_serveplate && closegripper) && X F " + \
-            "(opengripper  && X F "+ \
-            "(moveto_world_baxterneutral " + \
-            "))))"
-
-    
-    spec = "F" +  serve + "&& (! " + serve + " U inservezone_serveplate)" + " && " + serve_task_KB
-    
+    # spec = "G (( inservezone_serveplate -> X F (" + serve + ")) && (!inservezone_serveplate -> X F moveto_world_baxterneutral))" + " && " + serve_task_KB
+    #spec = "(((r && c) -> X F pp) && ((! r || ! c) -> X (F pp && (!pp U (r && c))))) && G(!col)"
+    # spec = "(F pp && (!pp U (r && c)))"
+    spec = serve + "&&" + "G(! (opengripper && closegripper))"
     
     #### add task specific conditions and constraints ####
     conditions = ['(! serve U apply_condiment)']

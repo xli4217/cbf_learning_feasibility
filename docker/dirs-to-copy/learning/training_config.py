@@ -21,22 +21,14 @@ from rl_pipeline.preprocessor.running_average import RunningAverage
 # Config to rl base runner config #
 ###################################
 def construct_rl_base_runner_config(restore_runner_dir=None,
-                                    dmp_action=False,
-                                    clf_action=False,
-                                    cbf_action=False,
-                                    rl_action=False,
                                     # environment config
                                     env_name='vrep',
-                                    task='1.1',
-                                    dist_th=0.03,
+                                    task='makehotdog',
                                     fsa_save_dir="",
                                     fsa_name="fsa",
                                     headless=False,
-                                    softmax=False,
-                                    beta=5.0,
-                                    tl_with_mdp_reward=False,
-                                    tl_with_mdp_done=False,
-                                    topk=2,
+                                    robot='jaco',
+                                    components={'mdp': True, 'fsa': True, 'cbf': False, 'dmp': False},
                                     # reset config
                                     reset_config=None,
                                     # critic_config
@@ -77,27 +69,16 @@ def construct_rl_base_runner_config(restore_runner_dir=None,
                                     cmd_log=""):
 
     
-    #### tmp ####
-    channel_width = 0.4
     
     #### Environment ####
     from experiment_config import ExperimentConfig
     exp_config = ExperimentConfig(config={'env_name': env_name,
+                                          'robot': robot,
+                                          'components': components,
                                           'task': task,
-                                          'tl_with_mdp_reward': tl_with_mdp_reward,
-                                          'tl_with_mdp_done': tl_with_mdp_done,
-                                          'dist_th': dist_th,
                                           'fsa_save_dir': fsa_save_dir,
                                           'fsa_name': fsa_name,
-                                          'headless':headless,
-                                          'dmp': dmp_action,
-                                          'clf': True,
-                                          'softmax': softmax,
-                                          'beta': beta,
-                                          'other': {
-                                              'channel_width': channel_width,
-                                              'topk': topk
-                                          }})
+                                          'headless':headless})
     
     process_rewards = exp_config.process_rewards    
     Environment = exp_config.Environment
@@ -217,10 +198,6 @@ def construct_rl_experiment_config(experiment_root_dir="",
                                    exp_name='test',
                                    experiment_mode='train',
                                    HyperparameterTuner=None,
-                                   dmp_action=False,
-                                   clf_action=False,
-                                   cbf_action=False,
-                                   rl_action=False,
                                    # runner_config
                                    max_itr=10000,
                                    # runner_config -> rl_base_runner_config
@@ -231,14 +208,10 @@ def construct_rl_experiment_config(experiment_root_dir="",
                                    env_name='vrep',
                                    task='gotogoal',
                                    headless=False,
-                                   dist_th=1.,
                                    fsa_save_dir="",
                                    fsa_name="fsa",
-                                   softmax=False,
-                                   beta=5.0,
-                                   tl_with_mdp_reward=False,
-                                   tl_with_mdp_done=False,
-                                   topk=2,
+                                   robot='jaco',
+                                   components={'mdp': True, 'fsa': True, 'cbf': False, 'dmp': False},
                                    # runner_config -> rl_base_runner_config -> agent_config
                                    agent='sac',
                                    # -- agent common
@@ -299,22 +272,14 @@ def construct_rl_experiment_config(experiment_root_dir="",
                 'BaseRunner':{
                     'type': base_runner,
                     'config': construct_rl_base_runner_config(restore_runner_dir=restore_runner_dir,
-                                                              dmp_action=dmp_action,
-                                                              clf_action=clf_action,
-                                                              cbf_action=cbf_action,
-                                                              rl_action=rl_action,
                                                               # env config
                                                               env_name=env_name,
                                                               headless=headless,
                                                               task=task,
-                                                              dist_th=dist_th,
                                                               fsa_save_dir=fsa_save_dir,
                                                               fsa_name=fsa_name,
-                                                              softmax=softmax,
-                                                              beta=beta,
-                                                              tl_with_mdp_reward=tl_with_mdp_reward,
-                                                              tl_with_mdp_done=tl_with_mdp_done,
-                                                              topk=topk,
+                                                              robot=robot,
+                                                              components=components,
                                                               # agent_config
                                                               agent=agent,
                                                               # -- common
@@ -382,19 +347,15 @@ def construct_rl_experiment_config(experiment_root_dir="",
 def construct_deployer_config(agent='ppo',
                               nb_trial_runs=10,
                               sampler_traj=True,
-                              dmp_action=False,
-                              clf_action=False,
-                              cbf_action=False,
-                              rl_action=False,
                               # env_config
                               env_name='',
                               env_from_config=True,
-                              task=2.1,
-                              dist_th=0.05,
+                              task='makehotdog',
                               fsa_save_dir=os.getcwd(),
                               fsa_name='fsa',
                               headless=False,
-                              topk=2,
+                              robot='jaco',
+                              components={'mdp': True, 'fsa': True, 'cbf': False, 'dmp': False},
                               # policy config
                               exp_name='test',
                               hyperparam_dir='seed0',
@@ -418,15 +379,11 @@ def construct_deployer_config(agent='ppo',
         'exp_config': {
             'env_name': env_name,
             'task': task,
-            'dist_th': dist_th,
             'fsa_save_dir': fsa_save_dir,
             'fsa_name': fsa_name,
             "headless":headless,
-            'dmp': dmp_action,
-            'other': {
-                'channel_width': 0.4,
-                'topk': topk
-            }
+            'robot': robot,
+            'components': components,
         },
         'experiment_name': exp_name,
         'hyperparam_dir': hyperparam_dir,
@@ -464,24 +421,16 @@ default_args = {
     #### rl_config -> run_one_experiment_config ####
     'restore_runner_dir': None,
     'max_itr': 1000,
-    'dmp_action': False,
-    'clf_action': False,
-    'cbf_action': False,
-    'rl_action': False,
     #### environment config ####
     # this can be 'vrep_baxter', 'baxter'
     'env_name': 'vrep',
     # this can be 'gotogoal', 'robustness', 'flat', 'hierarchical'
-    'task': 'flat',
-    'dist_th': 0.05,
+    'task': 'makehotdog',
     'headless': False,
     'fsa_save_dir': os.path.join(os.environ['LEARNING_PATH'], 'learning', 'figures'),
     'fsa_name': "fsa",
-    'softmax': False,
-    'beta': 5.0,
-    'tl_with_mdp_reward': False,
-    'tl_with_mdp_done': False,
-    'topk': 2,
+    'robot': 'jaco',
+    'components':{'mdp': True, 'fsa': True, 'cbf': False, 'dmp': False},
     ##### replay buffer config ####
     'per_alpha': 0.,
     'per_beta0': 0.4,
@@ -576,22 +525,14 @@ def construct_experiment_config(experiment_root_dir=default_args['experiment_roo
                                 #### run_one_experiment_config #### 
                                 restore_runner_dir=default_args['restore_runner_dir'],
                                 max_itr=default_args['max_itr'],
-                                dmp_action=default_args['dmp_action'],
-                                clf_action=default_args['clf_action'],
-                                cbf_action=default_args['cbf_action'],
-                                rl_action=default_args['rl_action'],
                                 #### env config ####
                                 env_name=default_args['env_name'],
                                 headless=default_args['headless'],
                                 task=default_args['task'],
-                                dist_th=default_args['dist_th'],
                                 fsa_save_dir=default_args['fsa_save_dir'],
                                 fsa_name=default_args['fsa_name'],
-                                softmax=default_args['softmax'],
-                                beta=default_args['beta'],
-                                tl_with_mdp_reward=default_args['tl_with_mdp_reward'],
-                                tl_with_mdp_done=default_args['tl_with_mdp_done'],
-                                topk=default_args['topk'],
+                                robot=default_args['robot'],
+                                components=default_args['components'],
                                 #### agent config ####
                                 agent=default_args['agent'],
                                 # -- common configs
@@ -656,10 +597,6 @@ def construct_experiment_config(experiment_root_dir=default_args['experiment_roo
                 'rl_run_one_experiment_config': construct_rl_experiment_config(experiment_root_dir=experiment_root_dir,
                                                                                exp_name=exp_name,
                                                                                experiment_mode=mode,
-                                                                               dmp_action=dmp_action,
-                                                                               clf_action=clf_action,
-                                                                               cbf_action=cbf_action,
-                                                                               rl_action=rl_action,
                                                                                #### runner_config ####
                                                                                max_itr=max_itr,
                                                                                # runner_config -> rl_base_runner_config
@@ -670,14 +607,10 @@ def construct_experiment_config(experiment_root_dir=default_args['experiment_roo
                                                                                env_name=env_name,
                                                                                headless=headless,
                                                                                task=task,
-                                                                               dist_th=dist_th,
                                                                                fsa_save_dir=fsa_save_dir,
                                                                                fsa_name=fsa_name,
-                                                                               softmax=softmax,
-                                                                               beta=beta,
-                                                                               tl_with_mdp_reward=tl_with_mdp_reward,
-                                                                               tl_with_mdp_done=tl_with_mdp_done,
-                                                                               topk=topk,
+                                                                               robot=robot,
+                                                                               components=components,
                                                                                #### agent_config ####
                                                                                agent=agent,
                                                                                # -- common configs
@@ -722,18 +655,14 @@ def construct_experiment_config(experiment_root_dir=default_args['experiment_roo
             'type': None,
             'config': construct_deployer_config(agent=agent,
                                                 sampler_traj=sampler_traj,
-                                                dmp_action=dmp_action,
-                                                clf_action=clf_action,
-                                                cbf_action=cbf_action,
                                                 # env_config
                                                 env_name=env_name,
                                                 env_from_config=env_from_config,
                                                 task=task,
-                                                dist_th=dist_th,
                                                 fsa_save_dir=fsa_save_dir,
                                                 fsa_name=fsa_name,
-                                                headless=headless,
-                                                topk=topk,
+                                                robot=robot,
+                                                components=components,
                                                 # policy config
                                                 exp_name=exp_name,
                                                 hyperparam_dir=hyperparam_dir,

@@ -43,6 +43,7 @@ default_config = {
         'use_own_pose': False,
         'dt': 0.2
     },
+    # this can be 'clf', 'cbf', 'clf_cbf'
     'translation_gen': 'clf_cbf',
     'orientation_gen': 'dmp'
 }
@@ -76,7 +77,21 @@ class TrajectoryGenerator(object):
             y_trans = dmp_y[:3]
         elif translation_gen == 'clf_cbf':
             #### this currently only includes translation
-            clf_cbf_ddy, clf_cbf_dy, clf_cbf_y = self.clf_cbf_gen.get_next_wp(action, curr_pose, curr_vel, obs_info)
+            clf_cbf_ddy, clf_cbf_dy, clf_cbf_y = self.clf_cbf_gen.get_next_wp(action, curr_pose, curr_vel, obs_info, clf=True, cbf=True)
+
+            ddy_trans = clf_cbf_ddy[:3]
+            dy_trans = clf_cbf_dy[:3]
+            y_trans = clf_cbf_y[:3]
+        elif translation_gen == 'clf':
+            #### this currently only includes translation
+            clf_cbf_ddy, clf_cbf_dy, clf_cbf_y = self.clf_cbf_gen.get_next_wp(action, curr_pose, curr_vel, obs_info, clf=True, cbf=False)
+
+            ddy_trans = clf_cbf_ddy[:3]
+            dy_trans = clf_cbf_dy[:3]
+            y_trans = clf_cbf_y[:3]
+        elif translation_gen == 'cbf':
+            #### this currently only includes translation
+            clf_cbf_ddy, clf_cbf_dy, clf_cbf_y = self.clf_cbf_gen.get_next_wp(action, curr_pose, curr_vel, obs_info, clf=False, cbf=True)
 
             ddy_trans = clf_cbf_ddy[:3]
             dy_trans = clf_cbf_dy[:3]
@@ -91,13 +106,6 @@ class TrajectoryGenerator(object):
             ddy_ori = dmp_ddy[3:]
             dy_ori = dmp_dy[3:]
             y_ori = dmp_y[3:]
-        elif orientation_gen == 'clf_cbf':
-            #### this currently only includes translation
-            clf_cbf_ddy, clf_cbf_dy, clf_cbf_y = self.clf_cbf_gen.get_next_wp(action, curr_pose, curr_vel, obs_info)
-
-            ddy_ori = clf_cbf_ddy[3:]
-            dy_ori = clf_cbf_dy[3:]
-            y_ori = clf_cbf_y[3:]
         else:
             raise ValueError('trajectory generator not supported')
 

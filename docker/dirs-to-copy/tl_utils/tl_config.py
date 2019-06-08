@@ -75,6 +75,8 @@ class TLConfig(object):
             'condimentapplied': [44]
         }
 
+        self.obs_dim = 45
+
         ##############
         # TL Related #
         ##############
@@ -95,7 +97,7 @@ class TLConfig(object):
             'moveto_bunplate_relativeplateapplycondimentpre' : lambda s, a=None, sp=None: self.moveto_robustness(s,a,sp, 'bunplate', 'relativeplateapplycondimentpre'),
             'moveto_bunplate_relativeplateapplycondimentpost' : lambda s, a=None, sp=None: self.moveto_robustness(s,a,sp, 'bunplate', 'relativeplateapplycondimentpost'),
             'applycondiment': lambda s, a=None, sp=None: self.apply_condiment_robustness(s, a, sp),
-            'flipswitchon': lambda s, a=None, sp=None: self.switch_robustness(s,a,sp, sim_or_real='sim'),
+            'flipswitchon': lambda s, a=None, sp=None: self.switch_robustness(s,a,sp),
             'closegripper': lambda s, a=None, sp=None:  self.gripper_robustness(s,a,sp, 'close'),
             'opengripper': lambda s, a=None, sp=None:  self.gripper_robustness(s,a,sp,'open'),
             'inservezone_serveplate': lambda s, a=None, sp=None:  self.in_serve_zone_robustness(s,a,sp,'serveplate')
@@ -103,7 +105,7 @@ class TLConfig(object):
 
         
     def construct_skill_state(self, skill_arg):
-        state = np.zeros(45)
+        state = np.zeros(self.obs_dim)
         
         state[self.STATE_IDX_MAP['end_effector_pose'][0]:self.STATE_IDX_MAP['end_effector_pose'][1]] = skill_arg['curr_pose']
         state[self.STATE_IDX_MAP['gripper_state'][0]] = skill_arg['gripper_state']
@@ -149,23 +151,13 @@ class TLConfig(object):
         return (rob, 'action')
         
 
-    def switch_robustness(self, s=None, a=None, sp=None, sim_or_real='sim'):
+    def switch_robustness(self, s=None, a=None, sp=None):
         switch_on = s[self.state_idx_map['switchon']]
         if switch_on > 0:
             return (100, 'nonaction')
         else:
             return (-100, 'nonaction')
-
-    # if sim_or_real == 'sim':
-    #     if switch_angle < 1.:
-    #         return 0.1
-    #     else:
-    #         return -0.1
-    # elif sim_or_real == 'real':
-    #     return -0.1
-    # else:
-    #     raise ValueError('mode not supported')
-    
+  
     def apply_condiment_robustness(self, s, a=None, sp=None):
         '''
         0.1 if true, -0.1 if false

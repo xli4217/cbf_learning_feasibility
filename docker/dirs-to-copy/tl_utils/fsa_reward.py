@@ -137,7 +137,6 @@ class FsaReward(object):
              sp=None,
              repeat=False,
              phi_b_truth=None,
-             
              **kwargs):
         '''
         get reward at current step

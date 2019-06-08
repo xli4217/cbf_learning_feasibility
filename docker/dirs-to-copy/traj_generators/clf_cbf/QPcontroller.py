@@ -47,11 +47,11 @@ class QPcontroller:
     def set_goal(self, goal):
         self.goal = goal
 
-    def get_next_wp(self, action=None, curr_pose=None, curr_vel=None, obs_info={}):
-        target_accel, target_vel, target_pose = self.generate_control(curr_pose[:3], obs_info)
+    def get_next_wp(self, action=None, curr_pose=None, curr_vel=None, obs_info={}, clf=True, cbf=True):
+        target_accel, target_vel, target_pose = self.generate_control(curr_pose[:3], obs_info, clf, cbf)
         return np.concatenate([target_accel, np.zeros(3)]), np.concatenate([target_vel, np.zeros(3)]), np.concatenate([target_pose, np.array([0,0,0,1])])
 
-    def generate_control(self,x_current, obs_info={}):
+    def generate_control(self,x_current, obs_info={}, clf=True, cbf=True):
         self.m.remove(self.m.getConstrs())
 
         if self.QPcontroller_config['use_own_pose']:
@@ -69,13 +69,16 @@ class QPcontroller:
 
                 # Table Constraint
                 h_table = (x_current[2] - table_height)
-                self.m.addConstr(self.u3 + self.k_cbf*h_table >= 0, "CBF_Constraint_for_table")
+                if cbf:
+                    self.m.addConstr(self.u3 + self.k_cbf*h_table >= 0, "CBF_Constraint_for_table")
             else:
                 pos = obs_info[i]['position']
                 rad = obs_info[i]['radius']
                 h = (x_current[0]-pos[0])**2 + (x_current[1]-pos[1])**2 + (x_current[2]-pos[2])**2 - rad**2
-                self.m.addConstr(2*(x_current[0]-pos[0])*self.u1 + 2*(x_current[1]-pos[1])*self.u2 + 2*(x_current[2]-pos[2])*self.u3 + self.k_cbf*h >= 0, "CBF_Constraint_"+obs_info[i]['name'])
-                # self.m.addConstr(2*(x_current[0]-pos[0])*self.u1 + 2*(x_current[1]-pos[1])*self.u2 + 2*(x_current[2]-pos[2])*self.u3 + h**0.3*h >= 0, "CBF_Constraint_"+obs_info[i]['name'])
+
+                if cbf:
+                    self.m.addConstr(2*(x_current[0]-pos[0])*self.u1 + 2*(x_current[1]-pos[1])*self.u2 + 2*(x_current[2]-pos[2])*self.u3 + self.k_cbf*h >= 0, "CBF_Constraint_"+obs_info[i]['name'])
+                    # self.m.addConstr(2*(x_current[0]-pos[0])*self.u1 + 2*(x_current[1]-pos[1])*self.u2 + 2*(x_current[2]-pos[2])*self.u3 + h**0.3*h >= 0, "CBF_Constraint_"+obs_info[i]['name'])
       
         # Initialize Cost Function
         self.cost_func = self.u1*self.u1+self.u2*self.u2+self.u3*self.u3 + self.delta*self.delta
@@ -88,9 +91,10 @@ class QPcontroller:
         partial_V_x2 = (x_current[1]-self.goal[1])
         partial_V_x3 = (x_current[2]-self.goal[2])
 
-        self.m.addConstr(partial_V_x1*self.u1 + partial_V_x2*self.u2 + partial_V_x3*self.u3 + self.epsilon +self.delta <= -20, "Relaxed_CLF_constraint")
+        if clf:
+            self.m.addConstr(partial_V_x1*self.u1 + partial_V_x2*self.u2 + partial_V_x3*self.u3 + self.epsilon +self.delta <= -20, "Relaxed_CLF_constraint")
 
-        # self.m.addConstr(partial_V_x1*self.u1 + partial_V_x2*self.u2 + partial_V_x3*self.u3 + self.epsilon * V - self.delta  <= 0, "Relaxed_CLF_constraint")
+            # self.m.addConstr(partial_V_x1*self.u1 + partial_V_x2*self.u2 + partial_V_x3*self.u3 + self.epsilon * V - self.delta  <= 0, "Relaxed_CLF_constraint")
 
 
         #Stop optimizer from publsihing results to console - remove if desired
