@@ -430,7 +430,7 @@ default_args = {
     'fsa_save_dir': os.path.join(os.environ['LEARNING_PATH'], 'learning', 'figures'),
     'fsa_name': "fsa",
     'robot': 'jaco',
-    'components':{'mdp': True, 'fsa': True, 'cbf': False, 'dmp': False},
+    'components':{'mdp': True, 'fsa': True, 'cbf': False, 'dmp': True},
     ##### replay buffer config ####
     'per_alpha': 0.,
     'per_beta0': 0.4,

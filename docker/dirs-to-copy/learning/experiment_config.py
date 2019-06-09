@@ -391,6 +391,8 @@ class ExperimentConfig(object):
                         "(moveto_world_jaconeutral" + \
                         ")))))))))))"
 
+            task_spec = "F(" + task_spec + ")"
+            
         elif task == 'serve' and self.robot == 'baxter':
             serve = "(moveto_bunplate && opengripper) && X F " + \
                     "(closegripper && X F " + \

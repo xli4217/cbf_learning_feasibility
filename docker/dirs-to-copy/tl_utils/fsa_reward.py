@@ -157,13 +157,13 @@ class FsaReward(object):
         done = self.check_done(Q)
 
         if not done:
-            next_Q, DQ_nontrap, DQ_trap, best_node_guard_bin, trap_node_guard_bin = self.get_node_guard_bin_and_node_rob(Q, s, a, sp, debug=False)
+            next_Q, DQ_nontrap, DQ_trap, best_node_guard, trap_node_guard = self.get_node_guard_bin_and_node_rob(Q, s, a, sp, debug=False)
 
             done = self.check_done(next_Q)
             
             while next_Q != Q and not done:
                 Q = next_Q
-                next_Q, DQ_nontrap, DQ_trap, best_node_guard_bin, trap_node_guard_bin = self.get_node_guard_bin_and_node_rob(Q, s, a, sp, debug=False)
+                next_Q, DQ_nontrap, DQ_trap, best_node_guard, trap_node_guard = self.get_node_guard_bin_and_node_rob(Q, s, a, sp, debug=False)
                 
                 done = self.check_done(next_Q)
                 if done:
@@ -172,15 +172,15 @@ class FsaReward(object):
             next_Q = Q
             DQ_nontrap = 0
             DQ_trap = 0
-            best_node_guard_bin = None
-            trap_node_guard_bin = None
+            best_node_guard = None
+            trap_node_guard = None
             
         if repeat and done and self.aut_type == 'FSA':
             next_Q = self.init_state_name
    
         reward = 0
 
-        return next_Q, reward, (Q, next_Q), done, DQ_nontrap, DQ_trap, best_node_guard_bin, trap_node_guard_bin
+        return next_Q, reward, (Q, next_Q), done, DQ_nontrap, DQ_trap, best_node_guard, trap_node_guard
 
         
     def get_node_guard_bin_and_node_rob(self, Q, s, a, sp, debug=False):

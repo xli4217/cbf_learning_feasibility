@@ -6,6 +6,14 @@ from tl_utils.fsa_reward import FsaReward
 from lomap.classes import Fsa
 from utils.configuration import Configuration
 
+
+#### HACK ####
+from tl_utils.tl_config import TLConfig
+from utils.utils import get_object_goal_pose
+tl_conf = TLConfig(config={'robot':'jaco'})
+OBJECT_RELATIVE_POSE = tl_conf.OBJECT_RELATIVE_POSE
+       
+
 default_config = {
     'fsa_save_dir': os.getcwd(),
     'dot_file_name': 'g',
@@ -103,15 +111,55 @@ class FsaAugmentedEnv(object):
         self.base_env.update_all_info()
         self.all_info.update(self.base_env.get_info())
         self.all_info.update({"Q":self.Q, "Q_next": self.Q_next, 'curr_edge': self.curr_edge, 'Dq': self.Dq})
+
+    def set_node_goal(self, best_node_guard):
+        ee_goal = None
+        gripper_action = None
+        other_action = None
+
+        if best_node_guard is not None:
+            best_node_guard_pred_list = best_node_guard.strip().split("&")
+            for node_guard_pred in best_node_guard_pred_list:
+                node_guard_pred = node_guard_pred.strip()
+        
+                if node_guard_pred == 'opengripper':
+                    gripper_action = 'opengripper'
+                if node_guard_pred == 'closegripper':
+                    gripper_action = 'closegripper'
+                     
+                if 'moveto' in node_guard_pred and node_guard_pred[0] != "~":
+                    ee_goal = node_guard_pred
+
+                if node_guard_pred == 'flipswitchon':
+                    other_action = "flipswitchon"
+                             
+                if node_guard_pred == 'applycondiment':
+                    other_action = 'applycondiment'
+
+        if ee_goal is not None:
+            object_name = ee_goal.split('_')[1]
+            if len(ee_goal.split('_')) == 3:
+                object_rel_pose_name = ee_goal.split('_')[2]
+            else:
+                object_rel_pose_name = object_name
+
+            if object_name == 'world':
+                pt = OBJECT_RELATIVE_POSE[object_rel_pose_name]
+            else:
+                pt = get_object_goal_pose(self.all_info['obj_poses'][object_name], OBJECT_RELATIVE_POSE[object_rel_pose_name])
+            self.base_env.set_goal_pose(pt)
+
         
     def step_fsa(self, mdp_state, action, next_mdp_state):
         Q = self.fsa_reward.get_node_name_from_value(self.q)
 
-        Q_next, fsa_r, curr_edge, fsa_done, DQ_nontrap, DQ_trap, _, _ = self.fsa_reward.step(Q, mdp_state, action, next_mdp_state)
+        Q_next, fsa_r, curr_edge, fsa_done, DQ_nontrap, DQ_trap, best_node_guard, trap_node_guard = self.fsa_reward.step(Q, mdp_state, action, next_mdp_state)
         
         self.q = self.fsa_reward.get_node_value_from_name(Q_next)
         self.fsa_done = fsa_done
         self.fsa_r = fsa_r
+
+        self.set_node_goal(best_node_guard)
         
     def step_base_env(self, actions, **kwargs):
         self.base_env.step(actions)        

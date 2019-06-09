@@ -169,13 +169,16 @@ class LearningEnv(object):
         # clip action
         action = np.clip(action, self.action_space['lower_bound'], self.action_space['upper_bound'])
         
-        curr_pos, curr_quat = self.base_env.get_target_pose()
-        curr_linear_vel, curr_angular_vel = self.base_env.get_target_velocity()
+        curr_pos, curr_quat = self.get_target_pose()
+        curr_linear_vel, curr_angular_vel = self.get_target_velocity()
         curr_angular_vel = curr_angular_vel * np.pi / 180
 
         curr_pose = np.concatenate([curr_pos, curr_quat])
         curr_vel = np.concatenate([curr_linear_vel, curr_angular_vel])
 
+        #### HACK! remove when done debugging #####
+        action = np.zeros(action.shape)
+        
         if len(action) == 3:
             action = np.concatenate([action, np.zeros(3)])
         ddy, dy, y = self.wp_gen.get_next_wp(action, curr_pose, curr_vel)
