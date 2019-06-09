@@ -1,5 +1,6 @@
 import numpy as np
 from lomap.classes import Fsa
+
 from utils.utils import pos_distance, quat_distance, pose_distance, get_object_goal_pose
 from utils import transformations
 import json

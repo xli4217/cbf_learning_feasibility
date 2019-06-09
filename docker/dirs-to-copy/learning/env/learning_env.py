@@ -38,7 +38,9 @@ default_config = {
 }
 
 class LearningEnv(object):
-
+    '''
+    Equivalent of robot_cooking_interface.py
+    '''
     def __init__(self,
                  config={},
                  seed=None,
@@ -107,14 +109,6 @@ class LearningEnv(object):
     def get_info(self):
         return self.all_info
         
-    def set_goal_pose(self, goal):
-        self.goal = goal
-        self.wp_gen.set_goal(goal)
-
-        if len(goal) != 7:
-            goal = np.concatenate([goal, np.array([0,0,0,1])])
-
-        self.base_env.set_goal_pose(goal)
         
     def get_state(self):
         self.update_all_info()
@@ -136,48 +130,31 @@ class LearningEnv(object):
             return False
 
     def update_all_info(self):
-        target_pos, target_quat = self.base_env.get_target_pose()
+        target_pos, target_quat = self.get_target_pose()
+        lv, av = self.get_target_velocity()
         rc = 1
         while rc != 0:
-            rc, button_rel_pos = vrep.simxGetObjectPosition(self.base_env.clientID,
-                                                            self.base_env.object_handles['toaster_button_joint'],
-                                                            self.base_env.object_handles['grill'],
-                                                            vrep.simx_opmode_streaming)
-
-            rc, button_rel_angle = vrep.simxGetObjectOrientation(self.base_env.clientID,
-                                                                 self.base_env.object_handles['toaster_button_joint'],
-                                                                 self.base_env.object_handles['grill'],
-                                                                 vrep.simx_opmode_streaming)
-
-            button_rel_pose = np.concatenate([np.array(button_rel_pos), np.array(button_rel_angle)])
-            
-            rc, button_joint_angle = vrep.simxGetJointPosition(self.base_env.clientID,
-                                                               self.base_env.object_handles['toaster_button_joint'],
-                                                               vrep.simx_opmode_streaming)
-
-
-            rc, button_joint_frame_angle = vrep.simxGetObjectOrientation(self.base_env.clientID,
-                                                                         self.base_env.object_handles['toaster_button'],
-                                                                         self.base_env.object_handles['grill'],
-                                                                         vrep.simx_opmode_streaming)
-
-                   
             rc, button_linear_vel, button_angular_vel = vrep.simxGetObjectVelocity(self.base_env.clientID,
                                                                                    self.base_env.object_handles['toaster_button'],
                                                                                    vrep.simx_opmode_streaming)
 
         button_vel = np.concatenate([np.array(button_linear_vel), np.array(button_angular_vel)])
-
+        curr_pose = np.concatenate([np.array(target_pos), np.array(target_quat)])
+        curr_vel = np.concatenate([np.array(lv), np.array(av)])
+        
         self.all_info = {
             'goal': self.goal,
-            'target_pos': target_pos,
-            'target_quat': target_quat,
-            'button_rel_pose': button_rel_pose,
-            'button_joint_angle': button_joint_angle,
-            'button_joint_frame_angle': button_joint_frame_angle,
             'button_vel': button_vel,
             'sample_range': self.sample_range,
-            'motion_range': self.motion_range
+            'motion_range': self.motion_range,
+            #### skill args ###
+            'curr_pose': curr_pose,
+            'curr_vel': curr_vel,
+            'switchon': self.get_switch_state(),
+            'condimentapplied': -10,
+            'gripper_state': self.get_gripper_state(),
+            'obs_info': self.get_obstacle_info(),
+            'obj_poses': self.get_object_pose()
         }
         
     def step(self, action):
@@ -208,7 +185,48 @@ class LearningEnv(object):
 
         # time.sleep(0.05)
         self.base_env.set_target_pose(y)
-            
+
+
+    ####################
+    # Common Interface #
+    ####################
+
+    def home_robot(self):
+        pass
+
+    def get_target_pose(self):
+        return self.base_env.get_target_pose()
+
+    def get_target_velocity(self):
+        return self.base_env.get_target_velocity()
+        
+    def get_gripper_state(self):
+        return 0
+
+    def get_object_pose(self):
+        return self.base_env.get_object_pose()
+        
+    def get_obstacle_info(self):
+        return self.base_env.get_obstacle_info()
+        
+    def set_goal_pose(self, goal):
+        self.goal = goal
+        self.wp_gen.set_goal(goal)
+
+        if len(goal) != 7:
+            goal = np.concatenate([goal, np.array([0,0,0,1])])
+
+        self.base_env.set_goal_pose(goal)
+
+        
+    def get_switch_state(self):
+        switch_angle_rel_grill = self.base_env.get_switch_state()
+
+        if switch_angle_rel_grill < 0.83:
+            return 10
+        else:
+            return -10
+        
     def set_seed(self, seed):
         np.random.seed(seed)
 
@@ -292,6 +310,7 @@ if __name__ == "__main__":
         # if cls.is_done(state=s):
         #     cls.reset()
         cls.update_all_info()
+        print(cls.all_info)
         cls.base_env.synchronous_trigger()
         # cls.get_reward(state=cls.all_info['target_pos'])
         #print(cls.is_done(state=cls.all_info['target_pos']))

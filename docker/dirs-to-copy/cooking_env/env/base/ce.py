@@ -127,6 +127,7 @@ class CookingEnv(VrepEnvBase):
                                                                          vrep.simx_opmode_streaming)
 
         switch_state = button_joint_frame_angle[2]
+        
         return switch_state
         
         
@@ -256,7 +257,7 @@ class CookingEnv(VrepEnvBase):
         while rct != 0 or np.linalg.norm(target_pos) < 0.001:    
             rct, target_pos = vrep.simxGetObjectPosition(self.clientID, handle, self.world_frame_handle, vrep.simx_opmode_streaming)
             rcq, target_quat = vrep.simxGetObjectQuaternion(self.clientID, handle, self.world_frame_handle, vrep.simx_opmode_streaming)
-            print(target_quat)
+
             
         return np.array(target_pos), np.array(target_quat)
 
@@ -414,10 +415,8 @@ if __name__ == "__main__":
     }
 
     env = CookingEnv(config)
-    env.reset()
 
-    print(env.get_sample_region_info())
-    
+        
     #### test grasping ####
     # target_pos = env.all_info['target_pose'][:3]
     # target_pos[2] -= 0.08

@@ -60,6 +60,10 @@ class TrajectoryGenerator(object):
     def set_goal(self, goal):
         self.dmp_gen.set_goal(goal)
         self.clf_cbf_gen.set_goal(goal)
+
+    def reset(self, pose, vel):
+        self.dmp_gen.reset(pose, vel)
+        self.clf_cbf_gen.reset(pose, vel)
         
     def get_next_wp(self, action, curr_pose, curr_vel, obs_info={}, translation_gen=None, orientation_gen=None):
 
@@ -96,6 +100,14 @@ class TrajectoryGenerator(object):
             ddy_trans = clf_cbf_ddy[:3]
             dy_trans = clf_cbf_dy[:3]
             y_trans = clf_cbf_y[:3]
+        elif translation_gen is None:
+            #### this currently only includes translation
+            clf_cbf_ddy, clf_cbf_dy, clf_cbf_y = self.clf_cbf_gen.get_next_wp(action, curr_pose, curr_vel, obs_info, clf=False, cbf=False)
+
+            ddy_trans = clf_cbf_ddy[:3]
+            dy_trans = clf_cbf_dy[:3]
+            y_trans = clf_cbf_y[:3]
+       
         else:
             raise ValueError('trajectory generator not supported')
 

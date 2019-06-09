@@ -14,7 +14,7 @@ default_config = {
     # this list can contain 'mdp', 'fsa', 'cbf', 'dmp' 
     'components': {'mdp': True, 'fsa': False, 'cbf': False, 'dmp': False},
     # this can be 'makehotdog (for jaco+mdp+fsa)', 'serve (for baxter+mdp+fsa)', 'switchon (for jaco + mdp)'
-    'task': 'makehotdog',
+    'task': 'switchon',
     'fsa_save_dir': os.getcwd(),
     'fsa_name': 'g'
 }
@@ -80,7 +80,7 @@ class ExperimentConfig(object):
         elif self.components['mdp'] and self.components['fsa']:
             if self.ExperimentConfig_config.get('task') == 'makehotdog' and self.robot == 'jaco':
                 task_spec, construct_state, predicate_robustness, obs_dim = self.get_tl_related(task='makehotdog')
-                get_state, get_reward, is_done, state_space, action_space, other = self.makehotdog_task_mdp_config(get_state=construct_state, obs_dim=obs_dim)
+                get_state, get_reward, is_done, state_space, action_space, other = self.makehotdog_task_mdp_config(get_state_fn=construct_state, obs_dim=obs_dim)
       
             elif self.ExperimentConfig_config.get('task') == 'serve' and self.robot == 'baxter':
                 pass
@@ -137,7 +137,7 @@ class ExperimentConfig(object):
             from learning.env.learning_env import LearningEnv
             from cooking_env.env.base.ce import CookingEnv
 
-            self.reset = mdp_config['env_other']['reset']
+            self.reset = mdp_config['other']['reset']
         
             self.mdp_env_type = LearningEnv
             self.mdp_env_config = {
@@ -147,7 +147,7 @@ class ExperimentConfig(object):
                 "action_space": mdp_config['action_space'],
                 "get_state": mdp_config['get_state'],
                 "get_reward": mdp_config['get_reward'],
-                "is_done": self.is_done,
+                "is_done": mdp_config['is_done'],
                 "get_info": None,
                 #### class specific ####
                 "WPGenerator": {
@@ -170,9 +170,9 @@ class ExperimentConfig(object):
         else:
             raise ValueError('unsupported environment')
 
-        return mdp_env_type, mdp_env_config
+        return self.mdp_env_type, self.mdp_env_config
 
-    def construct_traj_generator(self, tranlation_gen="clf_cbf", orientation_gen='dmp'):
+    def construct_traj_generator(self, translation_gen="clf_cbf", orientation_gen='dmp'):
         from traj_generators.trajectory_generator import TrajectoryGenerator
 
         config =  {
@@ -213,7 +213,7 @@ class ExperimentConfig(object):
                 'dt': 0.015,
                 'log_dir': os.path.join(os.environ['LEARNING_PATH'], 'execution', 'log')
             },
-            'translation_gen': tranlation_gen,
+            'translation_gen': translation_gen,
             'orientation_gen': orientation_gen
         }
 
@@ -251,13 +251,13 @@ class ExperimentConfig(object):
 
    
         
-    def makehotdog_task_mdp_config(self, get_state=None, obs_dim=None):        
+    def makehotdog_task_mdp_config(self, get_state_fn=None, obs_dim=None):        
         #### State ####
         def get_state(all_info):
             if not get_state:
                 raise ValueError('need to provide get_state')
             else:
-                mdp_state = get_state(all_info)
+                mdp_state = get_state_fn(all_info)
             return mdp_state
 
         #### Reward ####

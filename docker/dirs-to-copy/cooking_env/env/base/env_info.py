@@ -48,5 +48,6 @@ object_handles = [
     {'name': 'hotdogplate', 'handle': 'hotdogplate'},
     {'name': 'bunplate', 'handle': 'bunplate'},
     {'name': 'condiment', 'handle': 'condiment_frame'},
+    {'name': 'serveplate', 'handle': 'serveplate'},
 ]
 

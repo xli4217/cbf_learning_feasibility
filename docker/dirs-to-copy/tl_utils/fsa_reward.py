@@ -1,10 +1,11 @@
-import numpy as np
+# import numpy as np
 from lomap.classes import Fsa
 from future.utils import viewitems
 import networkx
 import sys
 from sympy import *
 import sympy
+import numpy as np
 
 if sys.version_info > (3, 0):
     PYTHON_VERSION = 3

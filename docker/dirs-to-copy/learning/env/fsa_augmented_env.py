@@ -112,10 +112,6 @@ class FsaAugmentedEnv(object):
         self.q = self.fsa_reward.get_node_value_from_name(Q_next)
         self.fsa_done = fsa_done
         self.fsa_r = fsa_r
-        self.Q_next = Q_next
-        self.curr_edge = curr_edge
-        self.Dq = Dq
-        self.Q = Q
         
     def step_base_env(self, actions, **kwargs):
         self.base_env.step(actions)        
