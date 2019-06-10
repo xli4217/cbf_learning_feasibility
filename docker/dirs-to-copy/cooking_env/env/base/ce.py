@@ -101,9 +101,7 @@ class CookingEnv(VrepEnvBase):
             self.obstacle_handles.append(dict(name=obs_h['name'], handle=h))
         
         #### test particle ####
-        self.test_particle_handle = None
-        if self.CookingEnv_config.get('particle_test'):
-            _, self.particle_handle = vrep.simxGetObjectHandle(self.clientID, rh['particle_handle'], vrep.simx_opmode_blocking)
+        _, self.particle_handle = vrep.simxGetObjectHandle(self.clientID, rh['particle_handle'], vrep.simx_opmode_blocking)
         
         #### ee sample region ####
         _, self.ee_sample_region_handle = vrep.simxGetObjectHandle(self.clientID, rh['ee_sample_region_handle'], vrep.simx_opmode_blocking)
@@ -182,14 +180,16 @@ class CookingEnv(VrepEnvBase):
         self.synchronous_trigger()
 
     def set_gripper_state(self, gripper_state):
-        if self.CookingEnv_config.get('particle_test'):
-            if gripper_state < 0.5:
-                vrep.simxSetIntegerSignal(self.clientID, 'open_gripper', 0, vrep.simx_opmode_oneshot)
-                self.gripper_state = 0
-            else:
-                vrep.simxSetIntegerSignal(self.clientID, 'open_gripper', 1, vrep.simx_opmode_oneshot)
-                self.gripper_state = 1
+        if gripper_state < 0.5:
+            vrep.simxSetIntegerSignal(self.clientID, 'open_gripper', 0, vrep.simx_opmode_oneshot)
+            self.gripper_state = 0
+        else:
+            vrep.simxSetIntegerSignal(self.clientID, 'open_gripper', 1, vrep.simx_opmode_oneshot)
+            self.gripper_state = 1
 
+        for _ in range(20):
+            self.synchronous_trigger()
+            
     def get_gripper_state(self):
         return self.gripper_state
                 
@@ -198,10 +198,7 @@ class CookingEnv(VrepEnvBase):
         
     def set_target_pose(self, pt):
         assert pt.shape == (7,)
-        if self.CookingEnv_config.get('particle_test'):
-            handle = self.particle_handle
-        else:
-            handle = self.target_handle
+        handle = self.particle_handle
             
         pos = pt[:3]
         quat = pt[3:]
@@ -209,9 +206,6 @@ class CookingEnv(VrepEnvBase):
         vrep.simxSetObjectPosition(self.clientID, handle, self.world_frame_handle, pos, vrep.simx_opmode_oneshot)
         vrep.simxSetObjectQuaternion(self.clientID, handle, self.world_frame_handle, quat, vrep.simx_opmode_oneshot)
 
-        # vrep.simxSetObjectPosition(self.clientID, handle, -1, pos, vrep.simx_opmode_oneshot)
-        # vrep.simxSetObjectQuaternion(self.clientID, handle, -1, quat, vrep.simx_opmode_oneshot)
-      
         self.synchronous_trigger()
 
     
@@ -230,22 +224,15 @@ class CookingEnv(VrepEnvBase):
         
     def set_target_quaternion(self, quat):
         assert quat.shape == (4,)
-        if self.CookingEnv_config.get('particle_test'):
-            handle = self.particle_handle
-        else:
-            handle = self.target_handle
+        handle = self.particle_handle
       
         vrep.simxSetObjectQuaternion(self.clientID, handle, self.world_frame_handle, quat, vrep.simx_opmode_oneshot)
         self.synchronous_trigger()
         
     def set_target_euler_angles(self, rpy):
         assert rpy.shape == (3,)
-
-        if self.CookingEnv_config.get('particle_test'):
-            handle = self.particle_handle
-        else:
-            handle = self.target_handle
-      
+        handle = self.particle_handle
+       
         vrep.simxSetObjectOrientation(self.clientID, handle, self.world_frame_handle, rpy, vrep.simx_opmode_oneshot)
         self.synchronous_trigger()
         
@@ -283,11 +270,8 @@ class CookingEnv(VrepEnvBase):
 
         
     def get_target_velocity(self):
-        if self.CookingEnv_config.get('particle_test'):
-            handle = self.particle_handle
-        else:
-            handle = self.target_handle
-
+        handle = self.particle_handle
+       
         rc = 1
         while rc != 0:    
             rc, linear_vel, angular_vel = vrep.simxGetObjectVelocity(self.clientID, handle, vrep.simx_opmode_streaming)

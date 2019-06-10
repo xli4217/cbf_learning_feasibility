@@ -89,7 +89,7 @@ class LearningEnv(object):
         else:
             self.target_pos = s
             
-        quat = np.array([0, 0,  0, 1])
+        quat = np.array([9.96912479e-01,  5.98265615e-08,   -5.05284581e-04, 7.85199478e-02])
         self.base_env.set_target_pose(np.concatenate([self.target_pos, quat]))
         self.wp_gen.reset(np.concatenate([self.target_pos, quat]), np.zeros(6))
 
@@ -204,8 +204,11 @@ class LearningEnv(object):
         return self.base_env.get_target_velocity()
         
     def get_gripper_state(self):
-        return 0
+        return self.base_env.get_gripper_state()
 
+    def set_gripper_state(self, gs):
+        self.base_env.set_gripper_state(gs)
+        
     def get_object_pose(self):
         return self.base_env.get_object_pose()
         
@@ -313,7 +316,8 @@ if __name__ == "__main__":
         # if cls.is_done(state=s):
         #     cls.reset()
         cls.update_all_info()
-        print(cls.all_info)
+        cls.set_gripper_state(1.)
+        print(cls.get_gripper_state())
         cls.base_env.synchronous_trigger()
         # cls.get_reward(state=cls.all_info['target_pos'])
         #print(cls.is_done(state=cls.all_info['target_pos']))

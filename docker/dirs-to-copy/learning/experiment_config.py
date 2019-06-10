@@ -186,7 +186,7 @@ class ExperimentConfig(object):
                 # gain on attractor term y dynamics (angular)
                 'bz': None,
                 # timestep
-                'dt': 0.0015,
+                'dt': 0.005,
                 # time scaling, increase tau to make the system execute faster
                 'tau': 1.,
                 'use_canonical': False,
@@ -210,7 +210,7 @@ class ExperimentConfig(object):
                 'num_states':3,
                 'action_space': {'shape': (3,), 'upper_bound': 0.2 * np.ones(3), 'lower_bound': -0.2 * np.ones(3)},
                 'use_own_pose': True,
-                'dt': 0.015,
+                'dt': 0.05,
                 'log_dir': os.path.join(os.environ['LEARNING_PATH'], 'execution', 'log')
             },
             'translation_gen': translation_gen,
@@ -378,7 +378,7 @@ class ExperimentConfig(object):
 
         if task == 'makehotdog' and self.robot == 'jaco':
             task_spec = "moveto_world_jaconeutral && X F" + \
-                        "((flipswitchon && closegripper) && X F (" + \
+                        "((closegripper) && X F (" + \
                         "(moveto_hotdogplate && opengripper) && X F " + \
                         "(closegripper && X F " + \
                         "((moveto_grill && closegripper) && X F " + \
@@ -391,7 +391,17 @@ class ExperimentConfig(object):
                         "(moveto_world_jaconeutral" + \
                         ")))))))))))"
 
-            task_spec = "F(" + task_spec + ")"
+            apply_condiment_ = "(moveto_condiment_condimentpre && opengripper) && X F " + \
+                               "(moveto_condiment_condimentpost && X F " + \
+                               "(closegripper && X F "+ \
+                               "((moveto_bunplate_relativeplateapplycondimentpost && closegripper) && X F "+\
+                               "((moveto_world_placecondimentgoal && closegripper) && X F" + \
+                               "(opengripper && X F" + \
+                               "(moveto_condiment_condimentpre" + \
+                               "))))))"
+
+            
+            task_spec = "F(" + apply_condiment_ + ")"
             
         elif task == 'serve' and self.robot == 'baxter':
             serve = "(moveto_bunplate && opengripper) && X F " + \

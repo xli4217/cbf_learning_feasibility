@@ -155,9 +155,9 @@ class TLConfig(object):
     def switch_robustness(self, s=None, a=None, sp=None):
         switch_on = s[self.state_idx_map['switchon']]
         if switch_on > 0:
-            return (100, 'nonaction')
+            return (1., 'nonaction')
         else:
-            return (-100, 'nonaction')
+            return (-1., 'nonaction')
   
     def apply_condiment_robustness(self, s, a=None, sp=None):
         '''

@@ -1,8 +1,4 @@
 * V-REP setup
-  * open/close gripper --- done
-  * grasp objects
-  * control target/goal -- done
-  * put fryer in
   * IK (traj following) --- partly done
     * http://www.coppeliarobotics.com/helpFiles/en/pathAndMotionPlanningModules.htm
     * http://www.forum.coppeliarobotics.com/viewtopic.php?t=3119
@@ -10,6 +6,20 @@
     * http://www.coppeliarobotics.com/helpFiles/en/inverseKinematicsModule.htm
     * https://github.com/JoshSong/jaco_ros_vrep
 
-* Real robot setup
-  * UR
-  * Jaco
+* What's left
+  * Paper
+    * fsa guided generation
+    * results
+      * key points setup 
+    * discussion
+    * post work (2 days)
+      * figures
+      * citation
+      * cover letter, etc
+  * Results
+    * cases: fsa+DI, fsa+DI+cbf, fsa+DMP, fsa+DMP+cbf, BC, GAIL
+    * make arm run with target
+    * plots: 
+  * Video (3 days)
+    * sim training video
+    * experiment video

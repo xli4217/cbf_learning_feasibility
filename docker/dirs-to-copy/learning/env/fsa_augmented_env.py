@@ -149,7 +149,14 @@ class FsaAugmentedEnv(object):
                 pt = get_object_goal_pose(self.all_info['obj_poses'][object_name], OBJECT_RELATIVE_POSE[object_rel_pose_name])
             self.base_env.set_goal_pose(pt)
 
-        
+        if gripper_action is not None:
+            if gripper_action == 'opengripper':
+                if self.base_env.get_gripper_state() != 0:
+                    self.base_env.set_gripper_state(0)
+            if gripper_action == 'closegripper':
+                if self.base_env.get_gripper_state() != 1:
+                    self.base_env.set_gripper_state(1)
+                
     def step_fsa(self, mdp_state, action, next_mdp_state):
         Q = self.fsa_reward.get_node_name_from_value(self.q)
 

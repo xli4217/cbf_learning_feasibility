@@ -4,7 +4,6 @@ import time
 from future.utils import viewitems
 
 from utils.utils import *
-import rospy
 
 default_config = {
     #### this can be 'sim' or 'real' ####
@@ -54,6 +53,9 @@ class RunRobotCooking(object):
 
         self.robot = self.RunRobotCooking_config['robot']
 
+        if self.RunRobotCooking_config['mode'] == 'real':
+            import rospy
+        
         if self.RunRobotCooking_config['init_node']:
             rospy.init_node(self.robot + "_robot_cooking", anonymous=False)
                         
