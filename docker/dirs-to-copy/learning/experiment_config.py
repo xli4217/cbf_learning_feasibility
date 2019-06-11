@@ -160,7 +160,7 @@ class ExperimentConfig(object):
                     'config': {
                         # specific to this env
                         "suffix": "",
-                        "particle_test": True,
+                        "particle_test": False,
                         "arm": "jaco",
                         "control_mode": "velocity"
                     }
@@ -377,19 +377,19 @@ class ExperimentConfig(object):
         tlconfig = TLConfig({'robot': self.robot})
 
         if task == 'makehotdog' and self.robot == 'jaco':
-            task_spec = "moveto_world_jaconeutral && X F" + \
-                        "((closegripper) && X F (" + \
-                        "(moveto_hotdogplate && opengripper) && X F " + \
-                        "(closegripper && X F " + \
-                        "((moveto_grill && closegripper) && X F " + \
-                        "(opengripper && X F "+ \
-                        "(moveto_world_jaconeutral && X F " + \
-                        "((moveto_grill && opengripper) && X F " + \
-                        "(closegripper && X F "+\
-                        "((moveto_bunplate && closegripper) && X F "+\
-                        "(opengripper && X F " + \
-                        "(moveto_world_jaconeutral" + \
-                        ")))))))))))"
+            task_spec_wo_condiment = "moveto_world_jaconeutral && X F" + \
+                                     "((closegripper) && X F (" + \
+                                     "(moveto_hotdogplate && opengripper) && X F " + \
+                                     "(closegripper && X F " + \
+                                     "((moveto_grill && closegripper) && X F " + \
+                                     "(opengripper && X F "+ \
+                                     "(moveto_world_jaconeutral && X F " + \
+                                     "((moveto_grill && opengripper) && X F " + \
+                                     "(closegripper && X F "+\
+                                     "((moveto_bunplate && closegripper) && X F "+\
+                                     "(opengripper && X F " + \
+                                     "(moveto_world_jaconeutral" + \
+                                     ")))))))))))"
 
             apply_condiment_ = "(moveto_condiment_condimentpre && opengripper) && X F " + \
                                "(moveto_condiment_condimentpost && X F " + \
@@ -400,8 +400,31 @@ class ExperimentConfig(object):
                                "(moveto_condiment_condimentpre" + \
                                "))))))"
 
+
+            entire_task_w_condiment = "moveto_world_jaconeutral && X F" + \
+                                      "((flipswitchon && closegripper) && X F " + \
+                                      "((moveto_hotdogplate && opengripper) && X F " + \
+                                      "(closegripper && X F " + \
+                                      "((moveto_grill && closegripper) && X F " + \
+                                      "(opengripper && X F "+ \
+                                      "(moveto_world_jaconeutral && X F " + \
+                                      "((moveto_grill && opengripper) && X F " + \
+                                      "(closegripper && X F "+\
+                                      "((moveto_bunplate && closegripper) && X F "+\
+                                      "(opengripper && X F " + \
+                                      "((moveto_condiment_condimentpre && opengripper) && X F " + \
+                                      "(moveto_condiment_condimentpost && X F " + \
+                                      "(closegripper && X F "+ \
+                                      "((moveto_bunplate_relativeplateapplycondimentpost && closegripper) && X F "+\
+                                      "(applycondiment && X F" + \
+                                      "((moveto_world_placecondimentgoal && closegripper) && X F" + \
+                                      "(opengripper && X F" + \
+                                      "(moveto_world_jaconeutral" + \
+                                      "))))))))))))))))))"
+
             
-            task_spec = "F(" + apply_condiment_ + ")"
+            # task_spec = "F(" + entire_task_w_condiment + ")"
+            task_spec = "F(closegripper && X F applycondiment)"
             
         elif task == 'serve' and self.robot == 'baxter':
             serve = "(moveto_bunplate && opengripper) && X F " + \

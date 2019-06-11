@@ -2,6 +2,7 @@ import os
 import numpy as np
 import time
 from future.utils import viewitems
+from utils import transformations
 
 from cooking_env.env.base.ce import CookingEnv
 import cooking_env.vrep as vrep
@@ -20,9 +21,7 @@ default_config = {
     #### class specific ####
     "WPGenerator": {
         'type':None,
-        'config': {
-            'initial_goal': [0,0,0,0,0,0,1]
-        }
+        'config': {}
     },
     # for cooking environment
     "BaseEnv":{
@@ -52,7 +51,7 @@ class LearningEnv(object):
                  logger=None):
         self.LearningEnv_config = default_config
         self.LearningEnv_config.update(config)
-
+        
         if base_env is None:
             self.base_env = self.LearningEnv_config['BaseEnv']['type']( self.LearningEnv_config['BaseEnv']['config'])
         else:
@@ -130,8 +129,8 @@ class LearningEnv(object):
             return False
 
     def update_all_info(self):
-        target_pos, target_quat = self.get_target_pose()
-        lv, av = self.get_target_velocity()
+        ee_pos, ee_quat = self.get_ee_pose()
+        lv, av = self.get_ee_velocity()
         rc = 1
         while rc != 0:
             rc, button_linear_vel, button_angular_vel = vrep.simxGetObjectVelocity(self.base_env.clientID,
@@ -139,7 +138,7 @@ class LearningEnv(object):
                                                                                    vrep.simx_opmode_streaming)
 
         button_vel = np.concatenate([np.array(button_linear_vel), np.array(button_angular_vel)])
-        curr_pose = np.concatenate([np.array(target_pos), np.array(target_quat)])
+        curr_pose = np.concatenate([np.array(ee_pos), np.array(ee_quat)])
         curr_vel = np.concatenate([np.array(lv), np.array(av)])
         
         self.all_info = {
@@ -200,8 +199,42 @@ class LearningEnv(object):
     def get_target_pose(self):
         return self.base_env.get_target_pose()
 
+    def set_target_pose(self,pt):
+        return self.base_env.set_target_pose(pt)
+
     def get_target_velocity(self):
         return self.base_env.get_target_velocity()
+
+    def get_ee_pose(self):
+        return self.base_env.get_ee_pose()
+
+    def set_ee_pose(self, pt):
+        self.base_env.set_ee_pose(pt)
+
+    def get_ee_velocity(self):
+        return self.base_env.get_ee_velocity()
+
+    def pub_ee_frame_velocity(self, direction='z',vel_scale=1.0, duration_sec=0.1):
+        target_pos, target_quat = self.get_target_pose()
+        T = transformations.quaternion_matrix(target_quat)
+        T[:3,3] = target_pos
+
+        dT = np.eye(4)
+        if direction == 'x':
+            dT[0,3] = vel_scale*0.005
+        if direction == 'y':
+            dT[1,3] = vel_scale*0.005
+        if direction == 'z':
+            dT[2,3] = vel_scale*0.005
+       
+        T_post_vel = T.dot(dT)
+
+        new_target_pos = T_post_vel[:3,3]
+        new_target_quat = transformations.quaternion_from_matrix(T_post_vel)
+
+        new_target_pose = np.concatenate([new_target_pos, new_target_quat])
+        
+        self.set_target_pose(new_target_pose)
         
     def get_gripper_state(self):
         return self.base_env.get_gripper_state()
@@ -227,8 +260,8 @@ class LearningEnv(object):
         
     def get_switch_state(self):
         switch_angle_rel_grill = self.base_env.get_switch_state()
-
-        if switch_angle_rel_grill < 0.83:
+        
+        if switch_angle_rel_grill < 1.04:
             return 10
         else:
             return -10

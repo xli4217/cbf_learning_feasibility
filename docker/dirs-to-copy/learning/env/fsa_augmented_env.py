@@ -68,6 +68,10 @@ class FsaAugmentedEnv(object):
         self.FsaAugmentedEnv_reset = reset
 
         self.state = None
+
+        #### hack ####
+        self.load_switchon_policy()
+        self.condimentapplied = -10
         
     def get_state(self, **kwargs):
         self.update_all_info()
@@ -110,7 +114,7 @@ class FsaAugmentedEnv(object):
     def update_all_info(self):
         self.base_env.update_all_info()
         self.all_info.update(self.base_env.get_info())
-        self.all_info.update({"Q":self.Q, "Q_next": self.Q_next, 'curr_edge': self.curr_edge, 'Dq': self.Dq})
+        self.all_info.update({"Q":self.Q, "Q_next": self.Q_next, 'curr_edge': self.curr_edge, 'Dq': self.Dq, 'condimentapplied': self.condimentapplied})
 
     def set_node_goal(self, best_node_guard):
         ee_goal = None
@@ -156,7 +160,42 @@ class FsaAugmentedEnv(object):
             if gripper_action == 'closegripper':
                 if self.base_env.get_gripper_state() != 1:
                     self.base_env.set_gripper_state(1)
+
+        if other_action is not None:
+            if other_action == 'flipswitchon':
+                from tl_utils.tl_config import TLConfig
+                from utils.utils import get_object_goal_pose
+        
+                tl_conf = TLConfig(config={'robot':'jaco'})
+
+                OBJECT_RELATIVE_POSE = tl_conf.OBJECT_RELATIVE_POSE
+
+                #### close gripper
+                if self.base_env.get_gripper_state() != 1:
+                    self.base_env.set_gripper_state(1.)
                 
+                pt = get_object_goal_pose(self.all_info['obj_poses']['grill'], OBJECT_RELATIVE_POSE['switchon'])
+                self.base_env.set_goal_pose(pt)
+                
+                curr_pos, curr_quat = self.base_env.get_ee_pose()
+                curr_linear_vel, curr_angular_vel = self.base_env.get_ee_velocity()
+                curr_angular_vel = curr_angular_vel * np.pi / 180
+
+                curr_pose = np.concatenate([curr_pos, curr_quat])
+                curr_vel = np.concatenate([curr_linear_vel, curr_angular_vel])
+
+                ddy, dy, y = self.skill_flipswitchon(pt, curr_pose, curr_vel, self.all_info['obs_info'])
+
+                self.base_env.set_target_pose(y)
+                
+            elif other_action == 'applycondiment':
+                for i in range(25):
+                    vel_scale = 2. * np.sin(0.3*i)
+                    self.base_env.pub_ee_frame_velocity(direction='z',vel_scale=vel_scale, duration_sec=0.1)
+                self.condimentapplied = 10.
+            else:
+                raise ValueError('other_action not supported')
+                    
     def step_fsa(self, mdp_state, action, next_mdp_state):
         Q = self.fsa_reward.get_node_name_from_value(self.q)
 
@@ -207,3 +246,61 @@ class FsaAugmentedEnv(object):
 
     def teleop(self, cmd):
         pass
+
+
+    ########
+    # Misc #
+    ########
+
+    def load_switchon_policy(self):
+        from utils.utils import load_policy_and_preprocessor
+
+        ## flip switch open 
+        experiment_root_dir = os.path.join(os.environ['LEARNING_PATH'], 'learning', 'experiments')
+        experiment_name = 'switchon'
+        hyperparam_dir = 'seed0'
+        itr = 100
+        
+        learned_skill_config = {
+            "state_space": {'type': 'float', 'shape': (3, ), "upper_bound": [], 'lower_bound': []},
+            "action_space": {'type': 'float', 'shape': (3, ), "upper_bound": 70*np.ones(3), 'lower_bound': -70*np.ones(3)},
+            "training_config_restore_path": os.path.join(experiment_root_dir, experiment_name, 'config', hyperparam_dir, 'config.pkl'),
+            "policy_restore_path": os.path.join(experiment_root_dir, experiment_name, 'transitions', hyperparam_dir, 'itr_'+str(itr)),
+            "state_preprocessor_restore_path": os.path.join(experiment_root_dir, experiment_name, 'info', hyperparam_dir, 'state_preprocessor_params.pkl')
+        }
+
+        self.switchon_policy, self.switchon_state_preprocessor = load_policy_and_preprocessor(learned_skill_config)
+
+        self.learned_skills_dict = {
+            'flipswitchon':{
+                'policy': self.switchon_policy,
+                'state_preprocessor': self.switchon_state_preprocessor
+            }
+        }
+
+    def skill_flipswitchon(self, goal, curr_pose, curr_vel, obs_info):
+        self.base_env.wp_gen.set_goal(goal)
+        
+        policy = self.learned_skills_dict['flipswitchon']['policy']
+        state_preprocessor = self.learned_skills_dict['flipswitchon']['state_preprocessor']
+
+        state_dim = 3
+        
+        s = curr_pose[:state_dim]
+
+        if state_preprocessor is not None:
+            s = state_preprocessor.get_scaled_x(s)
+            
+        forcing = policy.get_action(s, deterministic=True).flatten()
+
+        forcing *= 100
+
+        action_space = 3
+        forcing = np.clip(forcing, -70, 70)
+        forcing = np.concatenate([forcing, np.zeros(3)])
+
+        ddy, dy, y = self.base_env.wp_gen.get_next_wp(action=forcing,
+                                                      curr_pose=curr_pose,
+                                                      curr_vel=curr_vel,
+                                                      obs_info=obs_info)
+        return ddy, dy , y

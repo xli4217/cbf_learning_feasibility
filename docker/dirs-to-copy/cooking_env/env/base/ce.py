@@ -31,6 +31,7 @@ class CookingEnv(VrepEnvBase):
         self.CookingEnv_config = Configuration(default_config)
         self.CookingEnv_config.update(config)
 
+        
         self.CookingEnv_reset = reset
         self.object_handles = None
         
@@ -76,11 +77,28 @@ class CookingEnv(VrepEnvBase):
         #     rc, ds, dp, dh, dn = vrep.simxReadProximitySensor(self.clientID, self.gripper_prox_sensor_handle, vrep.simx_opmode_buffer)
         self.gripper_state = 0
         self.set_gripper_state(self.gripper_state)    
-        
-        #### target handle ####
-        _, self.target_handle = vrep.simxGetObjectHandle(self.clientID,
-                                                         rh['target_handle'],
+
+        #### ee handle ####
+        if self.CookingEnv_config.get('particle_test'):
+            _, self.ee_handle = vrep.simxGetObjectHandle(self.clientID,
+                                                         rh['particle_handle'],
                                                          vrep.simx_opmode_blocking)
+        else:
+            _, self.ee_handle = vrep.simxGetObjectHandle(self.clientID,
+                                                         rh['ee_handle'],
+                                                         vrep.simx_opmode_blocking)
+        
+            
+        #### target handle ####
+        if self.CookingEnv_config.get('particle_test'):    
+            _, self.target_handle = vrep.simxGetObjectHandle(self.clientID,
+                                                             rh['particle_target_handle'],
+                                                             vrep.simx_opmode_blocking)
+        else:
+            _, self.target_handle = vrep.simxGetObjectHandle(self.clientID,
+                                                             rh['ee_target_handle'],
+                                                             vrep.simx_opmode_blocking)
+            
         #### goal handle ####
         _, self.goal_handle = vrep.simxGetObjectHandle(self.clientID,
                                                          rh['goal_handle'],
@@ -100,8 +118,6 @@ class CookingEnv(VrepEnvBase):
             _, h = vrep.simxGetObjectHandle(self.clientID, obs_h['handle'], vrep.simx_opmode_blocking)
             self.obstacle_handles.append(dict(name=obs_h['name'], handle=h))
         
-        #### test particle ####
-        _, self.particle_handle = vrep.simxGetObjectHandle(self.clientID, rh['particle_handle'], vrep.simx_opmode_blocking)
         
         #### ee sample region ####
         _, self.ee_sample_region_handle = vrep.simxGetObjectHandle(self.clientID, rh['ee_sample_region_handle'], vrep.simx_opmode_blocking)
@@ -179,6 +195,82 @@ class CookingEnv(VrepEnvBase):
         vrep.simxSetIntegerSignal(self.clientID, self.gripper_toggle_signal_name, 1, vrep.simx_opmode_oneshot)
         self.synchronous_trigger()
 
+    def move_to(self, pt):
+        self.set_target_pose(pt)
+        
+    
+        
+    def set_quaternion(self, quat, handle):
+        assert quat.shape == (4,)
+      
+        vrep.simxSetObjectQuaternion(self.clientID, handle, self.world_frame_handle, quat, vrep.simx_opmode_oneshot)
+        self.synchronous_trigger()
+        
+    def set_euler_angles(self, rpy, handle):
+        assert rpy.shape == (3,)
+        
+        vrep.simxSetObjectOrientation(self.clientID, handle, self.world_frame_handle, rpy, vrep.simx_opmode_oneshot)
+        self.synchronous_trigger()
+        
+
+    def get_velocity(self, handle):
+        rc = 1
+        while rc != 0:    
+            rc, linear_vel, angular_vel = vrep.simxGetObjectVelocity(self.clientID, handle, vrep.simx_opmode_streaming)
+
+        
+        return np.array(linear_vel), np.array(angular_vel)
+
+
+    def get_pose(self, handle):
+        rct = 1
+        target_pos = np.zeros(3)
+        while rct != 0 or np.linalg.norm(target_pos) < 0.001:    
+            rct, target_pos = vrep.simxGetObjectPosition(self.clientID, handle, self.world_frame_handle, vrep.simx_opmode_streaming)
+            rcq, target_quat = vrep.simxGetObjectQuaternion(self.clientID, handle, self.world_frame_handle, vrep.simx_opmode_streaming)
+
+            
+        return np.array(target_pos), np.array(target_quat)
+
+
+    def set_pose(self, pt, handle):
+        assert pt.shape == (7,)
+        pos = pt[:3]
+        quat = pt[3:]
+    
+        vrep.simxSetObjectPosition(self.clientID, handle, self.world_frame_handle, pos, vrep.simx_opmode_oneshot)
+        vrep.simxSetObjectQuaternion(self.clientID, handle, self.world_frame_handle, quat, vrep.simx_opmode_oneshot)
+
+        self.synchronous_trigger()
+
+
+    ####################
+    # Common Interface #
+    ####################
+    def set_goal_pose(self, pt):
+        self.set_pose(pt, self.goal_handle)
+
+    def get_goal_pose(self):
+        return self.get_pose(self.goal_handle)
+        
+    def set_target_pose(self, pt):
+        self.set_pose(pt, self.target_handle)
+
+    def get_target_pose(self):
+        return self.get_pose(self.target_handle)
+
+    def get_target_velocity(self):
+        return self.get_velocity(self.target_handle)
+        
+    def set_ee_pose(self, pt):
+        self.set_pose(pt, self.ee_handle)
+
+    def get_ee_pose(self):
+        return self.get_pose(self.ee_handle)
+
+    def get_ee_velocity(self):
+        return self.get_velocity(self.ee_handle)
+        
     def set_gripper_state(self, gripper_state):
         if gripper_state < 0.5:
             vrep.simxSetIntegerSignal(self.clientID, 'open_gripper', 0, vrep.simx_opmode_oneshot)
@@ -192,62 +284,8 @@ class CookingEnv(VrepEnvBase):
             
     def get_gripper_state(self):
         return self.gripper_state
-                
-    def move_to(self, pt):
-        self.set_target_pose(pt)
+  
         
-    def set_target_pose(self, pt):
-        assert pt.shape == (7,)
-        handle = self.particle_handle
-            
-        pos = pt[:3]
-        quat = pt[3:]
-    
-        vrep.simxSetObjectPosition(self.clientID, handle, self.world_frame_handle, pos, vrep.simx_opmode_oneshot)
-        vrep.simxSetObjectQuaternion(self.clientID, handle, self.world_frame_handle, quat, vrep.simx_opmode_oneshot)
-
-        self.synchronous_trigger()
-
-    
-    def set_goal_pose(self, pt):
-        pt = np.array(pt)
-        assert pt.shape == (7,)
-        handle = self.goal_handle
-
-        pos = pt[:3]
-        quat = pt[3:]    
-
-        vrep.simxSetObjectPosition(self.clientID, handle, self.world_frame_handle, pos, vrep.simx_opmode_oneshot)
-        vrep.simxSetObjectQuaternion(self.clientID, handle, self.world_frame_handle, quat, vrep.simx_opmode_oneshot)
-        self.synchronous_trigger()
-
-        
-    def set_target_quaternion(self, quat):
-        assert quat.shape == (4,)
-        handle = self.particle_handle
-      
-        vrep.simxSetObjectQuaternion(self.clientID, handle, self.world_frame_handle, quat, vrep.simx_opmode_oneshot)
-        self.synchronous_trigger()
-        
-    def set_target_euler_angles(self, rpy):
-        assert rpy.shape == (3,)
-        handle = self.particle_handle
-       
-        vrep.simxSetObjectOrientation(self.clientID, handle, self.world_frame_handle, rpy, vrep.simx_opmode_oneshot)
-        self.synchronous_trigger()
-        
-    def get_target_pose(self):
-        handle = self.particle_handle
-       
-        rct = 1
-        target_pos = np.zeros(3)
-        while rct != 0 or np.linalg.norm(target_pos) < 0.001:    
-            rct, target_pos = vrep.simxGetObjectPosition(self.clientID, handle, self.world_frame_handle, vrep.simx_opmode_streaming)
-            rcq, target_quat = vrep.simxGetObjectQuaternion(self.clientID, handle, self.world_frame_handle, vrep.simx_opmode_streaming)
-
-            
-        return np.array(target_pos), np.array(target_quat)
-
     def get_obstacle_info(self):
         obs_info = []
         for obs in self.obstacle_handles:
@@ -258,26 +296,8 @@ class CookingEnv(VrepEnvBase):
 
         return obs_info
             
-    def get_goal_pose(self):
-        handle = self.goal_handle
-        rc = 1
-        goal_pos = np.zeros(3)
-        while rc != 0 or np.linalg.norm(goal_pos) < 0.001:
-            rc, goal_pos = vrep.simxGetObjectPosition(self.clientID, handle, self.world_frame_handle, vrep.simx_opmode_streaming)
-            rc, goal_quat = vrep.simxGetObjectQuaternion(self.clientID, handle, self.world_frame_handle, vrep.simx_opmode_streaming)
+    
         
-        return np.array(goal_pos), np.array(goal_quat)
-
-        
-    def get_target_velocity(self):
-        handle = self.particle_handle
-       
-        rc = 1
-        while rc != 0:    
-            rc, linear_vel, angular_vel = vrep.simxGetObjectVelocity(self.clientID, handle, vrep.simx_opmode_streaming)
-
-        
-        return np.array(linear_vel), np.array(angular_vel)
         
         
     def reset(self):

@@ -28,9 +28,10 @@ robot_handles = {
             'prox_sensor_handle': ''
         },
         'goal_handle': 'Jaco_goal',
-        'target_handle': 'Jaco_target_dummy',
-        #'particle_handle': 'Jaco_goal_test',
-        'particle_handle': 'Jaco_target_dummy',
+        'particle_target_handle': 'Jaco_particle_target',
+        'particle_handle': 'Jaco_particle',
+        'ee_target_handle': 'Jaco_target_dummy',
+        'ee_handle': 'Jaco_ee_frame',
         'ee_sample_region_handle': "ee_sample_region",
         'ee_motion_region_handle': "ee_motion_region"
     }

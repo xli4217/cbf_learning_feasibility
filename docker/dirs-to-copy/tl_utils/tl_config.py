@@ -146,7 +146,7 @@ class TLConfig(object):
             quat_dist = 0.5
 
         mapped_quat_rob = (0.25 - quat_dist) / 0.25
-    
+
         rob = np.minimum(mapped_pos_rob, mapped_quat_rob)
         
         return (rob, 'action')
