@@ -155,10 +155,8 @@ class FsaReward(object):
         '''
 
         done = self.check_done(Q)
-
         if not done:
             next_Q, DQ_nontrap, DQ_trap, best_node_guard, trap_node_guard = self.get_node_guard_bin_and_node_rob(Q, s, a, sp, debug=False)
-
             done = self.check_done(next_Q)
             
             while next_Q != Q and not done:
@@ -214,7 +212,7 @@ class FsaReward(object):
                 else:
                     if edge_total_rob > -100:
                         process = True
-
+                        
                 if process:
                     #### edge robustness ####
                     if 'accept' in edge[1]:
@@ -230,7 +228,7 @@ class FsaReward(object):
                 trap_node_guard_list.append(edge_guard)
                 trap_node_list.append(edge[1])
              
-                        
+            
             if self.debug or debug:
                 print("next_node:", edge[1])
                 print('edge guard:', edge_guard)
@@ -240,7 +238,7 @@ class FsaReward(object):
             # sometimes self edge and outgoing edge can activate at the same time, why?
             # sometimes directly goes into trap    
             #if edge_total_rob > 0 and edge[1] != Q and edge[1] != 'trap':
-            if edge_total_rob > 0 and edge[1] != Q:     
+            if edge_total_rob > 0 and edge[1] != Q and edge[1] != 'trap':     
                 next_Q = edge[1]
     
         DQ_nontrap = 0
@@ -289,51 +287,64 @@ class FsaReward(object):
         return next_Q, DQ_nontrap, DQ_trap, best_node_guard, trap_node_guard
                 
 
-    def get_guard_robustness(self, guard, prop_robustness_dict):
+    def get_guard_robustness(self, guard, prop_robustness_dict, sym_pkg='lomap'):
         '''
-        guard is a string of form "a & b & ~c" or "(a & b & ~c)" with only conjunction
+        if sym_pkg='sympy' - guard is a string of form "a & b & ~c" or "(a & b & ~c)" with only conjunction
+        if sym_pkg='lomap' - guard is a string of form "((!(c)) && (!(b)) && (a))" or "(!(c))" or "(a)"
         '''
 
-        guard = guard.strip()
-        if guard[0] == "(":
-            guard = guard[1:-1]
+        if sym_pkg == 'sympy':
+            stripped_guard = guard.strip()
+            if stripped_guard[0] == "(":
+                stripped_guard = stripped_guard[1:-1]
+            guard_pred_list = stripped_guard.split("&")
+        elif sym_pkg == 'lomap':
+            stripped_guard = ""
+            for c in guard:
+                if c != '(' and c != ")" and c != " ":
+                    stripped_guard += c
+            guard_pred_list = stripped_guard.split("&&")
+        else:
+            raise ValueError('sym_pkg not supported')
+                
             
-            
-        guard_pred_list = guard.split("&")
-        
         guard_pred_rob_list = []
         for pred in guard_pred_list:
-            pred = pred.strip()
-            if pred[0] == "~":
+            if pred[0] == "~" or pred[0] == '!':
                 guard_pred_rob_list.append(-prop_robustness_dict[pred[1:]])
             else:
                 guard_pred_rob_list.append(prop_robustness_dict[pred])
 
-        return guard, min(guard_pred_rob_list)
-                
+        return stripped_guard, min(guard_pred_rob_list)
+        
     def get_edge_guard_bin_and_edge_rob_symbolic(self, edge, s, a=None, sp=None):
 
+        if edge[1] == 'trap':
+            print('trap state currently not supported')
+            return 0, 'trap_guard'
+            
         #### get robustness of all predicates at current state ####
         prop_robustness = {}
         for prop in self.sorted_props:
             rob, action = self.predicate_reward_dict[prop](s, a=None, sp=None)
             prop_robustness[prop] = rob            
         ####
-            
-        input_list = list(edge[2]['input'])
-        simplified_pos_dnf_form = str(SOPform(self.sorted_props_sympy[::-1], input_list))
 
-        # if edge[0] == 'T0_S4' and edge[1] == 'T0_S5':
-        #     print(simplified_pos_dnf_form)
-        #     print(edge[2]['guard'])
-        #     print("----")
-            
-        simp_pos_dnf_split = simplified_pos_dnf_form.split('|')
+        #### sympy way currently doesn't scale with large formula ####
+        # input_list = list(edge[2]['input'])
+        # simplified_pos_dnf_form = str(SOPform(self.sorted_props_sympy[::-1], input_list))
+        # simp_pos_dnf_split = simplified_pos_dnf_form.split('|')
 
+        #### directly using the guard that lomap generates ####
+        simplified_pos_dnf_form = str(edge[2]['guard'])
+        if "||" in simplified_pos_dnf_form:
+            simplified_pos_dnf_form = simplified_pos_dnf_form[1:-1]
+        simp_pos_dnf_split = simplified_pos_dnf_form.split('||')
+        
         edge_dnf_rob_list = []
         processed_edge_guard_list = []
         for edge_guard  in simp_pos_dnf_split:
-            edge_guard, edge_dnf_rob = self.get_guard_robustness(edge_guard, prop_robustness)
+            edge_guard, edge_dnf_rob = self.get_guard_robustness(edge_guard, prop_robustness, sym_pkg='lomap')
             edge_dnf_rob_list.append(edge_dnf_rob)
             processed_edge_guard_list.append(edge_guard)
             

@@ -163,7 +163,9 @@ class TLConfig(object):
         '''
         0.1 if true, -0.1 if false
         '''
+
         rob = s[self.state_idx_map['condimentapplied']]
+
         return (float(rob), 'action')
 
     def gripper_robustness(self, s, a=None, sp=None, oc='open'):

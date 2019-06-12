@@ -46,8 +46,8 @@ if get_fsa:
 
     # spec = "G (( inservezone_serveplate -> X F (" + serve + ")) && (!inservezone_serveplate -> X F moveto_world_baxterneutral))" + " && " + serve_task_KB
     #spec = "(((r && c) -> X F pp) && ((! r || ! c) -> X (F pp && (!pp U (r && c))))) && G(!col)"
-    # spec = "(F pp && (!pp U (r && c)))"
-    spec = serve + "&&" + "G(! (opengripper && closegripper))"
+    spec = "(F pp && (!pp U (r && c)))"
+    # spec = serve + "&&" + "G(! (opengripper && closegripper))"
     
     #### add task specific conditions and constraints ####
     conditions = ['(! serve U apply_condiment)']

@@ -69,7 +69,6 @@ def construct_rl_base_runner_config(restore_runner_dir=None,
                                     cmd_log=""):
 
     
-    
     #### Environment ####
     from experiment_config import ExperimentConfig
     exp_config = ExperimentConfig(config={'env_name': env_name,
@@ -257,7 +256,6 @@ def construct_rl_experiment_config(experiment_root_dir="",
     if agent == 'ppo':
         from rl_pipeline.algo_devel.ppo.pytorch.ppo_runner import PPORunner
         base_runner = PPORunner
-            
     experiment_config = {
         # this can be 'train' or 'hyperparam_tuning'
         'mode': experiment_mode,
@@ -422,14 +420,12 @@ default_args = {
     'restore_runner_dir': None,
     'max_itr': 1000,
     #### environment config ####
-    # this can be 'vrep_baxter', 'baxter'
     'env_name': 'vrep',
-    # this can be 'gotogoal', 'robustness', 'flat', 'hierarchical'
-    'task': 'makehotdog',
+    'task': 'serve',
     'headless': False,
     'fsa_save_dir': os.path.join(os.environ['LEARNING_PATH'], 'learning', 'figures'),
     'fsa_name': "fsa",
-    'robot': 'jaco',
+    'robot': 'baxter',
     'components':{'mdp': True, 'fsa': True, 'cbf': False, 'dmp': True},
     ##### replay buffer config ####
     'per_alpha': 0.,

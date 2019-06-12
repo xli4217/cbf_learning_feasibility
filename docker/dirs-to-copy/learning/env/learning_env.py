@@ -128,7 +128,7 @@ class LearningEnv(object):
         else:
             return False
 
-    def update_all_info(self):
+    def update_all_info(self, info={}):
         ee_pos, ee_quat = self.get_ee_pose()
         lv, av = self.get_ee_velocity()
         rc = 1
@@ -141,7 +141,7 @@ class LearningEnv(object):
         curr_pose = np.concatenate([np.array(ee_pos), np.array(ee_quat)])
         curr_vel = np.concatenate([np.array(lv), np.array(av)])
         
-        self.all_info = {
+        new_info = {
             'goal': self.goal,
             'button_vel': button_vel,
             'sample_range': self.sample_range,
@@ -150,12 +150,18 @@ class LearningEnv(object):
             'curr_pose': curr_pose,
             'curr_vel': curr_vel,
             'switchon': self.get_switch_state(),
-            'condimentapplied': -10,
             'gripper_state': self.get_gripper_state(),
             'obs_info': self.get_obstacle_info(),
-            'obj_poses': self.get_object_pose()
+            'obj_poses': self.get_object_pose(),
         }
+
+        self.all_info.update(new_info)
         
+        if 'condimentapplied' not in self.all_info:
+            self.all_info['condimentapplied'] = -10
+
+        self.all_info.update(info)
+            
     def step(self, action):
         '''
         here action is forcing function output
@@ -260,8 +266,7 @@ class LearningEnv(object):
         
     def get_switch_state(self):
         switch_angle_rel_grill = self.base_env.get_switch_state()
-        
-        if switch_angle_rel_grill < 1.04:
+        if switch_angle_rel_grill < 1.1:
             return 10
         else:
             return -10

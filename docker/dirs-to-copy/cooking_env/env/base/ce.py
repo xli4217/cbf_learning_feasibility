@@ -5,7 +5,7 @@ from utils.configuration import Configuration
 from future.utils import viewitems
 import time
 from utils import transformations
-from cooking_env.env.base.env_info import robot_handles, object_handles, obstacle_handles, world_frame_handle
+from cooking_env.env.base.env_info import robot_handles, object_handles, obstacle_handles
 
 default_config = {
     # Common to all envs
@@ -43,8 +43,8 @@ class CookingEnv(VrepEnvBase):
 
         self.all_info = {}
         ####
-        if self.CookingEnv_config.get('arm') == 'ur5':
-            rh = robot_handles['UR5']
+        if self.CookingEnv_config.get('arm') == 'baxter':
+            rh = robot_handles['Baxter']
             self.init_angles = [-2.69, -61.47, -3.35, -23.27, 89.80, -2.68]
         elif self.CookingEnv_config.get('arm') == 'jaco':
             rh = robot_handles['Jaco']
@@ -53,7 +53,7 @@ class CookingEnv(VrepEnvBase):
             raise ValueError('arm not supported')
 
         #### world frame ####
-        rc, self.world_frame_handle = vrep.simxGetObjectHandle(self.clientID, world_frame_handle, vrep.simx_opmode_blocking)
+        rc, self.world_frame_handle = vrep.simxGetObjectHandle(self.clientID, rh['world_frame_handle'], vrep.simx_opmode_blocking)
         
         #### joint handles ####
         self.joint_handles = []

@@ -12,7 +12,7 @@ from tl_utils.tl_config import TLConfig
 from utils.utils import get_object_goal_pose
 tl_conf = TLConfig(config={'robot':'jaco'})
 OBJECT_RELATIVE_POSE = tl_conf.OBJECT_RELATIVE_POSE
-       
+
 
 default_config = {
     'fsa_save_dir': os.getcwd(),
@@ -59,7 +59,8 @@ class FsaAugmentedEnv(object):
 
             self.qs = [v for k, v in viewitems(self.fsa_reward.aut_states_dict) if v != 1]
             self.q = None # this is the numerical representation of the automata state (we use Q to represent the string version)
-    
+
+            
         # seed the environment
         self.seed(seed)
 
@@ -72,6 +73,8 @@ class FsaAugmentedEnv(object):
         #### hack ####
         self.load_switchon_policy()
         self.condimentapplied = -10
+        self.OBJECT_RELATIVE_POSE = OBJECT_RELATIVE_POSE
+        self.get_object_goal_pose = get_object_goal_pose
         
     def get_state(self, **kwargs):
         self.update_all_info()
@@ -90,8 +93,10 @@ class FsaAugmentedEnv(object):
         self.Dq = None
         self.Q = None
 
-    
+        
         self.state = self.get_state()
+
+        
         return self.state
             
     def get_reward(self, state=None, action=None, next_state=None, **kwargs):
@@ -111,12 +116,17 @@ class FsaAugmentedEnv(object):
     def get_info(self):
         return self.all_info
  
-    def update_all_info(self):
-        self.base_env.update_all_info()
-        self.all_info.update(self.base_env.get_info())
-        self.all_info.update({"Q":self.Q, "Q_next": self.Q_next, 'curr_edge': self.curr_edge, 'Dq': self.Dq, 'condimentapplied': self.condimentapplied})
+    def update_all_info(self, info={}):
 
+        self.base_env.update_all_info(info={'condimentapplied': self.condimentapplied})
+
+        self.all_info.update(self.base_env.get_info())
+
+        self.all_info.update({"Q":self.Q, "Q_next": self.Q_next, 'curr_edge': self.curr_edge, 'Dq': self.Dq})
+        self.all_info.update(info)
+        
     def set_node_goal(self, best_node_guard):
+
         ee_goal = None
         gripper_action = None
         other_action = None
@@ -131,7 +141,7 @@ class FsaAugmentedEnv(object):
                 if node_guard_pred == 'closegripper':
                     gripper_action = 'closegripper'
                      
-                if 'moveto' in node_guard_pred and node_guard_pred[0] != "~":
+                if 'moveto' in node_guard_pred and node_guard_pred[0] != "~" and node_guard_pred[0] != "!":
                     ee_goal = node_guard_pred
 
                 if node_guard_pred == 'flipswitchon':
@@ -148,9 +158,9 @@ class FsaAugmentedEnv(object):
                 object_rel_pose_name = object_name
 
             if object_name == 'world':
-                pt = OBJECT_RELATIVE_POSE[object_rel_pose_name]
+                pt = self.OBJECT_RELATIVE_POSE[object_rel_pose_name]
             else:
-                pt = get_object_goal_pose(self.all_info['obj_poses'][object_name], OBJECT_RELATIVE_POSE[object_rel_pose_name])
+                pt = self.get_object_goal_pose(self.all_info['obj_poses'][object_name], self.OBJECT_RELATIVE_POSE[object_rel_pose_name])
             self.base_env.set_goal_pose(pt)
 
         if gripper_action is not None:
@@ -189,10 +199,12 @@ class FsaAugmentedEnv(object):
                 self.base_env.set_target_pose(y)
                 
             elif other_action == 'applycondiment':
-                for i in range(25):
+                for i in range(20):
                     vel_scale = 2. * np.sin(0.3*i)
                     self.base_env.pub_ee_frame_velocity(direction='z',vel_scale=vel_scale, duration_sec=0.1)
-                self.condimentapplied = 10.
+                self.condimentapplied = 10
+                self.update_all_info()
+                    
             else:
                 raise ValueError('other_action not supported')
                     

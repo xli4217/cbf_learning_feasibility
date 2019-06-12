@@ -29,7 +29,7 @@ class ExperimentConfig(object):
         self.headless = self.ExperimentConfig_config.get('headless')
         self.components = self.ExperimentConfig_config.get('components')
         self.robot = self.ExperimentConfig_config.get('robot')
-        
+
         # used in batch_sampler to post-process rewards
         self.process_rewards = None
         self.Environment = None
@@ -79,11 +79,13 @@ class ExperimentConfig(object):
         #### FSA ####
         elif self.components['mdp'] and self.components['fsa']:
             if self.ExperimentConfig_config.get('task') == 'makehotdog' and self.robot == 'jaco':
-                task_spec, construct_state, predicate_robustness, obs_dim = self.get_tl_related(task='makehotdog')
+                task_spec, construct_state, predicate_robustness, obs_dim = self.get_tl_related(task=self.ExperimentConfig_config.get('task'))
                 get_state, get_reward, is_done, state_space, action_space, other = self.makehotdog_task_mdp_config(get_state_fn=construct_state, obs_dim=obs_dim)
       
             elif self.ExperimentConfig_config.get('task') == 'serve' and self.robot == 'baxter':
-                pass
+                task_spec, construct_state, predicate_robustness, obs_dim = self.get_tl_related(task=self.ExperimentConfig_config.get('task'))
+                get_state, get_reward, is_done, state_space, action_space, other = self.makehotdog_task_mdp_config(get_state_fn=construct_state, obs_dim=obs_dim)
+      
             else:
                 raise ValueError('task and robot not match')
 
@@ -161,7 +163,7 @@ class ExperimentConfig(object):
                         # specific to this env
                         "suffix": "",
                         "particle_test": False,
-                        "arm": "jaco",
+                        "arm": self.robot,
                         "control_mode": "velocity"
                     }
                 }
@@ -423,8 +425,8 @@ class ExperimentConfig(object):
                                       "))))))))))))))))))"
 
             
-            # task_spec = "F(" + entire_task_w_condiment + ")"
-            task_spec = "F(closegripper && X F applycondiment)"
+            #task_spec = "F(" + entire_task_w_condiment + ")"
+            task_spec = "F(closegripper && X F moveto_bunplate)"
             
         elif task == 'serve' and self.robot == 'baxter':
             serve = "(moveto_bunplate && opengripper) && X F " + \
