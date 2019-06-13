@@ -9,7 +9,8 @@ import sys
 import time
 
 default_config = {
-    'robot': 'jaco'
+    'robot': 'jaco',
+    'mode': 'real'
 }
 
 class TLConfig(object):
@@ -139,7 +140,11 @@ class TLConfig(object):
 
         if pos_dist > 0.04:
             pos_dist = 0.04
-        
+
+        if self.TLConfig_config['mode'] == 'sim':
+            if pos_dist < 0.04:
+                pos_dist = 0
+            
         mapped_pos_rob = (0.02 - pos_dist) / 0.02
 
         if quat_dist > 0.5:
@@ -148,7 +153,12 @@ class TLConfig(object):
         mapped_quat_rob = (0.25 - quat_dist) / 0.25
 
         rob = np.minimum(mapped_pos_rob, mapped_quat_rob)
-        
+        # if rel_pose_name == 'bunplate':
+        #     print(object_pose)
+        #     print(ee_pose)
+        #     print(pos_dist, quat_dist)
+        #     print("---")
+            
         return (rob, 'action')
         
 

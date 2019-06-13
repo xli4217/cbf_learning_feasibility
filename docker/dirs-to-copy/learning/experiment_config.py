@@ -425,8 +425,8 @@ class ExperimentConfig(object):
                                       "))))))))))))))))))"
 
             
-            #task_spec = "F(" + entire_task_w_condiment + ")"
-            task_spec = "F(closegripper && X F moveto_bunplate)"
+            task_spec = "F(" + entire_task_w_condiment + ")"
+            #task_spec = "F(closegripper && X F moveto_bunplate)"
             
         elif task == 'serve' and self.robot == 'baxter':
             serve = "(moveto_bunplate && opengripper) && X F " + \
@@ -450,6 +450,8 @@ class ExperimentConfig(object):
             # serve_task_ = "(( inservezone_serveplate -> X F (" + serve + ")) && (!inservezone_serveplate -> X F moveto_world_baxterneutral))" + " && " + serve_task_KB
 
             task_spec = "F(" +  serve + " )&& (! (" + serve + ") U inservezone_serveplate)" + " && " + serve_task_KB
+
+           
             
             #### Buchi version 
             # serve_task_ = "G (( inservezone_serveplate -> X F (" + serve + ")))" + " && " + serve_task_KB

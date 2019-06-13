@@ -320,8 +320,8 @@ class FsaReward(object):
     def get_edge_guard_bin_and_edge_rob_symbolic(self, edge, s, a=None, sp=None):
 
         if edge[1] == 'trap':
-            print('trap state currently not supported')
-            return 0, 'trap_guard'
+            # print('trap state currently not supported')
+            return -1000, 'trap_guard'
             
         #### get robustness of all predicates at current state ####
         prop_robustness = {}

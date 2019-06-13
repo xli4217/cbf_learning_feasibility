@@ -42,6 +42,8 @@ class CookingEnv(VrepEnvBase):
             self.suffix = self.CookingEnv_config.get('suffix')
 
         self.all_info = {}
+
+        self.robot = self.CookingEnv_config.get('arm')
         ####
         if self.CookingEnv_config.get('arm') == 'baxter':
             rh = robot_handles['Baxter']
@@ -273,10 +275,10 @@ class CookingEnv(VrepEnvBase):
         
     def set_gripper_state(self, gripper_state):
         if gripper_state < 0.5:
-            vrep.simxSetIntegerSignal(self.clientID, 'open_gripper', 0, vrep.simx_opmode_oneshot)
+            vrep.simxSetIntegerSignal(self.clientID, self.robot+'_open_gripper', 0, vrep.simx_opmode_oneshot)
             self.gripper_state = 0
         else:
-            vrep.simxSetIntegerSignal(self.clientID, 'open_gripper', 1, vrep.simx_opmode_oneshot)
+            vrep.simxSetIntegerSignal(self.clientID, self.robot+'_open_gripper', 1, vrep.simx_opmode_oneshot)
             self.gripper_state = 1
 
         for _ in range(20):

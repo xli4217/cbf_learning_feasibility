@@ -10,7 +10,7 @@ from utils.configuration import Configuration
 #### HACK ####
 from tl_utils.tl_config import TLConfig
 from utils.utils import get_object_goal_pose
-tl_conf = TLConfig(config={'robot':'jaco'})
+tl_conf = TLConfig(config={'robot':'jaco', 'mode': 'sim'})
 OBJECT_RELATIVE_POSE = tl_conf.OBJECT_RELATIVE_POSE
 
 
