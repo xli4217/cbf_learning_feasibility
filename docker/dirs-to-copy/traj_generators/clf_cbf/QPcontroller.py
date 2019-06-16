@@ -55,6 +55,7 @@ class QPcontroller:
         return np.concatenate([target_accel, np.zeros(3)]), np.concatenate([target_vel, np.zeros(3)]), np.concatenate([target_pose, np.array([0,0,0,1])])
 
     def generate_control(self, action, x_current, obs_info={}, clf=True, cbf=True):
+        
         self.m.remove(self.m.getConstrs())
 
         if self.QPcontroller_config['use_own_pose']:

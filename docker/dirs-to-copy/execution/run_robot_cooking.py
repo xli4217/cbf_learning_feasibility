@@ -125,12 +125,12 @@ class RunRobotCooking(object):
             self.skill_arg['goal'] = pt
 
             curr_pose = self.skill_arg['curr_pose']
-            if skill_name == 'flipswitchon':
-                curr_pose[0] -= 0.19
-                curr_pose[2] -= 0.1
-                if self.skill_arg['switchon'] > 0:
-                    print('switch on')
-                    break
+            # if skill_name == 'flipswitchon':
+            #     curr_pose[0] -= 0.19
+            #     curr_pose[2] -= 0.1
+            #     if self.skill_arg['switchon'] > 0:
+            #         print('switch on')
+            #         break
                 
             pos_dist, quat_dist = pose_distance(self.skill_arg['curr_pose'], pt) 
             # print(("dist:", pos_dist, quat_dist))
@@ -140,9 +140,9 @@ class RunRobotCooking(object):
         
             action = self.motor_skills.get_action(skill_name=skill_name, skill_arg=self.skill_arg)
             y = action['value']
-            if skill_name == 'flipswitchon':
-                curr_pose[0] += 0.19
-                curr_pose[2] += 0.1
+            # if skill_name == 'flipswitchon':
+            #     curr_pose[0] += 0.19
+            #     curr_pose[2] += 0.1
 
             self.dry_run_target_pose = y
             self.env.move_to(y, dry_run=dry_run)
@@ -178,8 +178,9 @@ class RunRobotCooking(object):
         elif skill_name == 'applycondiment':
             #### squeeze
             # self.env.set_gripper_state(0.8)
-            for i in range(25):
-                vel_scale = 2. * np.sin(0.3*i)
+            for i in range(10):
+                # vel_scale = 2. * np.sin(0.3*i)
+                vel_scale = -1.
                 self.env.pub_ee_frame_velocity(direction='z',vel_scale=vel_scale, duration_sec=0.1)
                 time.sleep(0.1)
             self.condimentapplied = 10.

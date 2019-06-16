@@ -235,7 +235,8 @@ class ExecutionConfig(object):
 
             # task_spec =  "F (" +  entire_task_w_condiment + ")"
             # task_spec = "F ( moveto_bunplate && X F (" + apply_condiment_ + ") )"
-            task_spec = "F ( moveto_world_jaconeutral && X F flipswitchon)"
+            # task_spec = "F ( moveto_world_jaconeutral && X F flipswitchon)"
+            task_spec = "F ( moveto_world_jaconeutral && X F applycondiment)"
             
             repeat = False
             

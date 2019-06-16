@@ -87,6 +87,7 @@ class MotorSkills(object):
 
         forcing *= 100
 
+        forcing = 0
         action_space = self.Skills_config['LearnedSkills']['flipswitchon']['action_space']
         forcing = np.clip(forcing, action_space['lower_bound'], action_space['upper_bound'])
         forcing = np.concatenate([forcing, np.zeros(3)])

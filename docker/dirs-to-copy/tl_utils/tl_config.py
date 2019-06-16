@@ -54,7 +54,7 @@ class TLConfig(object):
             'bunplate': plate_rel,
             'serveplate': serve_plate_rel,
             'grill': np.array([0.007, -0.012, 0.006, 0.710, 0.704, 0.017, 0.027]), # this needs confirmation
-            'switchon': np.array([-0.001, -0.247, 0.076, 0.993, 0.072, 0.064, 0.073]),
+            'switchon': np.array([-0.001, -0.247-0.03, 0.076, 0.993, 0.072, 0.064, 0.073]),
             'condimentpre': np.array([0.022, -0.129, -0.045, -0.594, -0.433, -0.426, 0.528]),
             'condimentpost': np.array([0.022, -0.129+0.11, -0.045, -0.594, -0.433, -0.426, 0.528]),
             'relativeplateapplycondimentpre': cpre,

@@ -221,7 +221,7 @@ class RobotCookingInterface(object):
                 self.rate.sleep()
             return False
         else:
-            print("plan reached goal")
+            # print("plan reached goal")
             return True
 
 
