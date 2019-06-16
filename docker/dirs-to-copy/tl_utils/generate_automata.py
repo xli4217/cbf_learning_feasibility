@@ -83,18 +83,18 @@ class GenerateAutomata(object):
             for node_guard_pred in best_node_guard_pred_list:
                 node_guard_pred = node_guard_pred.strip()
         
-                if node_guard_pred == 'opengripper':
+                if 'opengripper' in node_guard_pred and node_guard_pred[0] != "~" and node_guard_pred[0] != "!":
                     gripper_action = 'opengripper'
-                if node_guard_pred == 'closegripper':
+                if 'closegripper' in node_guard_pred and node_guard_pred[0] != "~" and node_guard_pred[0] != "!":
                     gripper_action = 'closegripper'
                      
-                if 'moveto' in node_guard_pred and node_guard_pred[0] != "~":
+                if 'moveto' in node_guard_pred and node_guard_pred[0] != "~" and node_guard_pred[0] != "!":
                     ee_goal = node_guard_pred
 
-                if node_guard_pred == 'flipswitchon':
+                if 'flipswitchon' in node_guard_pred and node_guard_pred[0] != "~" and node_guard_pred[0] != "!":
                     other_action = "flipswitchon"
                              
-                if node_guard_pred == 'applycondiment':
+                if 'applycondiment' in node_guard_pred and node_guard_pred[0] != "~" and node_guard_pred[0] != "!":
                     other_action = 'applycondiment'
                   
         node_action = dict(ee_goal=ee_goal, gripper_action=gripper_action, other_action=other_action)

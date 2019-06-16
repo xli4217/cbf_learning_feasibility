@@ -68,6 +68,7 @@ class QPcontroller:
         # Loop through sphereical obstacles and set constraints
         for i in range(0,num_of_obstacles):
             if obs_info[i]['name'] == 'table':
+                #### planer obstacle ####
                 table_height = obs_info[i]['position'][2]# + 0.12
 
                 # Table Constraint
@@ -75,12 +76,18 @@ class QPcontroller:
                 if cbf:
                     self.m.addConstr(self.u3 + self.k_cbf*h_table >= 0, "CBF_Constraint_for_table")
             else:
+                #### ellipsoid obstacle ####
                 pos = obs_info[i]['position']
-                rad = obs_info[i]['radius']
-                h = (x_current[0]-pos[0])**2 + (x_current[1]-pos[1])**2 + (x_current[2]-pos[2])**2 - rad**2
+                scale = np.array(obs_info[i]['scale']) / 2
+
+                ellipsoid_x = (x_current[0]-pos[0])/scale[0]
+                ellipsoid_y = (x_current[1]-pos[1])/scale[1]
+                ellipsoid_z = (x_current[2]-pos[2])/scale[2]
+                
+                h = ellipsoid_x**2 + ellipsoid_y**2 + ellipsoid_z**2 - 1
 
                 if cbf:
-                    self.m.addConstr(2*(x_current[0]-pos[0])*(self.u1+action[0]) + 2*(x_current[1]-pos[1])*(self.u2+action[1]) + 2*(x_current[2]-pos[2])*(self.u3+action[2]) + self.k_cbf*h >= 0, "CBF_Constraint_"+obs_info[i]['name'])
+                    self.m.addConstr(2*ellipsoid_x*(self.u1+action[0]) + 2*ellipsoid_y*(self.u2+action[1]) + 2*ellipsoid_z*(self.u3+action[2]) + self.k_cbf*h >= 0, "CBF_Constraint_"+obs_info[i]['name'])
       
         # Initialize Cost Function
         self.cost_func = self.u1*self.u1+self.u2*self.u2+self.u3*self.u3 + self.delta*self.delta

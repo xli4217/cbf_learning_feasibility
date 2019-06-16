@@ -38,8 +38,8 @@ class TLConfig(object):
             plate_rel = np.array([0.0, 0.005, 0.02, 0.656, 0.754, -0.016, -0.016])
             serve_plate_rel = plate_rel
         elif self.TLConfig_config['robot'] == 'baxter':
-            plate_rel = np.array([0.0, 0.005, -0.015, 0.656, 0.754, -0.016, -0.016])
-            serve_plate_rel = plate_rel + np.array([0,0,0.03, 0,0,0,0])
+            plate_rel = np.array([-0.05, -0.05, -0.015, 0.656, 0.754, -0.016, -0.016])
+            serve_plate_rel = plate_rel + np.array([0,0,0.04, 0,0,0,0])
         else:
             raise ValueError('robot not supported')
             
@@ -54,12 +54,12 @@ class TLConfig(object):
             'bunplate': plate_rel,
             'serveplate': serve_plate_rel,
             'grill': np.array([0.007, -0.012, 0.006, 0.710, 0.704, 0.017, 0.027]), # this needs confirmation
-            'switchon': np.array([-0.001, -0.247-0.01, 0.076-0.012, 0.993, 0.072, 0.064, 0.073]),
-            'condimentpre': np.array([0.022, -0.129, -0.09, -0.594, -0.433, -0.426, 0.528]),
-            'condimentpost': np.array([0.022, -0.129+0.11, -0.09, -0.594, -0.433, -0.426, 0.528]),
+            'switchon': np.array([-0.001, -0.247, 0.076, 0.993, 0.072, 0.064, 0.073]),
+            'condimentpre': np.array([0.022, -0.129, -0.045, -0.594, -0.433, -0.426, 0.528]),
+            'condimentpost': np.array([0.022, -0.129+0.11, -0.045, -0.594, -0.433, -0.426, 0.528]),
             'relativeplateapplycondimentpre': cpre,
             'relativeplateapplycondimentpost': cpost,
-            'placecondimentgoal': np.array([0.488,-0.0669,0.038,0.6135,0.3485,0.6266,-0.33]),
+            'placecondimentgoal': np.array([0.488,-0.0669,0.048,0.6135,0.3485,0.6266,-0.33]),
             'baxterneutral': np.array([0.729, -0.29, 0.19, -0.052, 0.998, 0.031, 0.020]),
             'jaconeutral': np.array([-0.075, -0.316, 0.26, 0.779, -0.621, -0.052, -0.076])
         }
@@ -74,10 +74,11 @@ class TLConfig(object):
             'serveplate': [29, 36],
             'grill': [36, 43],
             'switchon': [43],
-            'condimentapplied': [44]
+            'condimentapplied': [44],
+            'hotdogprob': [45]
         }
 
-        self.obs_dim = 45
+        self.obs_dim = 46
 
         ##############
         # TL Related #
@@ -102,7 +103,8 @@ class TLConfig(object):
             'flipswitchon': lambda s, a=None, sp=None: self.switch_robustness(s,a,sp),
             'closegripper': lambda s, a=None, sp=None:  self.gripper_robustness(s,a,sp, 'close'),
             'opengripper': lambda s, a=None, sp=None:  self.gripper_robustness(s,a,sp,'open'),
-            'inservezone_serveplate': lambda s, a=None, sp=None:  self.in_serve_zone_robustness(s,a,sp,'serveplate')
+            'inservezone_serveplate': lambda s, a=None, sp=None:  self.in_serve_zone_robustness(s,a,sp,'serveplate'),
+            'hotdogready': lambda s, a=None, sp=None:  self.hotdogready_robustness(s,a,sp)
         }
 
         
@@ -118,7 +120,9 @@ class TLConfig(object):
         state[self.STATE_IDX_MAP['grill'][0]:self.STATE_IDX_MAP['grill'][1]] = skill_arg['obj_poses']['grill']
         state[self.STATE_IDX_MAP['switchon']] = skill_arg['switchon']
         state[self.STATE_IDX_MAP['condimentapplied']] = skill_arg['condimentapplied']
-    
+        state[self.STATE_IDX_MAP['hotdogprob']] = skill_arg['hotdogprob']
+
+        
         return state
             
 
@@ -152,6 +156,7 @@ class TLConfig(object):
 
         mapped_quat_rob = (0.25 - quat_dist) / 0.25
 
+        
         rob = np.minimum(mapped_pos_rob, mapped_quat_rob)
         # if rel_pose_name == 'bunplate':
         #     print(object_pose)
@@ -160,8 +165,14 @@ class TLConfig(object):
         #     print("---")
             
         return (rob, 'action')
-        
 
+    def hotdogready_robustness(self, s=None, a=None, sp=None):
+        hotdogprob = s[self.state_idx_map['hotdogprob']]
+        if hotdogprob > 0.2:
+            return (100, 'nonaction')
+        else:
+            return (-100, 'nonaction')
+            
     def switch_robustness(self, s=None, a=None, sp=None):
         switch_on = s[self.state_idx_map['switchon']]
         if switch_on > 0:

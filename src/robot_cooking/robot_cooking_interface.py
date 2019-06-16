@@ -248,7 +248,7 @@ class RobotCookingInterface(object):
                 obs_pose_tf_stamped.transform.translation.y,
                 obs_pose_tf_stamped.transform.translation.z
             ]
-            obs_info.append({ 'name': k, 'position': obs_pos, 'radius':v['scale'][0]/2})
+            obs_info.append({ 'name': k, 'position': obs_pos, 'scale':v['scale']})
 
 
         table_pose_tf_stamped  = self.tf_buffer.lookup_transform('world', 'table_mapped', rospy.Time())

@@ -12,6 +12,7 @@
   <group if="$(arg baxter)">
     <include file="$(find baxter_api)/launch/baxter_api.launch"/>
     <node name="baxter_cooking_env" pkg="robot_cooking" type="make_env_node.py" respawn="false" output="screen" args="$(arg optitrack) baxter"/>
+    <include file="$(find robot_cooking)/launch/darknet_ros.launch"/>
   </group>
 
   

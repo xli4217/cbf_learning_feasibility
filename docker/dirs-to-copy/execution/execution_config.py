@@ -178,6 +178,7 @@ class ExecutionConfig(object):
         OBJECT_RELATIVE_POSE = tl_conf.OBJECT_RELATIVE_POSE
         STATE_IDX_MAP = tl_conf.STATE_IDX_MAP,
         PREDICATES = tl_conf.PREDICATES
+        obs_dim = tl_conf.obs_dim
         
         pick_hotdog = "F((moveto_hotdogplate && opengripper) && X F (closegripper))"
         place_bun = "F((moveto_bunplate && closegripper)  && X F (opengripper))"
@@ -192,7 +193,7 @@ class ExecutionConfig(object):
                                "(applycondiment && X F" + \
                                "((moveto_world_placecondimentgoal && closegripper) && X F" + \
                                "(opengripper && X F" + \
-                               "(moveto_condiment_condimentpre" + \
+                               "(moveto_world_jaconeutral" + \
                                ")))))))"
         
             entire_task_wo_condiment = "moveto_world_jaconeutral && X F" + \
@@ -209,6 +210,7 @@ class ExecutionConfig(object):
                                        "(moveto_world_jaconeutral" + \
                                        ")))))))))))"
 
+            # "((flipswitchon && closegripper) && X F " + \
             entire_task_w_condiment = "moveto_world_jaconeutral && X F" + \
                                       "((flipswitchon && closegripper) && X F " + \
                                       "((moveto_hotdogplate && opengripper) && X F " + \
@@ -231,7 +233,10 @@ class ExecutionConfig(object):
                                       "))))))))))))))))))"
 
 
-            task_spec =  "F (" +  entire_task_w_condiment + ")"
+            # task_spec =  "F (" +  entire_task_w_condiment + ")"
+            # task_spec = "F ( moveto_bunplate && X F (" + apply_condiment_ + ") )"
+            task_spec = "F ( moveto_world_jaconeutral && X F flipswitchon)"
+            
             repeat = False
             
         elif self.robot == 'baxter':
@@ -243,6 +248,7 @@ class ExecutionConfig(object):
                     "(moveto_world_baxterneutral " + \
                     "))))"
 
+            
             
 
             #### serve task KG ####
@@ -256,7 +262,7 @@ class ExecutionConfig(object):
             #### FSA version
             # serve_task_ = "(( inservezone_serveplate -> X F (" + serve + ")) && (!inservezone_serveplate -> X F moveto_world_baxterneutral))" + " && " + serve_task_KB
 
-            serve_task_ = "F(" +  serve + " )&& (! (" + serve + ") U inservezone_serveplate)" + " && " + serve_task_KB
+            serve_task_ = "F(" +  serve + " )&& (! (" + serve + ") U (inservezone_serveplate && hotdogready))" + " && " + serve_task_KB
             
             #### Buchi version 
             # serve_task_ = "G (( inservezone_serveplate -> X F (" + serve + ")))" + " && " + serve_task_KB
@@ -283,7 +289,7 @@ class ExecutionConfig(object):
                 'fsa_save_dir': os.path.join(os.environ['LEARNING_PATH'], 'execution', 'figures'),
                 'dot_file_name': 'make_hotdog',
                 'svg_file_name': 'make_hotdog',
-                'mdp_state_space': {'type': 'float', 'shape': (45, ), 'upper_bound':[], 'lower_bound': []}
+                'mdp_state_space': {'type': 'float', 'shape': (obs_dim, ), 'upper_bound':[], 'lower_bound': []}
             }
         }
 

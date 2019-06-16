@@ -10,7 +10,7 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 
 rospy.init_node('image_publisher')
-cap = cv2.VideoCapture(0) #Select 1 for external USB cam if computer has a built-in cam
+cap = cv2.VideoCapture(1) #Select 1 for external USB cam if computer has a built-in cam
 cap.set(3,640) #width of frame in video stream
 cap.set(4,480) #height of frame in video stream
 image_pub = rospy.Publisher("camera/rgb/image_raw",Image,queue_size=10)

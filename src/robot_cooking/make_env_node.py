@@ -77,7 +77,8 @@ class MakeEnv(object):
 
         obj_names = []
         topic_names = []
-        offsets = []
+        motive_offsets = []
+        self.marker_offsets = {}
         require_motive2robot_transform = []
         parent_frame_id = []
         child_frame_id = []
@@ -86,7 +87,8 @@ class MakeEnv(object):
                 if 'vrpn_topic' in value.keys():
                     obj_names.append(object_name)
                     topic_names.append(value['vrpn_topic'])
-                    offsets.append(value['motive_offset'])
+                    motive_offsets.append(value['motive_offset'])
+                    self.marker_offsets[object_name] = value['marker_offset']
                     require_motive2robot_transform.append(value['require_motive2robot_transform'])
                     parent_frame_id.append(value['parent_frame_id'])
                     child_frame_id.append(value['child_frame_id'])
@@ -95,15 +97,16 @@ class MakeEnv(object):
                 for k, v in viewitems(value['fitted_obstacles']):
                     obj_names.append(k)
                     topic_names.append(v['vrpn_topic'])
-                    offsets.append(v['motive_offset'])
+                    motive_offsets.append(v['motive_offset'])
+                    self.marker_offsets[k] = v['marker_offset']
                     require_motive2robot_transform.append(value['require_motive2robot_transform'])
                     parent_frame_id.append(v['parent_frame_id'])
                     child_frame_id.append(v['child_frame_id'])
                     
         self.object_pose_dict = {}
-
+        
         if optitrack: # use optitrack to get environment data
-            [rospy.Subscriber(topic_name, geometry_msgs.msg.PoseStamped, self.optitrack_callback, (obj_name, offset, require_transform, pfid, cfid), queue_size=1) for topic_name, obj_name, offset, require_transform, pfid, cfid in zip(topic_names, obj_names, offsets, require_motive2robot_transform, parent_frame_id, child_frame_id)]
+            [rospy.Subscriber(topic_name, geometry_msgs.msg.PoseStamped, self.optitrack_callback, (obj_name, motive_offset, require_transform, pfid, cfid), queue_size=1) for topic_name, obj_name, motive_offset, require_transform, pfid, cfid in zip(topic_names, obj_names, motive_offsets, require_motive2robot_transform, parent_frame_id, child_frame_id)]
             while not rospy.is_shutdown():
                 pass
         else:
@@ -145,9 +148,7 @@ class MakeEnv(object):
             ]
 
             pose[:3] = np.array(pose)[:3] + np.array(offset)[:3]
-
-            # if obj_name == 'table':
-            #     pose[2] -= 0.01
+            
         else:
             pose = [msg.pose.position.x,
                     msg.pose.position.y,
@@ -163,7 +164,9 @@ class MakeEnv(object):
             
     def update_rviz_markers(self):
         for key, value in viewitems(self.object_pose_dict):
-            self.marker_pub.update_marker_pose(name=key, pose=value)
+            pose = np.array(value)
+            pose[:3] = pose[:3] + np.array(self.marker_offsets[key])[:3]
+            self.marker_pub.update_marker_pose(name=key, pose=pose)
         self.marker_pub.publish_marker_array()
 
     def pub_transforms(self, obj_name, parent_frame_id, child_frame_id, pose):
@@ -199,6 +202,7 @@ if __name__ == "__main__":
     rospy.init_node(robot_name + '_make_env', anonymous=True)
 
     env_json_path = os.path.join(os.environ['RC_PATH'],
-                            'src', 'robot_cooking', 'env',
-                            'config', robot_name+'_env_config.json')
+                                 'src', 'robot_cooking', 'env',
+                                 'config', robot_name+'_env_config.json')
+    
     env = MakeEnv(env_json_path, optitrack, robot_name)
