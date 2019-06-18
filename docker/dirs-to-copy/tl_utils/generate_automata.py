@@ -85,6 +85,12 @@ class GenerateAutomata(object):
         
                 if 'opengripper' in node_guard_pred and node_guard_pred[0] != "~" and node_guard_pred[0] != "!":
                     gripper_action = 'opengripper'
+                if 'squeezegripper' in node_guard_pred and node_guard_pred[0] != "~" and node_guard_pred[0] != "!":
+                    gripper_action = 'squeezegripper'
+
+                if 'unsqueezegripper' in node_guard_pred and node_guard_pred[0] != "~" and node_guard_pred[0] != "!":
+                    gripper_action = 'unsqueezegripper'
+         
                 if 'closegripper' in node_guard_pred and node_guard_pred[0] != "~" and node_guard_pred[0] != "!":
                     gripper_action = 'closegripper'
                      
@@ -94,8 +100,6 @@ class GenerateAutomata(object):
                 if 'flipswitchon' in node_guard_pred and node_guard_pred[0] != "~" and node_guard_pred[0] != "!":
                     other_action = "flipswitchon"
                              
-                if 'applycondiment' in node_guard_pred and node_guard_pred[0] != "~" and node_guard_pred[0] != "!":
-                    other_action = 'applycondiment'
                   
         node_action = dict(ee_goal=ee_goal, gripper_action=gripper_action, other_action=other_action)
                 

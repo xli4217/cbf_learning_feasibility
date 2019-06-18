@@ -345,9 +345,10 @@ if __name__ == "__main__":
     
     #### test ####
     #cls.test()
-    cls.home_robot()
+    # cls.home_robot()
     #cls.get_switch_state()
-
+    cls.set_gripper_state(0)
+    
     #### test IK ####
     # curr_ee_pos, curr_ee_quat = cls.driver_utils.get_ee_pose()
     # curr_jp = cls.driver_utils.get_joint_values()

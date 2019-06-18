@@ -105,7 +105,7 @@ class RunRobotCooking(object):
         curr_vel = np.concatenate([linear_vel, angular_vel])
         
         object_poses = self.env.get_object_pose()
-    
+
         self.skill_arg.update({
             'curr_pose': curr_pose,
             'curr_vel': curr_vel,
@@ -160,8 +160,12 @@ class RunRobotCooking(object):
         self.update_skill_arg(dry_run)
 
         if skill_name == 'opengripper':
-            self.env.set_gripper_state(0.2)
+            self.env.set_gripper_state(0.3)
         elif skill_name == 'closegripper':
+            self.env.set_gripper_state(0.8)
+        elif skill_name == 'squeezegripper':
+            self.env.set_gripper_state(1,)
+        elif skill_name == 'unsqueezegripper':
             self.env.set_gripper_state(0.8)
         elif skill_name == "flipswitchon":
             # pt = KEY_POSITIONS['switch_on_goal']
@@ -176,17 +180,24 @@ class RunRobotCooking(object):
 
             
         elif skill_name == 'applycondiment':
+            self.env.set_gripper_state(0.9)
             #### squeeze
-            # self.env.set_gripper_state(0.8)
-            for i in range(10):
-                # vel_scale = 2. * np.sin(0.3*i)
-                vel_scale = -1.
-                self.env.pub_ee_frame_velocity(direction='z',vel_scale=vel_scale, duration_sec=0.1)
-                time.sleep(0.1)
-            self.condimentapplied = 10.
-            #### unsqueeze
+            # for i in range(30):
+            #     # vel_scale = 2. * np.sin(0.3*i)
+            #     vel_scale = -2.
+            #     self.env.pub_ee_frame_velocity(direction='z',vel_scale=vel_scale, duration_sec=0.1)
+            #     time.sleep(0.1)
+
+
+            # pt = get_object_goal_pose(self.skill_arg['obj_poses']['bunplate'], OBJECT_RELATIVE_POSE['relativeplateapplycondimentpostpost'])
+            # for i in range(20):
+            #     self.move_to_target_with_motor_skill(pt, skill_name='moveto', dry_run=dry_run)
+
+            # self.condimentapplied = 10.
+            # #### unsqueeze
             # self.env.set_gripper_state(0.8)    
-            self.update_skill_arg()    
+            # self.update_skill_arg()
+            
         elif skill_name.split('_')[0] == 'moveto':
             object_name = skill_name.split('_')[1]
             if len(skill_name.split('_')) == 3:
@@ -199,10 +210,8 @@ class RunRobotCooking(object):
             else:
                 pt = get_object_goal_pose(self.skill_arg['obj_poses'][object_name], OBJECT_RELATIVE_POSE[object_rel_pose_name])
             if self.RunRobotCooking_config['robot'] == 'jaco':
-                if object_rel_pose_name in ['placecondimentgoal']:
-                    # TODO: rise gripper a bit before going to grill (otherwise it chooses to go underneath)
-                    # pt_rise = get_object_goal_pose(self.skill_arg['curr_pose'], np.array([0,0,-0.12,0,0,0,1]))
-                    pt_rise = self.skill_arg['curr_pose'] + np.array([0,0,0.1,0,0,0,0])
+                if object_rel_pose_name in ['placecondimentgoal', 'condimentpre']:
+                    pt_rise = self.skill_arg['curr_pose'] + np.array([0.0,0,0.14,0,0,0,0])
                     self.move_to_target_with_motor_skill(pt_rise, skill_name='moveto', dry_run=dry_run)
             elif self.RunRobotCooking_config['robot'] == 'baxter':
                 # if 'plate' in object_rel_pose_name:

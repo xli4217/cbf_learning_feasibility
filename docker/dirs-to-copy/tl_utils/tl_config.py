@@ -35,31 +35,35 @@ class TLConfig(object):
         #############
 
         if self.TLConfig_config['robot'] == 'jaco':
-            plate_rel = np.array([0.0, 0.005, 0.02, 0.656, 0.754, -0.016, -0.016])
-            serve_plate_rel = plate_rel
+            bunplate_rel = np.array([0.04, 0.005, 0.05, 0.656, 0.754, -0.016, -0.016])
+            serve_plate_rel = bunplate_rel
         elif self.TLConfig_config['robot'] == 'baxter':
-            plate_rel = np.array([-0.05, -0.05, -0.015, 0.656, 0.754, -0.016, -0.016])
-            serve_plate_rel = plate_rel + np.array([0,0,0.04, 0,0,0,0])
+            bunplate_rel = np.array([-0.05, -0.05, -0.015, 0.656, 0.754, -0.016, -0.016])
+            serve_plate_rel = bunplate_rel + np.array([0,0,0.04, 0,0,0,0])
         else:
             raise ValueError('robot not supported')
             
-        cpre = np.array([0.038, 0.002, 0.2, -0.502, -0.540, -0.295, 0.608])
-        Mcpre = transformations.quaternion_matrix(cpre[3:])
-        Mrot = transformations.euler_matrix(0, 0, -180 * np.pi/180)
-        Mcpost = Mcpre.dot(Mrot)
-        cpost = np.concatenate([cpre[:3], transformations.quaternion_from_matrix(Mcpost)])
+        # cpost = np.array([0.018, 0.051, 0.142, -0.492, 0.546, 0.416, 0.535])
+        cpost = np.array([0.048, 0.043, 0.124, -0.305, 0.589, 0.654, 0.364])
+
+        # Mcpre = transformations.quaternion_matrix(cpre[3:])
+        # Mrot = transformations.euler_matrix(0, 0, -180 * np.pi/180)
+        # Mcpost = Mcpre.dot(Mrot)
+        # cpost = np.concatenate([cpre[:3], transformations.quaternion_from_matrix(Mcpost)])
+
+        cpostpost = np.array([0.020, -0.038, 0.143, -0.468, 0.566, 0.394, 0.552])
         
         self.OBJECT_RELATIVE_POSE = {
             'hotdogplate': np.array([0.0, 0.005, 0.02, 0.656, 0.754, -0.016, -0.016]),
-            'bunplate': plate_rel,
+            'bunplate': bunplate_rel,
             'serveplate': serve_plate_rel,
-            'grill': np.array([0.007, -0.012, 0.006, 0.710, 0.704, 0.017, 0.027]), # this needs confirmation
+            'grill': np.array([0.007, -0.012, 0.01, 0.710, 0.704, 0.017, 0.027]), # this needs confirmation
             'switchon': np.array([-0.001, -0.247-0.03, 0.076, 0.993, 0.072, 0.064, 0.073]),
-            'condimentpre': np.array([0.022, -0.129, -0.045, -0.594, -0.433, -0.426, 0.528]),
-            'condimentpost': np.array([0.022, -0.129+0.11, -0.045, -0.594, -0.433, -0.426, 0.528]),
-            'relativeplateapplycondimentpre': cpre,
-            'relativeplateapplycondimentpost': cpost,
-            'placecondimentgoal': np.array([0.488,-0.0669,0.048,0.6135,0.3485,0.6266,-0.33]),
+            'condimentpre': np.array([-0.018, -0.113, -0.029, 0.584, 0.381, 0.516, -0.497]),
+            'condimentpost': np.array([0.002, -0.015, -0.027, 0.588, 0.375, 0.526, -0.487]),
+            'relativeplateapplycondimentpre': cpost,
+            'relativeplateapplycondimentpost': cpost + np.array([0, -0.14, 0, 0, 0, 0, 0]),
+            'placecondimentgoal': np.array([0.488,-0.0669,0.04,0.6135,0.3485,0.6266,-0.33]),
             'baxterneutral': np.array([0.729, -0.29, 0.19, -0.052, 0.998, 0.031, 0.020]),
             'jaconeutral': np.array([-0.075, -0.316, 0.26, 0.779, -0.621, -0.052, -0.076])
         }
@@ -103,6 +107,8 @@ class TLConfig(object):
             'flipswitchon': lambda s, a=None, sp=None: self.switch_robustness(s,a,sp),
             'closegripper': lambda s, a=None, sp=None:  self.gripper_robustness(s,a,sp, 'close'),
             'opengripper': lambda s, a=None, sp=None:  self.gripper_robustness(s,a,sp,'open'),
+            'squeezegripper': lambda s, a=None, sp=None:  self.gripper_robustness(s,a,sp,'squeeze'),
+            'unsqueezegripper': lambda s, a=None, sp=None:  self.gripper_robustness(s,a,sp,'unsqueeze'),
             'inservezone_serveplate': lambda s, a=None, sp=None:  self.in_serve_zone_robustness(s,a,sp,'serveplate'),
             'hotdogready': lambda s, a=None, sp=None:  self.hotdogready_robustness(s,a,sp)
         }
@@ -198,7 +204,11 @@ class TLConfig(object):
         if oc == 'open':
             rob = v_open - float(s[self.state_idx_map['gripper_state']]) * 2 + 1
         elif oc == 'close':
-            rob = float(s[self.state_idx_map['gripper_state']]) * 2 - 1  
+            rob = float(s[self.state_idx_map['gripper_state']]) * 2 - 1
+        elif oc == 'squeeze':
+            rob = float(s[self.state_idx_map['gripper_state']]) - 0.8
+        elif oc == 'unsqueeze':
+            rob = 0.9 - float(s[self.state_idx_map['gripper_state']]) 
         else:
             raise ValueError()
 
