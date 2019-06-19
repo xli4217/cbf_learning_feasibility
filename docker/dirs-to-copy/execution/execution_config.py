@@ -151,7 +151,7 @@ class ExecutionConfig(object):
                         'num_states':3,
                         'action_space': {'shape': (3,), 'upper_bound': 0.3 * np.ones(3), 'lower_bound': -0.3 * np.ones(3)},
                         'use_own_pose': True,
-                        'dt': 0.018,
+                        'dt': 0.02,
                         'log_dir': os.path.join(os.environ['LEARNING_PATH'], 'execution', 'log')
                     },
                     'translation_gen': 'clf_cbf',
@@ -198,17 +198,27 @@ class ExecutionConfig(object):
             #                    ")))))))"
 
             #### position version ####
+            # apply_condiment_ = "(moveto_condiment_condimentpre && opengripper) && X F " + \
+            #                    "(moveto_condiment_condimentpost && X F " + \
+            #                    "(closegripper && X F "+ \
+            #                    "((moveto_bunplate_relativeplateapplycondimentpre && closegripper) && X F "+\
+            #                    "(squeezegripper && X F "+\
+            #                    "((moveto_bunplate_relativeplateapplycondimentpost && squeezegripper) && X F "+\
+            #                    "((closegripper && !squeezegripper) && X F "+\
+            #                    "((moveto_world_placecondimentgoal && closegripper) && X F" + \
+            #                    "(opengripper && X F" + \
+            #                    "(moveto_world_jaconeutral" + \
+            #                    ")))))))))"
+
             apply_condiment_ = "(moveto_condiment_condimentpre && opengripper) && X F " + \
                                "(moveto_condiment_condimentpost && X F " + \
                                "(closegripper && X F "+ \
-                               "((moveto_bunplate_relativeplateapplycondimentpre && closegripper) && X F "+\
-                               "( squeezegripper && X F "+\
-                               "((moveto_bunplate_relativeplateapplycondimentpost && squeezegripper) && X F "+\
-                               "( unsqueezegripper && X F "+\
+                               "((moveto_world_applycondimentpre && closegripper) && X F "+\
+                               "((moveto_world_applycondimentpost && closegripper) && X F "+\
                                "((moveto_world_placecondimentgoal && closegripper) && X F" + \
                                "(opengripper && X F" + \
                                "(moveto_world_jaconeutral" + \
-                               ")))))))))"
+                               ")))))))"
 
             
             entire_task_wo_condiment = "moveto_world_jaconeutral && X F" + \
@@ -247,11 +257,22 @@ class ExecutionConfig(object):
                                       "(moveto_world_jaconeutral" + \
                                       "))))))))))))))))))"
 
+
+            entire_task_first_half =  "moveto_world_jaconeutral && X F" + \
+                                      "((flipswitchon && closegripper) && X F " + \
+                                      "((moveto_hotdogplate && opengripper) && X F " + \
+                                      "(closegripper && X F " + \
+                                      "((moveto_grill && closegripper) && X F " + \
+                                      "(opengripper && X F "+ \
+                                      "(moveto_world_jaconeutral " + \
+                                      "))))))"
+
             
             # task_spec =  "F (" +  entire_task_w_condiment + ")"
-            task_spec = "F ( moveto_bunplate && X F (" + apply_condiment_ + ") )"
+            # task_spec = "F ( moveto_bunplate && X F (" + apply_condiment_ + ") )"
             # task_spec = "F ( moveto_world_jaconeutral && X F flipswitchon)"
             # task_spec = "F ( moveto_world_jaconeutral && X F applycondiment)"
+            task_spec = "F (" +  entire_task_first_half + ")"
             
             repeat = False
             

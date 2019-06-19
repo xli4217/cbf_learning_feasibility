@@ -58,11 +58,13 @@ class TLConfig(object):
             'bunplate': bunplate_rel,
             'serveplate': serve_plate_rel,
             'grill': np.array([0.007, -0.012, 0.01, 0.710, 0.704, 0.017, 0.027]), # this needs confirmation
-            'switchon': np.array([-0.001, -0.247-0.03, 0.076, 0.993, 0.072, 0.064, 0.073]),
-            'condimentpre': np.array([-0.018, -0.113, -0.029, 0.584, 0.381, 0.516, -0.497]),
-            'condimentpost': np.array([0.002, -0.015, -0.027, 0.588, 0.375, 0.526, -0.487]),
+            'switchon': np.array([-0.001, -0.247-0.05, 0.076, 0.993, 0.072, 0.064, 0.073]),
+            'condimentpre': np.array([0.006, -0.112, -0.020, 0.608, 0.373, 0.553, -0.430]),
+            'condimentpost': np.array([0.023, -0.053, -0.021, 0.604, 0.375, 0.551, -0.436]),
             'relativeplateapplycondimentpre': cpost,
             'relativeplateapplycondimentpost': cpost + np.array([0, -0.14, 0, 0, 0, 0, 0]),
+            'applycondimentpre': np.array([0.471, -0.373, 0.145, 0.215, 0.589, 0.144, 0.766]),
+            'applycondimentpost': np.array([0.363, -0.373, 0.144, 0.231, 0.546, 0.147, 0.792]),
             'placecondimentgoal': np.array([0.488,-0.0669,0.04,0.6135,0.3485,0.6266,-0.33]),
             'baxterneutral': np.array([0.729, -0.29, 0.19, -0.052, 0.998, 0.031, 0.020]),
             'jaconeutral': np.array([-0.075, -0.316, 0.26, 0.779, -0.621, -0.052, -0.076])
@@ -103,6 +105,8 @@ class TLConfig(object):
             'moveto_world_placecondimentgoal' : lambda s, a=None, sp=None: self.moveto_robustness(s,a,sp, 'world', 'placecondimentgoal'),
             'moveto_bunplate_relativeplateapplycondimentpre' : lambda s, a=None, sp=None: self.moveto_robustness(s,a,sp, 'bunplate', 'relativeplateapplycondimentpre'),
             'moveto_bunplate_relativeplateapplycondimentpost' : lambda s, a=None, sp=None: self.moveto_robustness(s,a,sp, 'bunplate', 'relativeplateapplycondimentpost'),
+            'moveto_world_applycondimentpre' : lambda s, a=None, sp=None: self.moveto_robustness(s,a,sp, 'world', 'applycondimentpre'),
+            'moveto_world_applycondimentpost' : lambda s, a=None, sp=None: self.moveto_robustness(s,a,sp, 'world', 'applycondimentpost'),
             'applycondiment': lambda s, a=None, sp=None: self.apply_condiment_robustness(s, a, sp),
             'flipswitchon': lambda s, a=None, sp=None: self.switch_robustness(s,a,sp),
             'closegripper': lambda s, a=None, sp=None:  self.gripper_robustness(s,a,sp, 'close'),
@@ -149,25 +153,34 @@ class TLConfig(object):
         pos_dist, quat_dist = pose_distance(ee_pose, goal_pose)
 
         if pos_dist > 0.04:
-            pos_dist = 0.04
-
+            pos_dist_m = 0.04
+        else:
+            pos_dist_m = pos_dist
+            
         if self.TLConfig_config['mode'] == 'sim':
             if pos_dist < 0.04:
-                pos_dist = 0
-            
-        mapped_pos_rob = (0.02 - pos_dist) / 0.02
+                pos_dist_m = 0
+            else:
+                pos_dist_m = pos_dist
+                
+        mapped_pos_rob = (0.02 - pos_dist_m) / 0.02
 
         if quat_dist > 0.5:
-            quat_dist = 0.5
-
-        mapped_quat_rob = (0.25 - quat_dist) / 0.25
+            quat_dist_m = 0.5
+        else:
+            quat_dist_m = quat_dist
+            
+        mapped_quat_rob = (0.25 - quat_dist_m) / 0.25
 
         
         rob = np.minimum(mapped_pos_rob, mapped_quat_rob)
-        # if rel_pose_name == 'bunplate':
+
+        # if rel_pose_name == 'relativeplateapplycondimentpost':
         #     print(object_pose)
         #     print(ee_pose)
+        #     print(goal_pose)
         #     print(pos_dist, quat_dist)
+        #     print(mapped_pos_rob, mapped_quat_rob)
         #     print("---")
             
         return (rob, 'action')
@@ -206,9 +219,10 @@ class TLConfig(object):
         elif oc == 'close':
             rob = float(s[self.state_idx_map['gripper_state']]) * 2 - 1
         elif oc == 'squeeze':
-            rob = float(s[self.state_idx_map['gripper_state']]) - 0.8
+            # rob = float(s[self.state_idx_map['gripper_state']]) - 0.83
+            rob = float(s[self.state_idx_map['gripper_state']]) * 2 - 1
         elif oc == 'unsqueeze':
-            rob = 0.9 - float(s[self.state_idx_map['gripper_state']]) 
+            rob = 0.9 - float(s[self.state_idx_map['gripper_state']])
         else:
             raise ValueError()
 
