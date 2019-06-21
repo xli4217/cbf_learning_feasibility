@@ -99,7 +99,9 @@ class GenerateAutomata(object):
 
                 if 'flipswitchon' in node_guard_pred and node_guard_pred[0] != "~" and node_guard_pred[0] != "!":
                     other_action = "flipswitchon"
-                             
+                if 'flipswitchoff' in node_guard_pred and node_guard_pred[0] != "~" and node_guard_pred[0] != "!":
+                    other_action = "flipswitchoff"
+       
                   
         node_action = dict(ee_goal=ee_goal, gripper_action=gripper_action, other_action=other_action)
                 

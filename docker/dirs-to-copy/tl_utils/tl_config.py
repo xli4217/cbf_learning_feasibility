@@ -60,6 +60,7 @@ class TLConfig(object):
             'serveplate': serve_plate_rel,
             'grill': np.array([0.007, -0.032, 0.003, 0.710, 0.704, 0.017, 0.027]), # this needs confirmation
             'switchon': np.array([-0.001, -0.247-0.05, 0.076, 0.993, 0.072, 0.064, 0.073]),
+            'switchoff': np.array([-0.117, -0.293, 0.038, 0.990, 0.126, -0.071, 0.002]),
             'condimentpre': np.array([0.006, -0.112, -0.020, 0.608, 0.373, 0.553, -0.430]),
             'condimentpost': np.array([0.023, -0.023, -0.021, 0.604, 0.375, 0.551, -0.436]),
             'relativeplateapplycondimentpre': cpost,
@@ -110,7 +111,8 @@ class TLConfig(object):
             'moveto_world_applycondimentpre' : lambda s, a=None, sp=None: self.moveto_robustness(s,a,sp, 'world', 'applycondimentpre'),
             'moveto_world_applycondimentpost' : lambda s, a=None, sp=None: self.moveto_robustness(s,a,sp, 'world', 'applycondimentpost'),
             'applycondiment': lambda s, a=None, sp=None: self.apply_condiment_robustness(s, a, sp),
-            'flipswitchon': lambda s, a=None, sp=None: self.switch_robustness(s,a,sp),
+            'flipswitchon': lambda s, a=None, sp=None: self.switch_robustness(s,a,sp, 'on'),
+            'flipswitchoff': lambda s, a=None, sp=None: self.switch_robustness(s,a,sp, 'off'),
             'closegripper': lambda s, a=None, sp=None:  self.gripper_robustness(s,a,sp, 'close'),
             'opengripper': lambda s, a=None, sp=None:  self.gripper_robustness(s,a,sp,'open'),
             'squeezegripper': lambda s, a=None, sp=None:  self.gripper_robustness(s,a,sp,'squeeze'),
@@ -194,12 +196,20 @@ class TLConfig(object):
         else:
             return (-100, 'nonaction')
             
-    def switch_robustness(self, s=None, a=None, sp=None):
+    def switch_robustness(self, s=None, a=None, sp=None, on_or_off='on'):
         switch_on = s[self.state_idx_map['switchon']]
-        if switch_on > 0:
-            return (1., 'nonaction')
-        else:
-            return (-1., 'nonaction')
+
+        if on_or_off == 'on':
+            if switch_on > 0:
+                return (1., 'nonaction')
+            else:
+                return (-1., 'nonaction')
+        elif on_or_off == 'off':
+            if switch_on > 0:
+                return (-1., 'nonaction')
+            else:
+                return (1., 'nonaction')
+   
   
     def apply_condiment_robustness(self, s, a=None, sp=None):
         '''

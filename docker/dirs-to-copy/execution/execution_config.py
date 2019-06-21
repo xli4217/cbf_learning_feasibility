@@ -277,7 +277,18 @@ class ExecutionConfig(object):
 
 
             entire_task_third_half = "(moveto_bunplate && closegripper) && X F "+\
-                                      "(opengripper && X F (" + apply_condiment_ + " && X F moveto_world_jaconeutral))"
+                                     "(opengripper && X F " + \
+                                     "((moveto_condiment_condimentpre && opengripper) && X F " + \
+                                     "(moveto_condiment_condimentpost && X F " + \
+                                     "(closegripper && X F "+ \
+                                     "((moveto_world_applycondimentpre && closegripper) && X F "+\
+                                     "((moveto_world_applycondimentpost && closegripper) && X F "+\
+                                     "((moveto_world_placecondimentgoal && closegripper) && X F" + \
+                                     "(opengripper && X F" + \
+                                     "(moveto_world_jaconeutral  && X F" + \
+                                     "(flipswitchoff && X F " + \
+                                     "(moveto_world_jaconeutral" + \
+                                     ")))))))))))"
             
 
 
@@ -285,6 +296,7 @@ class ExecutionConfig(object):
             # task_spec =  "F (" +  entire_task_w_condiment + ")"
             # task_spec = "F ( moveto_bunplate && X F (" + apply_condiment_ + ") )"
             # task_spec = "F ( moveto_world_jaconeutral && X F flipswitchon)"
+            # task_spec = "F ( moveto_world_jaconeutral && X F flipswitchoff)"
             # task_spec = "F ( moveto_world_jaconeutral && X F applycondiment)"
 
             # task_spec = "F (" +  entire_task_first_half + ")"
