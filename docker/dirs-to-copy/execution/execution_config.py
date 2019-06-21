@@ -267,18 +267,35 @@ class ExecutionConfig(object):
                                       "(moveto_world_jaconeutral " + \
                                       "))))))"
 
+
+            entire_task_second_half = "(moveto_world_jaconeutral && opengripper) && X F " + \
+                                      "((moveto_grill && opengripper) && X F " + \
+                                      "(closegripper && X F "+\
+                                      "((moveto_bunplate && closegripper) && X F "+\
+                                      "(opengripper " + \
+                                      "))))"
+
+
+            entire_task_third_half = "(moveto_bunplate && closegripper) && X F "+\
+                                      "(opengripper && X F (" + apply_condiment_ + " && X F moveto_world_jaconeutral))"
+            
+
+
             
             # task_spec =  "F (" +  entire_task_w_condiment + ")"
             # task_spec = "F ( moveto_bunplate && X F (" + apply_condiment_ + ") )"
             # task_spec = "F ( moveto_world_jaconeutral && X F flipswitchon)"
             # task_spec = "F ( moveto_world_jaconeutral && X F applycondiment)"
-            task_spec = "F (" +  entire_task_first_half + ")"
+
+            # task_spec = "F (" +  entire_task_first_half + ")"
+            # task_spec = "F (" +  entire_task_second_half + ")"
+            task_spec = "F (" +  entire_task_third_half + ")"
             
             repeat = False
             
         elif self.robot == 'baxter':
             
-            serve = "(moveto_bunplate && opengripper) && X F " + \
+            serve = "(moveto_world_baxterhotdogplate && opengripper) && X F " + \
                     "(closegripper && X F " + \
                     "((moveto_serveplate && closegripper) && X F " + \
                     "(opengripper  && X F "+ \
@@ -289,11 +306,11 @@ class ExecutionConfig(object):
             
 
             #### serve task KG ####
-            serve_task_KB = "G (!(moveto_serveplate && moveto_bunplate)) && " + \
+            serve_task_KB = "G (!(moveto_serveplate && moveto_world_baxterhotdogplate)) && " + \
                             "G (!(opengripper && closegripper)) && " + \
                             "G (!(moveto_serveplate && moveto_world_baxterneutral)) && " + \
-                            "G (!(moveto_bunplate && moveto_world_baxterneutral)) && " + \
-                            "G (!(moveto_serveplate && moveto_bunplate && moveto_world_baxterneutral))"
+                            "G (!(moveto_world_baxterhotdogplate && moveto_world_baxterneutral)) && " + \
+                            "G (!(moveto_serveplate && moveto_world_baxterhotdogplate && moveto_world_baxterneutral))"
      
 
             #### FSA version
