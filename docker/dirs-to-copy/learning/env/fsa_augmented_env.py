@@ -71,7 +71,7 @@ class FsaAugmentedEnv(object):
         self.state = None
 
         #### hack ####
-        self.load_switchon_policy()
+        # self.load_switchon_policy()
         self.condimentapplied = -10
         self.OBJECT_RELATIVE_POSE = OBJECT_RELATIVE_POSE
         self.get_object_goal_pose = get_object_goal_pose
@@ -86,12 +86,12 @@ class FsaAugmentedEnv(object):
             self.q = int(np.random.choice(self.qs, 1))
         else:
             self.q = 0
+        self.Q = self.fsa_reward.get_node_name_from_value(self.q)
         self.fsa_done = False
         self.fsa_r = None
         self.Q_next = None
         self.curr_edge = None
         self.Dq = None
-        self.Q = None
 
         
         self.state = self.get_state()
@@ -172,7 +172,7 @@ class FsaAugmentedEnv(object):
                     self.base_env.set_gripper_state(1)
 
         if other_action is not None:
-            if other_action == 'flipswitchon':
+            if other_action == 'flipswitchon' or other_action == 'flipswitchoff':
                 from tl_utils.tl_config import TLConfig
                 from utils.utils import get_object_goal_pose
         
@@ -183,20 +183,27 @@ class FsaAugmentedEnv(object):
                 #### close gripper
                 if self.base_env.get_gripper_state() != 1:
                     self.base_env.set_gripper_state(1.)
-                
-                pt = get_object_goal_pose(self.all_info['obj_poses']['grill'], OBJECT_RELATIVE_POSE['switchon'])
+
+                if other_action == 'flipswitchon':
+                    object_rel_pose = OBJECT_RELATIVE_POSE['switchon']
+                elif other_action == 'flipswitchoff':
+                    object_rel_pose = OBJECT_RELATIVE_POSE['switchoff']
+                else:
+                    raise ValueError('action not supported')
+                    
+                pt = get_object_goal_pose(self.all_info['obj_poses']['grill'], object_rel_pose)
                 self.base_env.set_goal_pose(pt)
                 
-                curr_pos, curr_quat = self.base_env.get_ee_pose()
-                curr_linear_vel, curr_angular_vel = self.base_env.get_ee_velocity()
-                curr_angular_vel = curr_angular_vel * np.pi / 180
+                # curr_pos, curr_quat = self.base_env.get_ee_pose()
+                # curr_linear_vel, curr_angular_vel = self.base_env.get_ee_velocity()
+                # curr_angular_vel = curr_angular_vel * np.pi / 180
 
-                curr_pose = np.concatenate([curr_pos, curr_quat])
-                curr_vel = np.concatenate([curr_linear_vel, curr_angular_vel])
+                # curr_pose = np.concatenate([curr_pos, curr_quat])
+                # curr_vel = np.concatenate([curr_linear_vel, curr_angular_vel])
 
-                ddy, dy, y = self.skill_flipswitchon(pt, curr_pose, curr_vel, self.all_info['obs_info'])
-
-                self.base_env.set_target_pose(y)
+                # # ddy, dy, y = self.skill_flipswitchon(pt, curr_pose, curr_vel, self.all_info['obs_info'])
+                
+                # self.base_env.set_target_pose(y)
                 
             elif other_action == 'applycondiment':
                 for i in range(20):
@@ -290,29 +297,29 @@ class FsaAugmentedEnv(object):
             }
         }
 
-    def skill_flipswitchon(self, goal, curr_pose, curr_vel, obs_info):
-        self.base_env.wp_gen.set_goal(goal)
+    # def skill_flipswitchon(self, goal, curr_pose, curr_vel, obs_info):
+    #     self.base_env.wp_gen.set_goal(goal)
         
-        policy = self.learned_skills_dict['flipswitchon']['policy']
-        state_preprocessor = self.learned_skills_dict['flipswitchon']['state_preprocessor']
+    #     policy = self.learned_skills_dict['flipswitchon']['policy']
+    #     state_preprocessor = self.learned_skills_dict['flipswitchon']['state_preprocessor']
 
-        state_dim = 3
+    #     state_dim = 3
         
-        s = curr_pose[:state_dim]
+    #     s = curr_pose[:state_dim]
 
-        if state_preprocessor is not None:
-            s = state_preprocessor.get_scaled_x(s)
+    #     if state_preprocessor is not None:
+    #         s = state_preprocessor.get_scaled_x(s)
             
-        forcing = policy.get_action(s, deterministic=True).flatten()
+    #     forcing = policy.get_action(s, deterministic=True).flatten()
 
-        forcing *= 100
+    #     forcing *= 100
 
-        action_space = 3
-        forcing = np.clip(forcing, -70, 70)
-        forcing = np.concatenate([forcing, np.zeros(3)])
+    #     action_space = 3
+    #     forcing = np.clip(forcing, -70, 70)
+    #     forcing = np.concatenate([forcing, np.zeros(3)])
 
-        ddy, dy, y = self.base_env.wp_gen.get_next_wp(action=forcing,
-                                                      curr_pose=curr_pose,
-                                                      curr_vel=curr_vel,
-                                                      obs_info=obs_info)
-        return ddy, dy , y
+    #     ddy, dy, y = self.base_env.wp_gen.get_next_wp(action=forcing,
+    #                                                   curr_pose=curr_pose,
+    #                                                   curr_vel=curr_vel,
+    #                                                   obs_info=obs_info)
+    #     return ddy, dy , y

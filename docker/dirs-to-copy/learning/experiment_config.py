@@ -84,7 +84,7 @@ class ExperimentConfig(object):
       
             elif self.ExperimentConfig_config.get('task') == 'serve' and self.robot == 'baxter':
                 task_spec, construct_state, predicate_robustness, obs_dim = self.get_tl_related(task=self.ExperimentConfig_config.get('task'))
-                get_state, get_reward, is_done, state_space, action_space, other = self.makehotdog_task_mdp_config(get_state_fn=construct_state, obs_dim=obs_dim)
+                get_state, get_reward, is_done, state_space, action_space, other = self.serve_task_mdp_config(get_state_fn=construct_state, obs_dim=obs_dim)
       
             else:
                 raise ValueError('task and robot not match')
@@ -222,21 +222,24 @@ class ExperimentConfig(object):
         return TrajectoryGenerator, config
 
 
-    def serve_task_mdp_config(self):        
+    def serve_task_mdp_config(self, get_state_fn=None, obs_dim=None):        
         #### State ####
         def get_state(all_info):
+            if not get_state_fn:
+                raise ValueError('need to provide get_state_fn')
+            else:
+                mdp_state = get_state_fn(all_info)
             return mdp_state
 
         #### Reward ####
         def get_reward(state=None, action=None, next_state=None, all_info=None):
-            return r
+            return 0
             
-        
         #### Done ####
         def is_done(state=None, action=None, next_state=None, all_info=None):
-            return done
+            return False
             
-        state_space = {'type': 'float', 'shape': (3, ), 'upper_bound': [], 'lower_bound': []}
+        state_space = {'type': 'float', 'shape': (obs_dim, ), 'upper_bound': [], 'lower_bound': []}
 
         action_coeff = 120
         action_space = {'type': 'float', 'shape': (3, ), "upper_bound": np.ones(3) * action_coeff, "lower_bound": -np.ones(3) * action_coeff}
@@ -256,8 +259,8 @@ class ExperimentConfig(object):
     def makehotdog_task_mdp_config(self, get_state_fn=None, obs_dim=None):        
         #### State ####
         def get_state(all_info):
-            if not get_state:
-                raise ValueError('need to provide get_state')
+            if not get_state_fn:
+                raise ValueError('need to provide get_state_fn')
             else:
                 mdp_state = get_state_fn(all_info)
             return mdp_state
@@ -292,19 +295,17 @@ class ExperimentConfig(object):
         def get_state(all_info):
             # mdp_state = np.array(list(all_info['target_pos']) + \
             #                      list(all_info['target_quat']))
-            mdp_state = np.array(all_info['target_pos'])
+            mdp_state = np.array(all_info['curr_pose'])[:3]
             return mdp_state
 
         #### Reward ####
         def get_reward(state=None, action=None, next_state=None, all_info=None):
-            button_joint_angle = all_info['button_joint_angle']
-            button_rel_pose = all_info['button_rel_pose']
             button_vel = all_info['button_vel']
-            button_joint_frame_angle = all_info['button_joint_frame_angle']
+            button_joint_frame_angle = all_info['button_angle']
 
-            r = -10*(button_joint_frame_angle[2] - 1.15)
+            r = -10*(button_joint_frame_angle - 1.15)
 
-            if button_joint_frame_angle[2] < 0.6:
+            if button_joint_frame_angle < 0.6:
                 r += 5.
 
             motion_range = all_info['motion_range']
@@ -350,7 +351,7 @@ class ExperimentConfig(object):
                 done = True
 
             ## done if finished task
-            toaster_joint_frame_angle = all_info['button_joint_frame_angle'][2]
+            toaster_joint_frame_angle = all_info['button_angle']
             # print(all_info['button_joint_frame_angle'][2])
             if toaster_joint_frame_angle < 0.57:
                 print('done: turn on task done')

@@ -76,21 +76,29 @@ class LearningEnv(object):
 
         self.sample_range = self.base_env.get_region_info(region='sample_region')
         self.motion_range = self.base_env.get_region_info(region='motion_region')
+
+        #### Tmp Hack ####
+        self.hotdogprob = 0    
+      
         
     def reset(self, s=None):
         self.update_all_info()
 
-        if s is None:
-            ## sampel target
-            low = [self.sample_range['x'][0], self.sample_range['y'][0], self.sample_range['z'][0]]
-            high = [self.sample_range['x'][1], self.sample_range['y'][1], self.sample_range['z'][1]]
-            self.target_pos = np.random.uniform(low, high, 3)
-        else:
-            self.target_pos = s
+        #### reset hotdogready ####
+        self.hotdogprob = np.random.uniform(low=0, high=0.4)
+        
+        #### currently do not sample initial position ####
+        # if s is None:
+        #     ## sample target
+        #     low = [self.sample_range['x'][0], self.sample_range['y'][0], self.sample_range['z'][0]]
+        #     high = [self.sample_range['x'][1], self.sample_range['y'][1], self.sample_range['z'][1]]
+        #     self.target_pos = np.random.uniform(low, high, 3)
+        # else:
+        #     self.target_pos = s
             
-        quat = np.array([9.96912479e-01,  5.98265615e-08,   -5.05284581e-04, 7.85199478e-02])
-        self.base_env.set_target_pose(np.concatenate([self.target_pos, quat]))
-        self.wp_gen.reset(np.concatenate([self.target_pos, quat]), np.zeros(6))
+        # quat = np.array([9.96912479e-01,  5.98265615e-08,   -5.05284581e-04, 7.85199478e-02])
+        # self.base_env.set_target_pose(np.concatenate([self.target_pos, quat]))
+        # self.wp_gen.reset(np.concatenate([self.target_pos, quat]), np.zeros(6))
 
         ## reset button
         rc = vrep.simxSetJointTargetPosition(self.base_env.clientID,
@@ -104,7 +112,8 @@ class LearningEnv(object):
         while np.linalg.norm(self.all_info['button_vel']) > 0.01:
             self.update_all_info()
             self.base_env.synchronous_trigger()
-        
+
+            
     def get_info(self):
         return self.all_info
         
@@ -143,6 +152,7 @@ class LearningEnv(object):
         
         new_info = {
             'goal': self.goal,
+            'button_angle': self.base_env.get_switch_state(),
             'button_vel': button_vel,
             'sample_range': self.sample_range,
             'motion_range': self.motion_range,
@@ -151,6 +161,7 @@ class LearningEnv(object):
             'curr_vel': curr_vel,
             'switchon': self.get_switch_state(),
             'gripper_state': self.get_gripper_state(),
+            'hotdogprob': self.hotdogprob,
             'obs_info': self.get_obstacle_info(),
             'obj_poses': self.get_object_pose(),
         }

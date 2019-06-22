@@ -1,14 +1,15 @@
 digraph "" {
-T0_S2;
+accept_S2;
 T0_init;
+T0_S1;
 trap;
-accept_all;
-T0_S2 -> T0_S2  [guard="(!(pp))", input="set([0, 2, 4, 6])", key=0, label="(!(pp))", weight=0];
-T0_S2 -> accept_all  [guard="(pp)", input="set([1, 3, 5, 7])", key=0, label="(pp)", weight=0];
-T0_init -> T0_S2  [guard="((c) && (!(pp)) && (r))", input="set([6])", key=0, label="((c) && (!(pp)) && (r))", weight=0];
-T0_init -> T0_init  [guard="(((!(c)) && (!(pp))) || ((!(pp)) && (!(r))))", input="set([0, 2, 4])", key=0, label="(((!(c)) && (!(pp))) || ((!(pp)) && (!(r))))", weight=0];
-T0_init -> trap  [guard=trap_guard, input="set([1, 3, 5])", key=0, label=trap_guard, weight=0];
-T0_init -> accept_all  [guard="((c) && (pp) && (r))", input="set([7])", key=0, label="((c) && (pp) && (r))", weight=0];
-trap -> trap  [guard="(1)", input="set([0, 1, 2, 3, 4, 5, 6, 7])", key=0, label="(1)", weight=0];
-accept_all -> accept_all  [guard="(1)", input="set([0, 1, 2, 3, 4, 5, 6, 7])", key=0, label="(1)", weight=0];
+accept_S2 -> accept_S2  [guard="(((!(c)) && (!(d))) || ((!(d)) && (!(o))))", input="set([0, 1, 2, 3, 8, 10])", key=0, label="(((!(c)) && (!(d))) || ((!(d)) && (!(o))))", weight=0];
+accept_S2 -> trap  [guard=trap_guard, input="set([4, 5, 6, 7, 9, 11, 12, 13, 14, 15])", key=0, label=trap_guard, weight=0];
+T0_init -> T0_init  [guard="(((!(c)) && (!(d)) && (!(m))) || ((!(c)) && (!(d)) && (!(o))))", input="set([0, 8, 2])", key=0, label="(((!(c)) && (!(d)) && (!(m))) || ((!(c)) && (!(d)) && (!(o))))", weight=0];
+T0_init -> T0_S1  [guard="((!(c)) && (!(d)) && (m) && (o))", input="set([10])", key=0, label="((!(c)) && (!(d)) && (m) && (o))", weight=0];
+T0_init -> trap  [guard=trap_guard, input="set([1, 3, 4, 5, 6, 7, 9, 11, 12, 13, 14, 15])", key=0, label=trap_guard, weight=0];
+T0_S1 -> accept_S2  [guard="((c) && (!(d)) && (!(o)))", input="set([1, 3])", key=0, label="((c) && (!(d)) && (!(o)))", weight=0];
+T0_S1 -> T0_S1  [guard="((!(c)) && (!(d)))", input="set([0, 8, 2, 10])", key=0, label="((!(c)) && (!(d)))", weight=0];
+T0_S1 -> trap  [guard=trap_guard, input="set([4, 5, 6, 7, 9, 11, 12, 13, 14, 15])", key=0, label=trap_guard, weight=0];
+trap -> trap  [guard="(1)", input="set([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])", key=0, label="(1)", weight=0];
 }
