@@ -112,11 +112,16 @@ class QPcontroller:
         self.m.optimize()
         self.solution = self.m.getVars()
 
-        # get final decision variables
-        self.control_u1 = self.solution[0].x
-        self.control_u2 = self.solution[1].x
-        self.control_u3 = self.solution[2].x
-        
+        if clf or cbf:
+            # get final decision variables
+            self.control_u1 = self.solution[0].x + action[0]
+            self.control_u2 = self.solution[1].x + action[1]
+            self.control_u3 = self.solution[2].x + action[2]
+        else:
+            self.control_u1 = action[0]
+            self.control_u2 = action[1]
+            self.control_u3 = action[2]
+      
         # For debuging only, save model to view constraints etc.
         self.m.write(os.path.join(self.QPcontroller_config['log_dir'], "qp_model.lp"))
 

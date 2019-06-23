@@ -114,7 +114,12 @@ class TrajectoryGenerator(object):
         #### orientation generator ####
         if orientation_gen == 'dmp':
             #### this include translation and orientation
-            dmp_ddy, dmp_dy, dmp_y = self.dmp_gen.get_next_wp(action, curr_pose, curr_vel)
+            dmp_ddy, dmp_dy, dmp_y = self.dmp_gen.get_next_wp(action, curr_pose, curr_vel, with_point_attractor=True, with_action=True)
+            ddy_ori = dmp_ddy[3:]
+            dy_ori = dmp_dy[3:]
+            y_ori = dmp_y[3:]
+        elif orientation_gen is None:
+            dmp_ddy, dmp_dy, dmp_y = self.dmp_gen.get_next_wp(action, curr_pose, curr_vel, with_point_attractor=False, with_action=True)
             ddy_ori = dmp_ddy[3:]
             dy_ori = dmp_dy[3:]
             y_ori = dmp_y[3:]

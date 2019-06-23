@@ -80,7 +80,7 @@ class DMP(object):
         self.linear_vel = None
         self.angular_vel = None
         
-    def get_next_wp(self, action, curr_pose, curr_vel, dt=None, obs_info={}):
+    def get_next_wp(self, action, curr_pose, curr_vel, dt=None, obs_info={}, with_point_attractor=True, with_action=True):
         if dt is not None:
             self.dt = dt
 
@@ -97,17 +97,17 @@ class DMP(object):
             if self.pos is None:
                 self.reset(curr_pose, curr_vel)
                 
-            lddy, ldy, ly = self.get_next_wp_pos(action_linear, self.pos, self.linear_vel, self.linear_front_terms)
+            lddy, ldy, ly = self.get_next_wp_pos(action_linear, self.pos, self.linear_vel, self.linear_front_terms, with_point_attractor=with_point_attractor, with_action=with_action)
             #### addy is anglar acceleration, ady is angular velocity, ay is quaternion
-            addy, ady, ay= self.get_next_wp_quat(action_angular, self.quat, self.angular_vel, self.angular_front_terms)
+            addy, ady, ay= self.get_next_wp_quat(action_angular, self.quat, self.angular_vel, self.angular_front_terms, with_point_attractor=with_point_attractor, with_action=with_action)
             self.pos = ly
             self.quat = ay
             self.linear_vel = ldy
             self.angular_vel = ady
         else:
-            lddy, ldy, ly = self.get_next_wp_pos(action_linear, curr_pos, curr_linear_vel, self.linear_front_terms)
+            lddy, ldy, ly = self.get_next_wp_pos(action_linear, curr_pos, curr_linear_vel, self.linear_front_terms, with_point_attractor=with_point_attractor, with_action=with_action)
             #### addy is anglar acceleration, ady is angular velocity, ay is quaternion
-            addy, ady, ay= self.get_next_wp_quat(action_angular, curr_quat, curr_angular_vel, self.angular_front_terms)
+            addy, ady, ay= self.get_next_wp_quat(action_angular, curr_quat, curr_angular_vel, self.angular_front_terms, with_point_attractor=with_point_attractor, with_action=with_action)
 
         
         #### implement phase stopping ####
@@ -123,7 +123,7 @@ class DMP(object):
             self.angular_front_terms = cx * abs(quaternion_dist(self.goal[3:], curr_quat))
         
             
-        #### continuous goal integrate ####
+        #### continuous goal integration ####
         # linear_goal = self.goal[:3] + self.ag * (self.new_goal[:3] - self.goal[:3]) / self.tau
         # goal_quat = copy.copy(self.goal[3:])
         # new_goal_quat = copy.copy(self.new_goal[3:])
@@ -137,7 +137,7 @@ class DMP(object):
         return np.concatenate([lddy, addy]),  np.concatenate([ldy, ady]),  np.concatenate([ly, ay])
 
         
-    def get_next_wp_quat(self, action, curr_quat, curr_angular_vel, front_terms):
+    def get_next_wp_quat(self, action, curr_quat, curr_angular_vel, front_terms, with_point_attractor=True, with_action=True):
         '''
         reference: Orientation in Cartesian Space Dynamic Movement Primitives - https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6907291
 
@@ -148,16 +148,21 @@ class DMP(object):
         
         eta = self.tau * curr_angular_vel
 
-        
         log_conjugate_product = quaternion_log(t.quaternion_multiply(goal_quat, t.quaternion_conjugate(curr_quat)))
 
         # print('goal_quat:', goal_quat)
         # print('curr_quat:', curr_quat)
         # print('eta:', eta)
         # print('log_c:', log_conjugate_product)
-        
+
+        tmp = np.zeros(len(action))
+        if with_action:
+            tmp += action * front_terms
+        if with_point_attractor:
+            tmp += self.az * ( self.bz * 2 * log_conjugate_product - eta )
+            
         # eta_dot
-        addy = (1 / self.tau) * (self.az * ( self.bz * 2 * log_conjugate_product - eta ) + action * front_terms)
+        addy = (1 / self.tau) * tmp
 
         # print('addy:', addy)
         # eta
@@ -176,7 +181,7 @@ class DMP(object):
         
         return self.tau * addy, self.tau * ady, ay
         
-    def get_next_wp_pos(self, action, curr_pos, curr_linear_vel, front_terms):
+    def get_next_wp_pos(self, action, curr_pos, curr_linear_vel, front_terms,with_point_attractor=True, with_action=True):
 
         # print('goal:', self.goal)
         # print('pose:', curr_pos)
@@ -185,8 +190,13 @@ class DMP(object):
         # print('front_terms:', front_terms)
 
         pos_goal = self.goal[:3]
-        point_attractor = self.ay * ( self.by * (pos_goal - curr_pos) - curr_linear_vel ) + action * front_terms
 
+        tmp = np.zeros(len(action))
+        if with_action:
+            tmp += action * front_terms
+        if with_point_attractor:
+            tmp += self.ay * ( self.by * (pos_goal - curr_pos) - curr_linear_vel )
+            
         # print(self.ay * ( self.by * (pos_goal - curr_pos) - curr_linear_vel ))
         # print(point_attractor)
         # print(front_terms)
@@ -194,7 +204,7 @@ class DMP(object):
         # print(action * front_terms)
         # print('----')
         
-        lddy = ((point_attractor + action) * self.tau) / self.tau
+        lddy = (tmp * self.tau) / self.tau
         ldy = (curr_linear_vel + lddy * self.dt) / self.tau
         
         # ldy += self.app * (pos_goal - curr_pos)

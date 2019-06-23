@@ -172,8 +172,9 @@ class FsaAugmentedEnv(object):
             if object_rel_pose_name == 'condimentpost':
                 pt += np.array([0,0,-0.04,0,0,0,0])
             if object_rel_pose_name in ['bunplate']:
-                pt[3:] = -pt[3:]
                 pt[2] += 0.04
+            if object_rel_pose_name == 'hotdogplate':
+                pt[2] += -0.01
                 
             self.base_env.set_goal_pose(pt)
 
@@ -193,8 +194,9 @@ class FsaAugmentedEnv(object):
                     self.base_env.set_gripper_state(1.)
 
                 if other_action == 'flipswitchon':
-                    object_rel_pose = OBJECT_RELATIVE_POSE['switchon']
+                    object_rel_pose = np.array(self.OBJECT_RELATIVE_POSE['switchon'])
                     object_rel_pose += np.array([0, 0.03, -0.02, 0, 0, 0, 0])
+                    
                     
                     #### tune offset 
                     if self.all_info['switchon'] > 0:
@@ -204,12 +206,12 @@ class FsaAugmentedEnv(object):
                             self.base_env.step(action=np.zeros(self.base_env.action_space['shape'][0]))
                             
                 elif other_action == 'flipswitchoff':
-                    object_rel_pose = OBJECT_RELATIVE_POSE['switchoff']
+                    object_rel_pose = np.array(self.OBJECT_RELATIVE_POSE['switchoff'])
                     object_rel_pose += np.array([0, 0.03, -0.025, 0, 0, 0, 0])
                 else:
                     raise ValueError('action not supported')
                     
-                pt = get_object_goal_pose(self.all_info['obj_poses']['grill'], object_rel_pose)
+                pt = self.get_object_goal_pose(self.all_info['obj_poses']['grill'], object_rel_pose)
                 self.base_env.set_goal_pose(pt)
 
                 

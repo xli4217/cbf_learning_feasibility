@@ -11,8 +11,8 @@ default_config = {
     'env_name': "vrep",
     'robot': 'jaco',
     'headless': False,
-    # this list can contain 'mdp', 'fsa', 'cbf', 'dmp' 
-    'components': {'mdp': True, 'fsa': False, 'cbf': False, 'dmp': False},
+    # translation_gen can be 'clf', 'cbf', 'clf_cbf', 'dmp', orientation_gen can be 'dmp'
+    'components': {'mdp': True, 'fsa': False, 'translation_gen': 'clf_cbf', 'orientation_gen': 'dmp'},
     # this can be 'makehotdog (for jaco+mdp+fsa)', 'serve (for baxter+mdp+fsa)', 'switchon (for jaco + mdp)'
     'task': 'switchon',
     'fsa_save_dir': os.getcwd(),
@@ -39,18 +39,10 @@ class ExperimentConfig(object):
 
     def construct_env(self):
         #### traj generator ####
-        if not self.components['cbf'] and not self.components['dmp']:
-            translation_gen = None
-        elif not self.components['dmp'] and self.components['cbf']:
-            translation_gen = 'cbf'
-        elif self.components['dmp'] and not self.components['cbf']:
-            translation_gen = 'clf'
-        elif self.components['dmp'] and self.components['cbf']:
-            translation_gen = 'clf_cbf'
-        else:
-            raise ValueError('invalid combination of translation_gen')
+        translation_gen = self.components['translation_gen']
+        orientation_gen = self.components['orientation_gen']    
             
-        traj_gen_type, traj_gen_config = self.construct_traj_generator(translation_gen=translation_gen)
+        traj_gen_type, traj_gen_config = self.construct_traj_generator(translation_gen=translation_gen, orientation_gen=orientation_gen)
 
         #### MDP ####
         if self.components['mdp'] and not self.components['fsa']:
@@ -486,9 +478,9 @@ class ExperimentConfig(object):
             #### FSA version
             # serve_task_ = "(( inservezone_serveplate -> X F (" + serve + ")) && (!inservezone_serveplate -> X F moveto_world_baxterneutral))" + " && " + serve_task_KB
 
-            task_spec = "F(" +  serve + " )&& (! (" + serve + ") U inservezone_serveplate)" + " && " + serve_task_KB
+            # task_spec = "F(" +  serve + " )&& (! (" + serve + ") U inservezone_serveplate)" + " && " + serve_task_KB
 
-            # task_spec = "F(" +  serve + " ) && (! (" + serve + ") U (inservezone_serveplate && hotdogready))" + " && " + serve_task_KB
+            task_spec = "F(" +  serve + " ) && (! (" + serve + ") U (inservezone_serveplate && hotdogready))" + " && " + serve_task_KB
             
             #### Buchi version 
             # serve_task_ = "G (( inservezone_serveplate -> X F (" + serve + ")))" + " && " + serve_task_KB

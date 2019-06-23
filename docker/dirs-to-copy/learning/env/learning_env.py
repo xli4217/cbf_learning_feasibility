@@ -58,7 +58,8 @@ class LearningEnv(object):
             self.base_env = base_env
 
         if wp_gen is None:
-            self.wp_gen = self.LearningEnv_config['WPGenerator']['type']( self.LearningEnv_config['WPGenerator']['config'])
+            self.wp_gen_config = self.LearningEnv_config['WPGenerator']['config']
+            self.wp_gen = self.LearningEnv_config['WPGenerator']['type'](self.wp_gen_config)
         else:
             self.wp_gen = wp_gen
 
@@ -86,7 +87,7 @@ class LearningEnv(object):
 
         #### reset hotdogready ####
         # self.hotdogprob = np.random.uniform(low=0, high=0.4)
-        self.hotdogprob = 0
+        self.hotdogprob = 1
         
         #### currently do not sample initial position ####
         # if s is None:
@@ -195,10 +196,13 @@ class LearningEnv(object):
 
         #### HACK! remove when done debugging #####
         action = np.zeros(action.shape)
+        action = np.concatenate([np.random.uniform(low=-0.5,  high=0.5, size=3),
+                                 np.random.uniform(low=-200,  high=200, size=3)])
         
         if len(action) == 3:
             action = np.concatenate([action, np.zeros(3)])
-        ddy, dy, y = self.wp_gen.get_next_wp(action, curr_pose, curr_vel)
+
+        ddy, dy, y = self.wp_gen.get_next_wp(action, curr_pose, curr_vel, translation_gen=self.wp_gen_config['translation_gen'], orientation_gen=self.wp_gen_config['orientation_gen'])
         
         if len(y) < 7:
             y = np.concatenate([y, np.array([0,0,0,1])])

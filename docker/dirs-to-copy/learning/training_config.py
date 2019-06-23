@@ -28,7 +28,7 @@ def construct_rl_base_runner_config(restore_runner_dir=None,
                                     fsa_name="fsa",
                                     headless=False,
                                     robot='jaco',
-                                    components={'mdp': True, 'fsa': True, 'cbf': False, 'dmp': False},
+                                    components= {'mdp': True, 'fsa': False, 'translation_gen': 'clf_cbf', 'orientation_gen': 'dmp'},
                                     particle_test=False,
                                     # reset config
                                     reset_config=None,
@@ -212,7 +212,8 @@ def construct_rl_experiment_config(experiment_root_dir="",
                                    fsa_save_dir="",
                                    fsa_name="fsa",
                                    robot='jaco',
-                                   components={'mdp': True, 'fsa': True, 'cbf': False, 'dmp': False},
+                                   # translation_gen can be 'clf', 'cbf', 'clf_cbf', 'dmp', orientation_gen can be 'dmp'
+                                   components= {'mdp': True, 'fsa': False, 'translation_gen': 'clf_cbf', 'orientation_gen': 'dmp'},
                                    particle_test=False,
                                    # runner_config -> rl_base_runner_config -> agent_config
                                    agent='sac',
@@ -357,7 +358,8 @@ def construct_deployer_config(agent='ppo',
                               fsa_name='fsa',
                               headless=False,
                               robot='jaco',
-                              components={'mdp': True, 'fsa': True, 'cbf': False, 'dmp': False},
+                              # translation_gen can be 'clf', 'cbf', 'clf_cbf', 'dmp', orientation_gen can be 'dmp'
+                              components= {'mdp': True, 'fsa': False, 'translation_gen': 'clf_cbf', 'orientation_gen': 'dmp'},
                               # policy config
                               exp_name='test',
                               hyperparam_dir='seed0',
@@ -430,7 +432,8 @@ default_args = {
     'fsa_save_dir': os.path.join(os.environ['LEARNING_PATH'], 'learning', 'figures'),
     'fsa_name': "fsa",
     'robot': 'baxter',
-    'components':{'mdp': True, 'fsa': True, 'cbf': False, 'dmp': True},
+    # translation_gen can be 'clf', 'cbf', 'clf_cbf', 'dmp', 'None', orientation_gen can be 'dmp' or None
+    'components': {'mdp': True, 'fsa': True, 'translation_gen': 'clf_cbf', 'orientation_gen': None},
     'particle_test': False,
     ##### replay buffer config ####
     'per_alpha': 0.,
