@@ -7,7 +7,7 @@ jaco_joint_handles = ["Jaco_joint"+str(i+1) for i in range(6)]
     
 robot_handles = {
     'Baxter':{
-        'world_frame_handle': 'Baxter_World_Frame',
+        'world_frame_handle': 'BAXTER_WORLD_FRAME',
         'joint_handles': baxter_joint_handles,
         'gripper_handles': {
             'toggle_handle': 'baxterClosing',

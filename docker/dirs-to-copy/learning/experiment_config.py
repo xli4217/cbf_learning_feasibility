@@ -16,7 +16,8 @@ default_config = {
     # this can be 'makehotdog (for jaco+mdp+fsa)', 'serve (for baxter+mdp+fsa)', 'switchon (for jaco + mdp)'
     'task': 'switchon',
     'fsa_save_dir': os.getcwd(),
-    'fsa_name': 'g'
+    'fsa_name': 'g',
+    'particle_test': False
 }
 
 class ExperimentConfig(object):
@@ -108,6 +109,7 @@ class ExperimentConfig(object):
                 'fsa_save_dir': self.ExperimentConfig_config.get('fsa_save_dir'),
                 'dot_file_name': self.ExperimentConfig_config.get('fsa_name'),
                 'svg_file_name': self.ExperimentConfig_config.get('fsa_name'),
+                'robot': self.robot,
                 'base_env': {
                     'type': mdp_env_type,
                     'config': mdp_env_config,
@@ -162,7 +164,7 @@ class ExperimentConfig(object):
                     'config': {
                         # specific to this env
                         "suffix": "",
-                        "particle_test": False,
+                        "particle_test": self.ExperimentConfig_config.get('particle_test'),
                         "arm": self.robot,
                         "control_mode": "velocity"
                     }
@@ -377,7 +379,7 @@ class ExperimentConfig(object):
     def get_tl_related(self, task='makehotdog'):
         from tl_utils.tl_config import TLConfig
 
-        tlconfig = TLConfig({'robot': self.robot})
+        tlconfig = TLConfig({'robot': self.robot, 'mode': 'sim'})
 
         if task == 'makehotdog' and self.robot == 'jaco':
             task_spec_wo_condiment = "moveto_world_jaconeutral && X F" + \
@@ -404,13 +406,38 @@ class ExperimentConfig(object):
                                "))))))"
 
 
-            entire_task_w_condiment = "moveto_world_jaconeutral && X F" + \
+            # entire_task_w_condiment = "moveto_world_jaconeutral && X F" + \
+            #                           "((flipswitchon && closegripper) && X F " + \
+            #                           "((moveto_hotdogplate && opengripper) && X F " + \
+            #                           "(closegripper && X F " + \
+            #                           "((moveto_grill && closegripper) && X F " + \
+            #                           "(opengripper && X F "+ \
+            #                           "(moveto_world_jaconeutral && X F " + \
+            #                           "((moveto_grill && opengripper) && X F " + \
+            #                           "(closegripper && X F "+\
+            #                           "((moveto_bunplate && closegripper) && X F "+\
+            #                           "(opengripper && X F " + \
+            #                           "((moveto_condiment_condimentpre && opengripper) && X F " + \
+            #                           "(moveto_condiment_condimentpost && X F " + \
+            #                           "(closegripper && X F "+ \
+            #                           "((moveto_bunplate_relativeplateapplycondimentpost && closegripper) && X F "+\
+            #                           "(applycondiment && X F" + \
+            #                           "((moveto_world_placecondimentgoal && closegripper) && X F" + \
+            #                           "(opengripper && X F" + \
+            #                           "(moveto_world_jaconeutral && X F" + \
+            #                           "(closegripper && X F" + \
+            #                           "(flipswitchoff && X F" + \
+            #                           "(moveto_world_jaconeutral" +\
+            #                           ")))))))))))))))))))))"
+
+
+            entire_task_w_condiment =  "moveto_world_jaconeutral && X F" + \
                                       "((flipswitchon && closegripper) && X F " + \
                                       "((moveto_hotdogplate && opengripper) && X F " + \
                                       "(closegripper && X F " + \
                                       "((moveto_grill && closegripper) && X F " + \
                                       "(opengripper && X F "+ \
-                                      "(moveto_world_jaconeutral && X F " + \
+                                      "((moveto_world_jaconeutral && opengripper) && X F " + \
                                       "((moveto_grill && opengripper) && X F " + \
                                       "(closegripper && X F "+\
                                       "((moveto_bunplate && closegripper) && X F "+\
@@ -418,18 +445,28 @@ class ExperimentConfig(object):
                                       "((moveto_condiment_condimentpre && opengripper) && X F " + \
                                       "(moveto_condiment_condimentpost && X F " + \
                                       "(closegripper && X F "+ \
-                                      "((moveto_bunplate_relativeplateapplycondimentpost && closegripper) && X F "+\
-                                      "(applycondiment && X F" + \
+                                      "((moveto_world_applycondimentpre && closegripper) && X F "+\
+                                      "((moveto_world_applycondimentpost && closegripper) && X F "+\
                                       "((moveto_world_placecondimentgoal && closegripper) && X F" + \
                                       "(opengripper && X F" + \
+                                      "(moveto_world_jaconeutral  && X F" + \
+                                      "(flipswitchoff && X F " + \
                                       "(moveto_world_jaconeutral" + \
-                                      "))))))))))))))))))"
+                                     "))))))))))))))))))))"
+            
 
             
             task_spec = "F(" + entire_task_w_condiment + ")"
-            #task_spec = "F(closegripper && X F moveto_bunplate)"
+            # task_spec = "F(closegripper && X F moveto_bunplate)"
             
         elif task == 'serve' and self.robot == 'baxter':
+            # serve = "(moveto_bunplate && opengripper) && X F " + \
+            #         "(closegripper && X F " + \
+            #         "((moveto_serveplate && closegripper) && X F " + \
+            #         "(opengripper  && X F "+ \
+            #         "(moveto_world_baxterneutral " + \
+            #         "))))"
+
             serve = "(moveto_bunplate && opengripper) && X F " + \
                     "(closegripper && X F " + \
                     "((moveto_serveplate && closegripper) && X F " + \
@@ -437,7 +474,6 @@ class ExperimentConfig(object):
                     "(moveto_world_baxterneutral " + \
                     "))))"
 
-            
 
             #### serve task KG ####
             serve_task_KB = "G (!(moveto_serveplate && moveto_bunplate)) && " + \
@@ -452,7 +488,7 @@ class ExperimentConfig(object):
 
             task_spec = "F(" +  serve + " )&& (! (" + serve + ") U inservezone_serveplate)" + " && " + serve_task_KB
 
-           
+            # task_spec = "F(" +  serve + " ) && (! (" + serve + ") U (inservezone_serveplate && hotdogready))" + " && " + serve_task_KB
             
             #### Buchi version 
             # serve_task_ = "G (( inservezone_serveplate -> X F (" + serve + ")))" + " && " + serve_task_KB

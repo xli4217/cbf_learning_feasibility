@@ -29,6 +29,7 @@ def construct_rl_base_runner_config(restore_runner_dir=None,
                                     headless=False,
                                     robot='jaco',
                                     components={'mdp': True, 'fsa': True, 'cbf': False, 'dmp': False},
+                                    particle_test=False,
                                     # reset config
                                     reset_config=None,
                                     # critic_config
@@ -77,7 +78,8 @@ def construct_rl_base_runner_config(restore_runner_dir=None,
                                           'task': task,
                                           'fsa_save_dir': fsa_save_dir,
                                           'fsa_name': fsa_name,
-                                          'headless':headless})
+                                          'headless':headless,
+                                          'particle_test': particle_test})
     
     process_rewards = exp_config.process_rewards    
     Environment = exp_config.Environment
@@ -211,6 +213,7 @@ def construct_rl_experiment_config(experiment_root_dir="",
                                    fsa_name="fsa",
                                    robot='jaco',
                                    components={'mdp': True, 'fsa': True, 'cbf': False, 'dmp': False},
+                                   particle_test=False,
                                    # runner_config -> rl_base_runner_config -> agent_config
                                    agent='sac',
                                    # -- agent common
@@ -278,6 +281,7 @@ def construct_rl_experiment_config(experiment_root_dir="",
                                                               fsa_name=fsa_name,
                                                               robot=robot,
                                                               components=components,
+                                                              particle_test=particle_test,
                                                               # agent_config
                                                               agent=agent,
                                                               # -- common
@@ -427,6 +431,7 @@ default_args = {
     'fsa_name': "fsa",
     'robot': 'baxter',
     'components':{'mdp': True, 'fsa': True, 'cbf': False, 'dmp': True},
+    'particle_test': False,
     ##### replay buffer config ####
     'per_alpha': 0.,
     'per_beta0': 0.4,
@@ -529,6 +534,7 @@ def construct_experiment_config(experiment_root_dir=default_args['experiment_roo
                                 fsa_name=default_args['fsa_name'],
                                 robot=default_args['robot'],
                                 components=default_args['components'],
+                                particle_test=default_args['particle_test'],
                                 #### agent config ####
                                 agent=default_args['agent'],
                                 # -- common configs
@@ -607,6 +613,7 @@ def construct_experiment_config(experiment_root_dir=default_args['experiment_roo
                                                                                fsa_name=fsa_name,
                                                                                robot=robot,
                                                                                components=components,
+                                                                               particle_test=particle_test,
                                                                                #### agent_config ####
                                                                                agent=agent,
                                                                                # -- common configs

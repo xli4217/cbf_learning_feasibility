@@ -156,30 +156,26 @@ class TLConfig(object):
 
         pos_dist, quat_dist = pose_distance(ee_pose, goal_pose)
 
-        if pos_dist > 0.04:
-            pos_dist_m = 0.04
-        else:
-            pos_dist_m = pos_dist
             
         if self.TLConfig_config['mode'] == 'sim':
-            if pos_dist < 0.04:
+            if pos_dist < 0.045:
                 pos_dist_m = 0
             else:
                 pos_dist_m = pos_dist
                 
-        mapped_pos_rob = (0.02 - pos_dist_m) / 0.02
+        mapped_pos_rob = (0.02 - np.clip(pos_dist_m, 0, 0.04)) / 0.02
 
         if quat_dist > 0.5:
             quat_dist_m = 0.5
         else:
             quat_dist_m = quat_dist
             
-        mapped_quat_rob = (0.25 - quat_dist_m) / 0.25
+        mapped_quat_rob = (0.25 - np.clip(quat_dist_m, 0, 0.5)) / 0.25
 
         
         rob = np.minimum(mapped_pos_rob, mapped_quat_rob)
 
-        # if rel_pose_name == 'relativeplateapplycondimentpost':
+        # if rel_pose_name == 'bunplate':
         #     print(object_pose)
         #     print(ee_pose)
         #     print(goal_pose)
@@ -191,6 +187,7 @@ class TLConfig(object):
 
     def hotdogready_robustness(self, s=None, a=None, sp=None):
         hotdogprob = s[self.state_idx_map['hotdogprob']]
+    
         if hotdogprob > 0.2:
             return (100, 'nonaction')
         else:
@@ -205,11 +202,17 @@ class TLConfig(object):
             else:
                 return (-1., 'nonaction')
         elif on_or_off == 'off':
-            if switch_on > 0:
-                return (-1., 'nonaction')
+            if self.TLConfig_config['mode'] != 'sim':
+                if switch_on > 0:
+                    return (-1., 'nonaction')
+                else:
+                    return (1., 'nonaction')
             else:
-                return (1., 'nonaction')
-   
+                if switch_on >= 0:
+                    return (-1., 'nonaction')
+                else:
+                    return (1., 'nonaction')
+                    
   
     def apply_condiment_robustness(self, s, a=None, sp=None):
         '''

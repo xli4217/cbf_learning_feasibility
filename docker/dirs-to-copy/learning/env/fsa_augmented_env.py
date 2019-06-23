@@ -7,17 +7,11 @@ from lomap.classes import Fsa
 from utils.configuration import Configuration
 
 
-#### HACK ####
-from tl_utils.tl_config import TLConfig
-from utils.utils import get_object_goal_pose
-tl_conf = TLConfig(config={'robot':'jaco', 'mode': 'sim'})
-OBJECT_RELATIVE_POSE = tl_conf.OBJECT_RELATIVE_POSE
-
-
 default_config = {
     'fsa_save_dir': os.getcwd(),
     'dot_file_name': 'g',
     'svg_file_name': 'svg',
+    'robot': 'jaco',
     'base_env': {
         'type': None,
         'config': {}
@@ -73,7 +67,13 @@ class FsaAugmentedEnv(object):
         #### hack ####
         # self.load_switchon_policy()
         self.condimentapplied = -10
-        self.OBJECT_RELATIVE_POSE = OBJECT_RELATIVE_POSE
+
+
+        from tl_utils.tl_config import TLConfig
+        from utils.utils import get_object_goal_pose
+        
+        self.tl_conf = TLConfig(config={'robot':self.FsaAugmentedEnv_config.get('robot'), 'mode': 'sim'})
+        self.OBJECT_RELATIVE_POSE = self.tl_conf.OBJECT_RELATIVE_POSE
         self.get_object_goal_pose = get_object_goal_pose
         
     def get_state(self, **kwargs):
@@ -146,7 +146,11 @@ class FsaAugmentedEnv(object):
 
                 if node_guard_pred == 'flipswitchon':
                     other_action = "flipswitchon"
-                             
+
+                if node_guard_pred == 'flipswitchoff':
+                    other_action = "flipswitchoff"
+
+                    
                 if node_guard_pred == 'applycondiment':
                     other_action = 'applycondiment'
 
@@ -161,6 +165,16 @@ class FsaAugmentedEnv(object):
                 pt = self.OBJECT_RELATIVE_POSE[object_rel_pose_name]
             else:
                 pt = self.get_object_goal_pose(self.all_info['obj_poses'][object_name], self.OBJECT_RELATIVE_POSE[object_rel_pose_name])
+
+            #### tune offset
+            if object_rel_pose_name == 'condimentpre':
+                pt += np.array([0,0,-0.04,0,0,0,0])
+            if object_rel_pose_name == 'condimentpost':
+                pt += np.array([0,0,-0.04,0,0,0,0])
+            if object_rel_pose_name in ['bunplate']:
+                pt[3:] = -pt[3:]
+                pt[2] += 0.04
+                
             self.base_env.set_goal_pose(pt)
 
         if gripper_action is not None:
@@ -173,26 +187,31 @@ class FsaAugmentedEnv(object):
 
         if other_action is not None:
             if other_action == 'flipswitchon' or other_action == 'flipswitchoff':
-                from tl_utils.tl_config import TLConfig
-                from utils.utils import get_object_goal_pose
         
-                tl_conf = TLConfig(config={'robot':'jaco'})
-
-                OBJECT_RELATIVE_POSE = tl_conf.OBJECT_RELATIVE_POSE
-
                 #### close gripper
                 if self.base_env.get_gripper_state() != 1:
                     self.base_env.set_gripper_state(1.)
 
                 if other_action == 'flipswitchon':
                     object_rel_pose = OBJECT_RELATIVE_POSE['switchon']
+                    object_rel_pose += np.array([0, 0.03, -0.02, 0, 0, 0, 0])
+                    
+                    #### tune offset 
+                    if self.all_info['switchon'] > 0:
+                        pt_rise = self.all_info['curr_pose'] + np.array([0.0, 0, 0.08, 0, 0, 0, 0])
+                        for i in range(10):
+                            self.base_env.set_goal_pose(pt_rise)
+                            self.base_env.step(action=np.zeros(self.base_env.action_space['shape'][0]))
+                            
                 elif other_action == 'flipswitchoff':
                     object_rel_pose = OBJECT_RELATIVE_POSE['switchoff']
+                    object_rel_pose += np.array([0, 0.03, -0.025, 0, 0, 0, 0])
                 else:
                     raise ValueError('action not supported')
                     
                 pt = get_object_goal_pose(self.all_info['obj_poses']['grill'], object_rel_pose)
                 self.base_env.set_goal_pose(pt)
+
                 
                 # curr_pos, curr_quat = self.base_env.get_ee_pose()
                 # curr_linear_vel, curr_angular_vel = self.base_env.get_ee_velocity()

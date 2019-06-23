@@ -85,7 +85,8 @@ class LearningEnv(object):
         self.update_all_info()
 
         #### reset hotdogready ####
-        self.hotdogprob = np.random.uniform(low=0, high=0.4)
+        # self.hotdogprob = np.random.uniform(low=0, high=0.4)
+        self.hotdogprob = 0
         
         #### currently do not sample initial position ####
         # if s is None:
@@ -149,7 +150,7 @@ class LearningEnv(object):
         button_vel = np.concatenate([np.array(button_linear_vel), np.array(button_angular_vel)])
         curr_pose = np.concatenate([np.array(ee_pos), np.array(ee_quat)])
         curr_vel = np.concatenate([np.array(lv), np.array(av)])
-        
+
         new_info = {
             'goal': self.goal,
             'button_angle': self.base_env.get_switch_state(),
@@ -279,6 +280,8 @@ class LearningEnv(object):
         switch_angle_rel_grill = self.base_env.get_switch_state()
         if switch_angle_rel_grill < 1.1:
             return 10
+        elif switch_angle_rel_grill > 1.08 and switch_angle_rel_grill < 1.23:
+            return 0
         else:
             return -10
         
@@ -365,12 +368,14 @@ if __name__ == "__main__":
         # if cls.is_done(state=s):
         #     cls.reset()
         cls.update_all_info()
-        cls.set_gripper_state(1.)
-        print(cls.get_gripper_state())
-        cls.base_env.synchronous_trigger()
+        # cls.set_gripper_state(1.)
+        # print(cls.get_gripper_state())
+        cls.get_switch_state()
         # cls.get_reward(state=cls.all_info['target_pos'])
         #print(cls.is_done(state=cls.all_info['target_pos']))
         # time.sleep(0.05)
         # target_pos = np.concatenate([cls.all_info['target_pos'], cls.all_info['target_quat']])
         # target_pos += np.array([0.01,0,0,0,0,0,0])
         # cls.base_env.set_target_pose(target_pos)
+
+        cls.base_env.synchronous_trigger()

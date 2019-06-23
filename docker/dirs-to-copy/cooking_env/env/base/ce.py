@@ -56,7 +56,7 @@ class CookingEnv(VrepEnvBase):
 
         #### world frame ####
         rc, self.world_frame_handle = vrep.simxGetObjectHandle(self.clientID, rh['world_frame_handle'], vrep.simx_opmode_blocking)
-        
+
         #### joint handles ####
         self.joint_handles = []
         for jh in rh['joint_handles']:
@@ -90,7 +90,7 @@ class CookingEnv(VrepEnvBase):
                                                          rh['ee_handle'],
                                                          vrep.simx_opmode_blocking)
         
-            
+
         #### target handle ####
         if self.CookingEnv_config.get('particle_test'):    
             _, self.target_handle = vrep.simxGetObjectHandle(self.clientID,
@@ -257,7 +257,9 @@ class CookingEnv(VrepEnvBase):
         
     def set_target_pose(self, pt):
         self.set_pose(pt, self.target_handle)
-
+        if self.CookingEnv_config.get('particle_test'):
+            self.set_pose(pt, self.ee_handle)
+        
     def get_target_pose(self):
         return self.get_pose(self.target_handle)
 
