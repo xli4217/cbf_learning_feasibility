@@ -206,9 +206,13 @@ class RunRobotCooking(object):
             else:
                 pt = get_object_goal_pose(self.skill_arg['obj_poses'][object_name], OBJECT_RELATIVE_POSE[object_rel_pose_name])
             if self.RunRobotCooking_config['robot'] == 'jaco':
-                if object_rel_pose_name in ['placecondimentgoal', 'condimentpre']:
-                    pt_rise = self.skill_arg['curr_pose'] + np.array([0.0,0,0.14,0,0,0,0])
+                if object_rel_pose_name in ['condimentpre']:
+                    pt_rise = self.skill_arg['curr_pose'] + np.array([0,0,0.1,0,0,0,0])
                     self.move_to_target_with_motor_skill(pt_rise, skill_name='moveto', dry_run=dry_run)
+                if object_rel_pose_name in ['placecondimentgoal']:
+                    pt_rise = self.skill_arg['curr_pose'] + np.array([0,0,0.06,0,0,0,0])
+                    self.move_to_target_with_motor_skill(pt_rise, skill_name='moveto', dry_run=dry_run)
+        
             elif self.RunRobotCooking_config['robot'] == 'baxter':
                 # if 'plate' in object_rel_pose_name:
                 #     pt += np.array([0,0,-0.03,0,0,0,0])

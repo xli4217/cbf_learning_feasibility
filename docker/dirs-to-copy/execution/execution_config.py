@@ -307,12 +307,13 @@ class ExecutionConfig(object):
             
         elif self.robot == 'baxter':
             
-            serve = "(moveto_world_baxterhotdogplate && opengripper) && X F " + \
+            serve = "moveto_world_baxterhotdogplatepre && X F " + \
+                    "((moveto_world_baxterhotdogplate && opengripper) && X F " + \
                     "(closegripper && X F " + \
                     "((moveto_serveplate && closegripper) && X F " + \
                     "(opengripper  && X F "+ \
                     "(moveto_world_baxterneutral " + \
-                    "))))"
+                    ")))))"
 
             
             

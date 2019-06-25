@@ -35,7 +35,7 @@ class TLConfig(object):
         #############
 
         if self.TLConfig_config['robot'] == 'jaco':
-            bunplate_rel = np.array([0.033, -0.022, 0.098, 0.807, 0.588, -0.018, 0.048])
+            bunplate_rel = np.array([0.045, -0.040, 0.087, 0.804, 0.593, 0.039, -0.006])
             serve_plate_rel = bunplate_rel
         elif self.TLConfig_config['robot'] == 'baxter':
             bunplate_rel = np.array([-0.05, -0.05, -0.015, 0.656, 0.754, -0.016, -0.016])
@@ -56,13 +56,14 @@ class TLConfig(object):
         self.OBJECT_RELATIVE_POSE = {
             'hotdogplate': np.array([0.0, 0.005, 0.02, 0.656, 0.754, -0.016, -0.016]),
             'bunplate': bunplate_rel,
-            'baxterhotdogplate': np.array([0.570, -0.799, -0.231, -0.108, 0.993, -0.042, 0.030]),
+            'baxterhotdogplatepre': np.array([0.570, -0.768, -0.157, -0.043, 0.999, -0.015, 0.018]),
+            'baxterhotdogplate': np.array([0.576, -0.774, -0.222, -0.077, 0.997, -0.016, 0.020]),
             'serveplate': serve_plate_rel,
             'grill': np.array([0.007, -0.032, 0.003, 0.710, 0.704, 0.017, 0.027]), # this needs confirmation
             'switchon': np.array([-0.001, -0.247-0.05, 0.076, 0.993, 0.072, 0.064, 0.073]),
             'switchoff': np.array([-0.117, -0.293, 0.038, 0.990, 0.126, -0.071, 0.002]),
-            'condimentpre': np.array([0.006, -0.112, -0.020, 0.608, 0.373, 0.553, -0.430]),
-            'condimentpost': np.array([0.023, -0.023, -0.021, 0.604, 0.375, 0.551, -0.436]),
+            'condimentpre': np.array([0.035, -0.113, -0.032, -0.580, -0.418, -0.487, 0.502]),
+            'condimentpost': np.array([0.041, -0.041, -0.030, -0.565, -0.442, -0.451, 0.531]),
             'relativeplateapplycondimentpre': cpost,
             'relativeplateapplycondimentpost': cpost + np.array([0, -0.14, 0, 0, 0, 0, 0]),
             'applycondimentpre': np.array([0.504, -0.403, 0.132, 0.107, 0.732, 0.165, 0.652]),
@@ -100,6 +101,7 @@ class TLConfig(object):
 
             'moveto_bunplate': lambda s, a=None, sp=None: self.moveto_robustness(s,a,sp,'bunplate', 'bunplate'),
             'moveto_world_baxterhotdogplate':lambda s, a=None, sp=None: self.moveto_robustness(s,a,sp,'world', 'baxterhotdogplate'),
+            'moveto_world_baxterhotdogplatepre':lambda s, a=None, sp=None: self.moveto_robustness(s,a,sp,'world', 'baxterhotdogplatepre'),
             'moveto_world_baxterneutral':lambda s, a=None, sp=None: self.moveto_robustness(s,a,sp,'world', 'baxterneutral'),
             'moveto_world_jaconeutral':lambda s, a=None, sp=None: self.moveto_robustness(s,a,sp,'world', 'jaconeutral'),
             'moveto_grill': lambda s, a=None, sp=None: self.moveto_robustness(s,a,sp,'grill', 'grill'),
@@ -161,9 +163,12 @@ class TLConfig(object):
             if pos_dist < 0.045:
                 pos_dist = 0
             
-            if rel_pose_name == 'condimentpre' or rel_pose_name == 'jaconeutral':
-                if quat_dist < 0.2:
-                    quat_dist = 0
+        if rel_pose_name == 'condimentpre' or rel_pose_name == 'jaconeutral':
+            if pos_dist < 0.04:
+                pos_dist = 0
+           
+            if quat_dist < 0.2:
+                quat_dist = 0
                     
                     
         mapped_pos_rob = (0.02 - np.clip(pos_dist, 0, 0.04)) / 0.02
@@ -173,7 +178,7 @@ class TLConfig(object):
         
         rob = np.minimum(mapped_pos_rob, mapped_quat_rob)
 
-        # if rel_pose_name == 'bunplate':
+        # if rel_pose_name == 'baxterhotdogplate':
         #     print(object_pose)
         #     print(ee_pose)
         #     print(goal_pose)
