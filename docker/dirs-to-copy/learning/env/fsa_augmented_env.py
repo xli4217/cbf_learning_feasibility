@@ -149,7 +149,6 @@ class FsaAugmentedEnv(object):
 
                 if node_guard_pred == 'flipswitchoff':
                     other_action = "flipswitchoff"
-
                     
                 if node_guard_pred == 'applycondiment':
                     other_action = 'applycondiment'
@@ -173,8 +172,8 @@ class FsaAugmentedEnv(object):
                 pt += np.array([0,0,-0.04,0,0,0,0])
             if object_rel_pose_name in ['bunplate']:
                 pt[2] += 0.04
-            if object_rel_pose_name == 'hotdogplate':
-                pt[2] += -0.01
+            if object_rel_pose_name == 'grill':
+                pt[2] += 0.02
                 
             self.base_env.set_goal_pose(pt)
 

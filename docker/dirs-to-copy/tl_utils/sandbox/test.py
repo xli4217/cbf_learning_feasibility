@@ -49,8 +49,8 @@ if get_fsa:
     # spec = "(F pp && (!pp U (r && c)))"
     # spec = serve + "&&" + "G(! (opengripper && closegripper))"
     # spec = "F ((a && b) && F c) && (!(c) U (a && b)) && G(!(c && b)) && G(! d) && Fd"
-    spec = "F ((m && o) && F c) && (!(c) U (m && o)) && G(!(c && o)) && G(!d)"
-    
+    # spec = "F ((m && o) && F c) && (!(c) U (m && o)) && G(!(c && o)) && G(!d)"
+    spec = "F ( a ) && (! a U b)"
     #### add task specific conditions and constraints ####
     conditions = ['(! serve U apply_condiment)']
     # for condition in conditions:

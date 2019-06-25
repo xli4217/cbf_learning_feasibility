@@ -204,7 +204,7 @@ class ExperimentConfig(object):
                 'k_cbf': 1.1,
                 'epsilon':0.8,
                 'num_states':3,
-                'action_space': {'shape': (3,), 'upper_bound': 0.2 * np.ones(3), 'lower_bound': -0.2 * np.ones(3)},
+                'action_space': {'shape': (3,), 'upper_bound': 0.3* np.ones(3), 'lower_bound': -0.3 * np.ones(3)},
                 'use_own_pose': True,
                 'dt': 0.05,
                 'log_dir': os.path.join(os.environ['LEARNING_PATH'], 'execution', 'log')

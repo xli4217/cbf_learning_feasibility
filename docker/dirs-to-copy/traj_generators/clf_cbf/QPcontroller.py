@@ -51,6 +51,7 @@ class QPcontroller:
         self.goal = goal
 
     def get_next_wp(self, action=[0,0,0], curr_pose=None, curr_vel=None, obs_info={}, clf=True, cbf=True):
+
         target_accel, target_vel, target_pose = self.generate_control(action, curr_pose[:3], obs_info, clf, cbf)
         return np.concatenate([target_accel, np.zeros(3)]), np.concatenate([target_vel, np.zeros(3)]), np.concatenate([target_pose, np.array([0,0,0,1])])
 
@@ -80,7 +81,7 @@ class QPcontroller:
                 #### ellipsoid obstacle ####
                 pos = obs_info[i]['position']
                 scale = np.array(obs_info[i]['scale']) / 2
-
+                
                 ellipsoid_x = (x_current[0]-pos[0])/scale[0]
                 ellipsoid_y = (x_current[1]-pos[1])/scale[1]
                 ellipsoid_z = (x_current[2]-pos[2])/scale[2]

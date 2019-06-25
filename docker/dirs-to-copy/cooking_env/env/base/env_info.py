@@ -20,7 +20,8 @@ robot_handles = {
         'ee_target_handle': 'Baxter_target_dummy',
         'ee_handle': 'Baxter_ee_frame',
         'ee_sample_region_handle': "Baxter_ee_sample_region",
-        'ee_motion_region_handle': "Baxter_ee_motion_region"
+        'ee_motion_region_handle': "Baxter_ee_motion_region",
+        'obstacle_handles': [{'name': 'grill_obs', 'handle': 'Baxter_grill_shield'}]
     },
     'Jaco': {
         'world_frame_handle': 'Jaco_World_Frame',
@@ -36,15 +37,11 @@ robot_handles = {
         'ee_target_handle': 'Jaco_target_dummy',
         'ee_handle': 'Jaco_ee_frame',
         'ee_sample_region_handle': "Jaco_ee_sample_region",
-        'ee_motion_region_handle': "Jaco_ee_motion_region"
+        'ee_motion_region_handle': "Jaco_ee_motion_region",
+        'obstacle_handles': [{'name': 'grill_obs', 'handle': 'Jaco_grill_shield'}]
     }
 }
 
-obstacle_handles = [
-    {'name': 'sphere_left', 'handle': 'sphere_left'},
-    {'name': 'sphere_low', 'handle': 'sphere_low'},
-    {'name': 'sphere_right', 'handle': 'sphere_right'}
-]
 
 object_handles = [
     {'name': 'grill', 'handle': 'grill_mapped'},

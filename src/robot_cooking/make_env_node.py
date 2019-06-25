@@ -157,6 +157,9 @@ class MakeEnv(object):
                     msg.pose.orientation.y,
                     msg.pose.orientation.z,
                     msg.pose.orientation.w]
+
+            pose[:3] = np.array(pose)[:3] + np.array(offset)[:3]
+                    
             
         self.pub_transforms(obj_name, parent_frame_id, child_frame_id, pose)
         

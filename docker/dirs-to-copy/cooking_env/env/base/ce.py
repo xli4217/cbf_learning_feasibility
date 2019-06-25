@@ -5,7 +5,7 @@ from utils.configuration import Configuration
 from future.utils import viewitems
 import time
 from utils import transformations
-from cooking_env.env.base.env_info import robot_handles, object_handles, obstacle_handles
+from cooking_env.env.base.env_info import robot_handles, object_handles
 
 default_config = {
     # Common to all envs
@@ -116,7 +116,7 @@ class CookingEnv(VrepEnvBase):
 
         #### obstacle handles ####
         self.obstacle_handles = []
-        for obs_h in obstacle_handles:
+        for obs_h in rh['obstacle_handles']:
             _, h = vrep.simxGetObjectHandle(self.clientID, obs_h['handle'], vrep.simx_opmode_blocking)
             self.obstacle_handles.append(dict(name=obs_h['name'], handle=h))
         
@@ -132,7 +132,6 @@ class CookingEnv(VrepEnvBase):
     #    for joint_handle in joint_handles:
     #       vrep.simxSetJointForce(self.clientID, joint_handle, 10000, vrep.simx_opmode_oneshot)
     #       vrep.simxSetObjectIntParameter(self.clientID, joint_handle, 2001, 0, vrep.simx_opmode_oneshot)
-
     def get_switch_state(self):
         rc = 1
         button_joint_frame_angle = np.zeros(3)
@@ -296,13 +295,19 @@ class CookingEnv(VrepEnvBase):
             rc = 1
             while rc != 0:
                 rc, pos = vrep.simxGetObjectPosition(self.clientID, obs['handle'], self.world_frame_handle, vrep.simx_opmode_streaming)
-            obs_info.append({'name': obs['name'], 'position': pos, 'radius': 0.175})
+                _, bb_min_x = vrep.simxGetObjectFloatParameter(self.clientID, obs['handle'], 15, vrep.simx_opmode_streaming)
+                _, bb_min_y = vrep.simxGetObjectFloatParameter(self.clientID, obs['handle'], 16, vrep.simx_opmode_streaming)
+                _, bb_min_z = vrep.simxGetObjectFloatParameter(self.clientID, obs['handle'], 17, vrep.simx_opmode_streaming)
+
+                _, bb_max_x = vrep.simxGetObjectFloatParameter(self.clientID, obs['handle'], 18, vrep.simx_opmode_streaming)
+                _, bb_max_y = vrep.simxGetObjectFloatParameter(self.clientID, obs['handle'], 19, vrep.simx_opmode_streaming)
+                _, bb_max_z = vrep.simxGetObjectFloatParameter(self.clientID, obs['handle'], 20, vrep.simx_opmode_streaming)
+
+                scale = [bb_max_x - bb_min_x, bb_max_y - bb_min_y, bb_max_z - bb_min_z]
+                
+            obs_info.append({'name': obs['name'], 'position': pos, 'scale': scale})
 
         return obs_info
-            
-    
-        
-        
         
     def reset(self):
         #### clear signals ####

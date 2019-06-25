@@ -159,18 +159,16 @@ class TLConfig(object):
             
         if self.TLConfig_config['mode'] == 'sim':
             if pos_dist < 0.045:
-                pos_dist_m = 0
-            else:
-                pos_dist_m = pos_dist
-                
-        mapped_pos_rob = (0.02 - np.clip(pos_dist_m, 0, 0.04)) / 0.02
-
-        if quat_dist > 0.5:
-            quat_dist_m = 0.5
-        else:
-            quat_dist_m = quat_dist
+                pos_dist = 0
             
-        mapped_quat_rob = (0.25 - np.clip(quat_dist_m, 0, 0.5)) / 0.25
+            if rel_pose_name == 'condimentpre' or rel_pose_name == 'jaconeutral':
+                if quat_dist < 0.2:
+                    quat_dist = 0
+                    
+                    
+        mapped_pos_rob = (0.02 - np.clip(pos_dist, 0, 0.04)) / 0.02
+    
+        mapped_quat_rob = (0.25 - np.clip(quat_dist, 0, 0.5)) / 0.25
 
         
         rob = np.minimum(mapped_pos_rob, mapped_quat_rob)
