@@ -78,8 +78,8 @@ class TLConfig(object):
             'hotdogplate': hotdogplate_rel,
             'bunplate': bunplate_rel,
             'bunplatepre': bunplatepre_rel,
-            'baxterhotdogplatepre': np.array([0.570, -0.768, -0.157, -0.043, 0.999, -0.015, 0.018]),
-            'baxterhotdogplate': np.array([0.576, -0.774, -0.222, -0.077, 0.997, -0.016, 0.020]),
+            'baxterhotdogplatepre': np.array([0.565, -0.799, -0.14, -0.090, 0.995, -0.013, 0.026]),
+            'baxterhotdogplate': np.array([0.565, -0.799, -0.231, -0.090, 0.995, -0.013, 0.026]),
             'serveplate': serve_plate_rel,
             'grill': grill_rel, 
             'switchon': np.array([-0.001, -0.247-0.05, 0.076, 0.993, 0.072, 0.064, 0.073]),
@@ -186,7 +186,7 @@ class TLConfig(object):
             if pos_dist < 0.045:
                 pos_dist = 0
             
-        if rel_pose_name == 'condimentpre' or rel_pose_name == 'jaconeutral':
+        if rel_pose_name == 'condimentpre' or rel_pose_name == 'jaconeutral' or rel_pose_name == "serveplate":
             if pos_dist < 0.04:
                 pos_dist = 0
            
