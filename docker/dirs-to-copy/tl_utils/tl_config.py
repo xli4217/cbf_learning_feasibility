@@ -35,11 +35,32 @@ class TLConfig(object):
         #############
 
         if self.TLConfig_config['robot'] == 'jaco':
-            bunplate_rel = np.array([0.045, -0.040, 0.087, 0.804, 0.593, 0.039, -0.006])
-            serve_plate_rel = bunplate_rel
+            if self.TLConfig_config['mode'] == 'real':
+                hotdogplate_rel = np.array([0.0, 0.005, 0.02, 0.656, 0.754, -0.016, -0.016])
+                grill_rel = np.array([0.007, -0.032, 0.003, 0.710, 0.704, 0.017, 0.027])
+                bunplate_rel = np.array([0.045, -0.040, 0.087, 0.804, 0.593, 0.039, -0.006])
+                serve_plate_rel = bunplate_rel
+                bunplatepre_rel = bunplate_rel
+     
+            if self.TLConfig_config['mode'] == 'sim':
+                hotdogplate_rel = np.array([0.0, 0.005, 0.015, 0.656, 0.754, -0.016, -0.016])
+                grill_rel = np.array([0.013, -0.032, -0.02, 0.710, 0.704, 0.017, 0.027])
+                bunplate_rel = np.array([0.0, 0.0, 0.05, 0.804, 0.593, 0.039, -0.006])
+                serve_plate_rel = bunplate_rel
+                bunplatepre_rel = bunplate_rel
+     
+                
         elif self.TLConfig_config['robot'] == 'baxter':
-            bunplate_rel = np.array([-0.05, -0.05, -0.015, 0.656, 0.754, -0.016, -0.016])
-            serve_plate_rel = bunplate_rel + np.array([0,0,0.04, 0,0,0,0])
+            hotdogplate_rel = np.array([0.0, 0.005, 0.02, 0.656, 0.754, -0.016, -0.016])
+            grill_rel = np.array([0.007, -0.032, 0.003, 0.710, 0.704, 0.017, 0.027])
+            if self.TLConfig_config['mode'] == 'real':
+                bunplate_rel = np.array([-0.05, -0.05, -0.015, 0.656, 0.754, -0.016, -0.016])
+                bunplatepre_rel = bunplate_rel + np.array([0,0,0.05,0,0,0,0])
+                serve_plate_rel = bunplate_rel + np.array([0,0,0.04, 0,0,0,0])
+            elif self.TLConfig_config['mode'] == 'sim':
+                bunplate_rel = np.array([0, 0, -0.025, 0.656, 0.754, -0.016, -0.016])
+                bunplatepre_rel = bunplate_rel + np.array([0,0,0.1,0,0,0,0])
+                serve_plate_rel = bunplate_rel + np.array([0,0,0.1, 0,0,0,0])
         else:
             raise ValueError('robot not supported')
             
@@ -54,12 +75,13 @@ class TLConfig(object):
         cpostpost = np.array([0.020, -0.038, 0.143, -0.468, 0.566, 0.394, 0.552])
         
         self.OBJECT_RELATIVE_POSE = {
-            'hotdogplate': np.array([0.0, 0.005, 0.02, 0.656, 0.754, -0.016, -0.016]),
+            'hotdogplate': hotdogplate_rel,
             'bunplate': bunplate_rel,
+            'bunplatepre': bunplatepre_rel,
             'baxterhotdogplatepre': np.array([0.570, -0.768, -0.157, -0.043, 0.999, -0.015, 0.018]),
             'baxterhotdogplate': np.array([0.576, -0.774, -0.222, -0.077, 0.997, -0.016, 0.020]),
             'serveplate': serve_plate_rel,
-            'grill': np.array([0.007, -0.032, 0.003, 0.710, 0.704, 0.017, 0.027]), # this needs confirmation
+            'grill': grill_rel, 
             'switchon': np.array([-0.001, -0.247-0.05, 0.076, 0.993, 0.072, 0.064, 0.073]),
             'switchoff': np.array([-0.117, -0.293, 0.038, 0.990, 0.126, -0.071, 0.002]),
             'condimentpre': np.array([0.035, -0.113, -0.032, -0.580, -0.418, -0.487, 0.502]),
@@ -100,6 +122,7 @@ class TLConfig(object):
             'moveto_serveplate': lambda s, a=None, sp=None: self.moveto_robustness(s,a,sp,'serveplate', 'serveplate'),
 
             'moveto_bunplate': lambda s, a=None, sp=None: self.moveto_robustness(s,a,sp,'bunplate', 'bunplate'),
+            'moveto_bunplate_bunplatepre': lambda s, a=None, sp=None: self.moveto_robustness(s,a,sp,'bunplate', 'bunplatepre'),
             'moveto_world_baxterhotdogplate':lambda s, a=None, sp=None: self.moveto_robustness(s,a,sp,'world', 'baxterhotdogplate'),
             'moveto_world_baxterhotdogplatepre':lambda s, a=None, sp=None: self.moveto_robustness(s,a,sp,'world', 'baxterhotdogplatepre'),
             'moveto_world_baxterneutral':lambda s, a=None, sp=None: self.moveto_robustness(s,a,sp,'world', 'baxterneutral'),

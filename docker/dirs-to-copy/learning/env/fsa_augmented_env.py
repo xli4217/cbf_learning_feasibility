@@ -127,6 +127,7 @@ class FsaAugmentedEnv(object):
         
     def set_node_goal(self, best_node_guard):
 
+        # print(best_node_guard)
         ee_goal = None
         gripper_action = None
         other_action = None

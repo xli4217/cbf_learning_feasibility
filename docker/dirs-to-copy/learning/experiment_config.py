@@ -459,12 +459,13 @@ class ExperimentConfig(object):
             #         "(moveto_world_baxterneutral " + \
             #         "))))"
 
-            serve = "(moveto_bunplate && opengripper) && X F " + \
+            serve = "moveto_bunplate_bunplatepre && X F" + \
+                    "((moveto_bunplate && opengripper) && X F " + \
                     "(closegripper && X F " + \
                     "((moveto_serveplate && closegripper) && X F " + \
                     "(opengripper  && X F "+ \
                     "(moveto_world_baxterneutral " + \
-                    "))))"
+                    ")))))"
 
 
             #### serve task KG ####
