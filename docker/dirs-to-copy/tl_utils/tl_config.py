@@ -41,18 +41,29 @@ class TLConfig(object):
                 bunplate_rel = np.array([0.045, -0.040, 0.087, 0.804, 0.593, 0.039, -0.006])
                 serve_plate_rel = bunplate_rel
                 bunplatepre_rel = bunplate_rel
-     
+                placecondimentgoal = np.array([0.488,-0.0669,0.04,0.6135,0.3485,0.6266,-0.33])
+                jaconeutral = np.array([-0.075, -0.316, 0.26, 0.779, -0.621, -0.052, -0.076])
+                applycondimentpre = np.array([0.504, -0.403, 0.132, 0.107, 0.732, 0.165, 0.652])
+                applycondimentpost = np.array([0.401, -0.399, 0.125, 0.163, 0.732, 0.153, 0.643])
+                
             if self.TLConfig_config['mode'] == 'sim':
                 hotdogplate_rel = np.array([0.0, 0.005, 0.015, 0.656, 0.754, -0.016, -0.016])
                 grill_rel = np.array([0.013, -0.032, -0.02, 0.710, 0.704, 0.017, 0.027])
                 bunplate_rel = np.array([0.0, 0.0, 0.05, 0.804, 0.593, 0.039, -0.006])
                 serve_plate_rel = bunplate_rel
                 bunplatepre_rel = bunplate_rel
-     
+                placecondimentgoal = np.array([0.4,0.032,0.083,0.6135,0.3485,0.6266,-0.33])
+                jaconeutral = np.array([-0.075, -0.316, 0.26, 0.779, -0.621, -0.052, -0.076])
+                applycondimentpre = np.array([0.504, -0.353, 0.132, 0.107, 0.732, 0.165, 0.652])
+                applycondimentpost = np.array([0.401, -0.359, 0.125, 0.163, 0.732, 0.153, 0.643])
                 
         elif self.TLConfig_config['robot'] == 'baxter':
+            placecondimentgoal = np.array([0.488,-0.0669,0.04,0.6135,0.3485,0.6266,-0.33])
             hotdogplate_rel = np.array([0.0, 0.005, 0.02, 0.656, 0.754, -0.016, -0.016])
             grill_rel = np.array([0.007, -0.032, 0.003, 0.710, 0.704, 0.017, 0.027])
+            jaconeutral = np.array([-0.075, -0.316, 0.26, 0.779, -0.621, -0.052, -0.076])
+            applycondimentpre = np.array([0.504, -0.403, 0.132, 0.107, 0.732, 0.165, 0.652])
+            applycondimentpost = np.array([0.401, -0.399, 0.125, 0.163, 0.732, 0.153, 0.643])
             if self.TLConfig_config['mode'] == 'real':
                 bunplate_rel = np.array([-0.05, -0.05, -0.015, 0.656, 0.754, -0.016, -0.016])
                 bunplatepre_rel = bunplate_rel + np.array([0,0,0.05,0,0,0,0])
@@ -88,11 +99,11 @@ class TLConfig(object):
             'condimentpost': np.array([0.041, -0.041, -0.030, -0.565, -0.442, -0.451, 0.531]),
             'relativeplateapplycondimentpre': cpost,
             'relativeplateapplycondimentpost': cpost + np.array([0, -0.14, 0, 0, 0, 0, 0]),
-            'applycondimentpre': np.array([0.504, -0.403, 0.132, 0.107, 0.732, 0.165, 0.652]),
-            'applycondimentpost': np.array([0.401, -0.399, 0.125, 0.163, 0.732, 0.153, 0.643]),
-            'placecondimentgoal': np.array([0.488,-0.0669,0.04,0.6135,0.3485,0.6266,-0.33]),
+            'applycondimentpre': applycondimentpre,
+            'applycondimentpost': applycondimentpost,
+            'placecondimentgoal': placecondimentgoal,
             'baxterneutral': np.array([0.729, -0.29, 0.19, -0.052, 0.998, 0.031, 0.020]),
-            'jaconeutral': np.array([-0.075, -0.316, 0.26, 0.779, -0.621, -0.052, -0.076])
+            'jaconeutral': jaconeutral
         }
 
 
@@ -213,7 +224,8 @@ class TLConfig(object):
 
     def hotdogready_robustness(self, s=None, a=None, sp=None):
         hotdogprob = s[self.state_idx_map['hotdogprob']]
-    
+        print(hotdogprob)
+        
         if hotdogprob > 0.2:
             return (100, 'nonaction')
         else:

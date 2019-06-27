@@ -69,7 +69,7 @@ class GenerateAutomata(object):
         t1 = time.time()
         self.Q, r, self.edge, done, DQ_nontrap, DQ_trap, best_node_guard, trap_node_guard = self.FSA.step(self.Q, s=s, repeat=self.GenerateAutomata_config['repeat'])
         self.q = self.FSA.get_node_value_from_name(self.Q)
-
+        
         if self.GenerateAutomata_config['visdom']:
             self.plot_aut.update(current_state = self.Q, src_and_dest=self.edge)
 
