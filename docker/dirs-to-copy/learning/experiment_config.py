@@ -13,7 +13,6 @@ default_config = {
     'headless': False,
     # translation_gen can be 'clf', 'cbf', 'clf_cbf', 'dmp', orientation_gen can be 'dmp'
     'components': {'mdp': True, 'fsa': False, 'translation_gen': 'clf_cbf', 'orientation_gen': 'dmp'},
-    # this can be 'makehotdog (for jaco+mdp+fsa)', 'serve (for baxter+mdp+fsa)', 'switchon (for jaco + mdp)'
     'task': 'switchon',
     'fsa_save_dir': os.getcwd(),
     'fsa_name': 'g',
@@ -204,7 +203,7 @@ class ExperimentConfig(object):
                 'k_cbf': 1.1,
                 'epsilon':0.8,
                 'num_states':3,
-                'action_space': {'shape': (3,), 'upper_bound': 0.2* np.ones(3), 'lower_bound': -0.2 * np.ones(3)},
+                'action_space': {'shape': (3,), 'upper_bound': 0.2 * np.ones(3), 'lower_bound': -0.2 * np.ones(3)},
                 'use_own_pose': True,
                 'dt': 0.05,
                 'log_dir': os.path.join(os.environ['LEARNING_PATH'], 'execution', 'log')
@@ -459,13 +458,12 @@ class ExperimentConfig(object):
             #         "(moveto_world_baxterneutral " + \
             #         "))))"
 
-            serve = "moveto_bunplate_bunplatepre && X F" + \
-                    "((moveto_bunplate && opengripper) && X F " + \
+            serve = "(moveto_bunplate && opengripper) && X F " + \
                     "(closegripper && X F " + \
                     "((moveto_serveplate && closegripper) && X F " + \
                     "(opengripper  && X F "+ \
                     "(moveto_world_baxterneutral " + \
-                    ")))))"
+                    "))))"
 
 
             #### serve task KG ####
