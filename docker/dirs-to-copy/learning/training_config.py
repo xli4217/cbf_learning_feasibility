@@ -433,7 +433,7 @@ default_args = {
     'fsa_name': "fsa",
     'robot': 'baxter',
     # translation_gen can be 'clf', 'cbf', 'clf_cbf', 'dmp', 'None', orientation_gen can be 'dmp' or None
-    'components': {'mdp': True, 'fsa': True, 'translation_gen': None, 'orientation_gen': None},
+    'components': {'mdp': True, 'fsa': True, 'translation_gen': 'cbf', 'orientation_gen': None},
     'particle_test': False,
     ##### replay buffer config ####
     'per_alpha': 0.,

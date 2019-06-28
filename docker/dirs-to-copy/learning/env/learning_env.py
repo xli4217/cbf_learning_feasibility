@@ -179,10 +179,11 @@ class LearningEnv(object):
         '''
         here action is forcing function output
         '''
+
         action = np.array(action).flatten()
         assert action.size == self.action_space['shape'][0]
 
-        action *= 100
+        # action *= 100
 
         # clip action
         action = np.clip(action, self.action_space['lower_bound'], self.action_space['upper_bound'])
@@ -195,7 +196,7 @@ class LearningEnv(object):
         curr_vel = np.concatenate([curr_linear_vel, curr_angular_vel])
 
         #### HACK! remove when done debugging #####
-        action = np.zeros(action.shape)
+        # action = np.zeros(action.shape)
 
         #### first trial (trans_gen and ori_gen both None)
         # action = np.concatenate([np.random.uniform(low=-1.,  high=1., size=3),
@@ -205,11 +206,14 @@ class LearningEnv(object):
         #### last trial (trans_gen 'clf_cbf', ori_gen 'dmp')
         # action = np.concatenate([np.random.uniform(low=-0.1,  high=0.1, size=3),
         #                          np.random.uniform(low=-200,  high=200, size=3)])
-        
-        if len(action) == 3:
-            action = np.concatenate([action, np.zeros(3)])
 
-        ddy, dy, y = self.wp_gen.get_next_wp(action,
+        gripper_action = action[0]
+        motion_action = action[1:]
+
+        if len(motion_action) == 3:
+            motion_action = np.concatenate([motion_action, np.zeros(3)])
+
+        ddy, dy, y = self.wp_gen.get_next_wp(motion_action,
                                              curr_pose,
                                              curr_vel,
                                              obs_info=self.all_info['obs_info'],
@@ -221,7 +225,7 @@ class LearningEnv(object):
 
         # time.sleep(0.05)
         self.base_env.set_target_pose(y)
-
+        # self.set_gripper_state(gripper_action)
 
     ####################
     # Common Interface #

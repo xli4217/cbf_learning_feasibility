@@ -66,12 +66,12 @@ class TrajectoryGenerator(object):
         self.clf_cbf_gen.reset(pose, vel)
         
     def get_next_wp(self, action, curr_pose, curr_vel, obs_info={}, translation_gen=None, orientation_gen=None):
-
+    
         if translation_gen is None:
             translation_gen = self.TrajectoryGenerator_config['translation_gen']
         if orientation_gen is None:
             orientation_gen = self.TrajectoryGenerator_config['orientation_gen']
-            
+       
         #### translation generator ####
         if translation_gen == 'dmp':
             #### this include translation and orientation
@@ -81,7 +81,7 @@ class TrajectoryGenerator(object):
             y_trans = dmp_y[:3]
         elif translation_gen == 'clf_cbf':
             #### this currently only includes translation
-            clf_cbf_ddy, clf_cbf_dy, clf_cbf_y = self.clf_cbf_gen.get_next_wp(action, curr_pose, curr_vel, obs_info, clf=True, cbf=True)
+            clf_cbf_ddy, clf_cbf_dy, clf_cbf_y = self.clf_cbf_gen.get_next_wp(action[:3], curr_pose, curr_vel, obs_info, clf=True, cbf=True)
 
             ddy_trans = clf_cbf_ddy[:3]
             dy_trans = clf_cbf_dy[:3]

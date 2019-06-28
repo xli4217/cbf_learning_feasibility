@@ -268,8 +268,13 @@ class ExperimentConfig(object):
             
         state_space = {'type': 'float', 'shape': (obs_dim, ), 'upper_bound': [], 'lower_bound': []}
 
-        action_coeff = 120
-        action_space = {'type': 'float', 'shape': (3, ), "upper_bound": np.ones(3) * action_coeff, "lower_bound": -np.ones(3) * action_coeff}
+        translation_coeff = 0.2
+        rotation_coeff = 200
+        vel_upper = np.concatenate([translation_coeff * np.ones(3), rotation_coeff*np.ones(3)])
+        vel_lower = -np.concatenate([translation_coeff * np.ones(3), rotation_coeff*np.ones(3)])
+        upper_bound = np.hstack([1, vel_upper])
+        lower_bound = np.hstack([0, vel_lower])
+        action_space = {'type': 'float', 'shape': (7, ), "upper_bound": upper_bound, "lower_bound":  lower_bound}
 
 
         #### Reset ####
