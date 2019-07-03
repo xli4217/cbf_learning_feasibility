@@ -453,7 +453,7 @@ class ExperimentConfig(object):
 
             
             task_spec = "F(" + entire_task_w_condiment + ")"
-            # task_spec = "F(closegripper && X F moveto_bunplate)"
+            # task_spec = "F(closegripper && X F (moveto_grill))"
             
         elif task == 'serve' and self.robot == 'baxter':
             # serve = "(moveto_bunplate && opengripper) && X F " + \

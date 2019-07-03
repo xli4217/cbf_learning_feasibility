@@ -77,6 +77,7 @@ class QPcontroller:
                 h_table = (x_current[2] - table_height)
                 if cbf:
                     self.m.addConstr(self.u3 + self.k_cbf*h_table >= 0, "CBF_Constraint_for_table")
+                    
             else:
                 #### ellipsoid obstacle ####
                 pos = obs_info[i]['position']
@@ -122,7 +123,7 @@ class QPcontroller:
             self.control_u1 = action[0]
             self.control_u2 = action[1]
             self.control_u3 = action[2]
-      
+
         # For debuging only, save model to view constraints etc.
         self.m.write(os.path.join(self.QPcontroller_config['log_dir'], "qp_model.lp"))
 

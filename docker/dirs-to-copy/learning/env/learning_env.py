@@ -168,6 +168,7 @@ class LearningEnv(object):
             'obj_poses': self.get_object_pose(),
         }
 
+
         self.all_info.update(new_info)
         
         if 'condimentapplied' not in self.all_info:
@@ -196,13 +197,13 @@ class LearningEnv(object):
         curr_vel = np.concatenate([curr_linear_vel, curr_angular_vel])
 
         #### HACK! remove when done debugging #####
-        # action = np.zeros(action.shape)
+        action = np.zeros(action.shape)
 
         #### first trial (trans_gen and ori_gen both None)
-        # action = np.concatenate([np.random.uniform(low=-1.,  high=1., size=3),
-        #                          np.random.uniform(low=-200,  high=200, size=3)])
+        action = np.concatenate([ np.array([np.random.uniform(-1,1)]),
+                                  np.random.uniform(low=-0.1,  high=0.1, size=3),
+                                  np.random.uniform(low=-300,  high=300, size=3)])
       
-        
         #### last trial (trans_gen 'clf_cbf', ori_gen 'dmp')
         # action = np.concatenate([np.random.uniform(low=-0.1,  high=0.1, size=3),
         #                          np.random.uniform(low=-200,  high=200, size=3)])
@@ -219,7 +220,7 @@ class LearningEnv(object):
                                              obs_info=self.all_info['obs_info'],
                                              translation_gen=self.wp_gen_config['translation_gen'],
                                              orientation_gen=self.wp_gen_config['orientation_gen'])
-        
+
         if len(y) < 7:
             y = np.concatenate([y, np.array([0,0,0,1])])
 
@@ -227,6 +228,12 @@ class LearningEnv(object):
         self.base_env.set_target_pose(y)
         # self.set_gripper_state(gripper_action)
 
+        if gripper_action < 0.5:
+            vrep.simxSetIntegerSignal(self.base_env.clientID, self.base_env.robot+'_open_gripper', 0, vrep.simx_opmode_oneshot)
+        else:
+            vrep.simxSetIntegerSignal(self.base_env.clientID, self.base_env.robot+'_open_gripper', 1, vrep.simx_opmode_oneshot)
+    
+        
     ####################
     # Common Interface #
     ####################

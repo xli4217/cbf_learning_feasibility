@@ -245,7 +245,7 @@ class FsaAugmentedEnv(object):
         self.fsa_done = fsa_done
         self.fsa_r = fsa_r
 
-        # self.set_node_goal(best_node_guard)
+        self.set_node_goal(best_node_guard)
         
     def step_base_env(self, actions, **kwargs):
         self.base_env.step(actions)        

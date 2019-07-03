@@ -224,7 +224,6 @@ class TLConfig(object):
 
     def hotdogready_robustness(self, s=None, a=None, sp=None):
         hotdogprob = s[self.state_idx_map['hotdogprob']]
-        print(hotdogprob)
         
         if hotdogprob > 0.2:
             return (100, 'nonaction')
